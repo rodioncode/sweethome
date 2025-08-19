@@ -1,6 +1,8 @@
 package com.jetbrains.kmpapp.data
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -12,7 +14,7 @@ class MuseumRepository(
     private val scope = CoroutineScope(SupervisorJob())
 
     fun initialize() {
-        scope.launch {
+        scope.launch(Dispatchers.IO) {
             refresh()
         }
     }
