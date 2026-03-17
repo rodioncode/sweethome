@@ -20,7 +20,8 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.LinkEmailScreen
 import com.jetbrains.kmpapp.auth.RegisterScreen
 import com.jetbrains.kmpapp.screens.detail.DetailScreen
-import com.jetbrains.kmpapp.screens.list.ListScreen
+import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
+import com.jetbrains.kmpapp.screens.todo.TodoListsScreen
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 
@@ -38,6 +39,9 @@ object ListDestination
 
 @Serializable
 data class DetailDestination(val objectId: Int)
+
+@Serializable
+data class TodoListDetailDestination(val listId: String)
 
 @Composable
 fun App() {
@@ -102,10 +106,16 @@ fun App() {
                     )
                 }
                 composable<ListDestination> {
-                    ListScreen(
-                        navigateToDetails = { objectId ->
-                            navController.navigate(DetailDestination(objectId))
+                    TodoListsScreen(
+                        navigateToListDetail = { listId ->
+                            navController.navigate(TodoListDetailDestination(listId))
                         },
+                    )
+                }
+                composable<TodoListDetailDestination> { backStackEntry ->
+                    TodoListDetailScreen(
+                        listId = backStackEntry.toRoute<TodoListDetailDestination>().listId,
+                        navigateBack = { navController.popBackStack() },
                     )
                 }
                 composable<DetailDestination> { backStackEntry ->

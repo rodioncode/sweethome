@@ -10,9 +10,14 @@ import com.jetbrains.kmpapp.data.KtorMuseumApi
 import com.jetbrains.kmpapp.data.MuseumApi
 import com.jetbrains.kmpapp.data.MuseumRepository
 import com.jetbrains.kmpapp.data.MuseumStorage
+import com.jetbrains.kmpapp.data.lists.KtorListsApi
+import com.jetbrains.kmpapp.data.lists.ListsApi
+import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.detail.DetailViewModel
 import com.jetbrains.kmpapp.screens.list.ListViewModel
+import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
+import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -48,7 +53,7 @@ val dataModule = module {
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
-                sanitizeHeader { header -> header == HttpHeaders.Authorization }
+                //sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Any)
@@ -81,12 +86,24 @@ val dataModule = module {
             initialize()
         }
     }
+
+    single<ListsApi> {
+        KtorListsApi(
+            apiClient = get(named("apiClient")),
+            baseUrl = getApiBaseUrl(),
+            tokenProvider = { get<TokenStorage>().getAccessToken() },
+        )
+    }
+
+    single { ListsRepository(get()) }
 }
 
 val viewModelModule = module {
     factoryOf(::AuthViewModel)
     factoryOf(::ListViewModel)
     factoryOf(::DetailViewModel)
+    factoryOf(::TodoListsViewModel)
+    factoryOf(::TodoListDetailViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>
