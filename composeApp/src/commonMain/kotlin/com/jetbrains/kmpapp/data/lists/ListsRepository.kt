@@ -4,7 +4,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class ListsRepository(private val listsApi: ListsApi) {
+class ListsRepository(
+    private val listsApi: ListsApi,
+    private val listsStorage: ListsStorage,
+) {
 
     private val _lists = MutableStateFlow<List<TodoList>>(emptyList())
     val lists: StateFlow<List<TodoList>> = _lists.asStateFlow()
@@ -16,21 +19,32 @@ class ListsRepository(private val listsApi: ListsApi) {
     val error: StateFlow<String?> = _error.asStateFlow()
 
     suspend fun loadLists(scope: String? = null, groupId: String? = null) {
+        _lists.value = listsStorage.getLists()
         listsApi.getLists(scope, groupId)
-            .onSuccess { _lists.value = it }
+            .onSuccess {
+                _lists.value = it
+                listsStorage.saveLists(it)
+            }
             .onFailure { _error.value = it.message }
     }
 
     suspend fun createList(type: String, title: String, scope: String = "personal"): Result<TodoList> {
         val result = listsApi.createList(CreateListRequest(type = type, title = title, scope = scope))
-        result.onSuccess { _lists.value = _lists.value + it }
+        result.onSuccess {
+            _lists.value = _lists.value + it
+            listsStorage.saveLists(_lists.value)
+        }
         result.onFailure { _error.value = it.message }
         return result
     }
 
     suspend fun loadListWithItems(listId: String) {
+        _currentListWithItems.value = listsStorage.getListWithItems(listId)
         listsApi.getListWithItems(listId)
-            .onSuccess { _currentListWithItems.value = it }
+            .onSuccess {
+                _currentListWithItems.value = it
+                listsStorage.saveListWithItems(it.first, it.second)
+            }
             .onFailure { _error.value = it.message }
     }
 
@@ -45,6 +59,10 @@ class ListsRepository(private val listsApi: ListsApi) {
             _currentListWithItems.value?.let { (list, items) ->
                 if (list.id == listId) _currentListWithItems.value = updated to items
             }
+            listsStorage.saveLists(_lists.value)
+            _currentListWithItems.value?.let { (list, items) ->
+                listsStorage.saveListWithItems(list, items)
+            }
         }
         result.onFailure { _error.value = it.message }
         return result
@@ -57,6 +75,7 @@ class ListsRepository(private val listsApi: ListsApi) {
             if (_currentListWithItems.value?.first?.id == listId) {
                 _currentListWithItems.value = null
             }
+            listsStorage.saveLists(_lists.value)
         }
         result.onFailure { _error.value = it.message }
         return result
@@ -66,7 +85,11 @@ class ListsRepository(private val listsApi: ListsApi) {
         val result = listsApi.createItem(listId, CreateItemRequest(title = title))
         result.onSuccess { newItem ->
             _currentListWithItems.value?.let { (list, items) ->
-                if (list.id == listId) _currentListWithItems.value = list to (items + newItem)
+                if (list.id == listId) {
+                    val updated = list to (items + newItem)
+                    _currentListWithItems.value = updated
+                    listsStorage.saveListWithItems(updated.first, updated.second)
+                }
             }
         }
         result.onFailure { _error.value = it.message }
@@ -78,7 +101,9 @@ class ListsRepository(private val listsApi: ListsApi) {
         result.onSuccess { updated ->
             _currentListWithItems.value?.let { (list, items) ->
                 if (list.id == item.listId) {
-                    _currentListWithItems.value = list to items.map { if (it.id == item.id) updated else it }
+                    val newItems = items.map { if (it.id == item.id) updated else it }
+                    _currentListWithItems.value = list to newItems
+                    listsStorage.saveListWithItems(list, newItems)
                 }
             }
         }
@@ -90,7 +115,9 @@ class ListsRepository(private val listsApi: ListsApi) {
         val result = listsApi.updateItem(itemId, UpdateItemRequest(title = title, note = note))
         result.onSuccess { updated ->
             _currentListWithItems.value?.let { (list, items) ->
-                _currentListWithItems.value = list to items.map { if (it.id == itemId) updated else it }
+                val newItems = items.map { if (it.id == itemId) updated else it }
+                _currentListWithItems.value = list to newItems
+                listsStorage.saveListWithItems(list, newItems)
             }
         }
         result.onFailure { _error.value = it.message }
@@ -102,7 +129,9 @@ class ListsRepository(private val listsApi: ListsApi) {
         result.onSuccess {
             _currentListWithItems.value?.let { (list, items) ->
                 if (list.id == item.listId) {
-                    _currentListWithItems.value = list to items.filter { it.id != item.id }
+                    val newItems = items.filter { it.id != item.id }
+                    _currentListWithItems.value = list to newItems
+                    listsStorage.saveListWithItems(list, newItems)
                 }
             }
         }

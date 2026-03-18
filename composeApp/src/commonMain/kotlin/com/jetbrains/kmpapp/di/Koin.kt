@@ -95,7 +95,7 @@ val dataModule = module {
         )
     }
 
-    single { ListsRepository(get()) }
+    single { ListsRepository(get(), get()) }
 }
 
 val viewModelModule = module {
