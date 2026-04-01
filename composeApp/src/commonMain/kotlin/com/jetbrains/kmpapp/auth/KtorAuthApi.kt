@@ -2,7 +2,6 @@ package com.jetbrains.kmpapp.auth
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -12,7 +11,6 @@ class KtorAuthApi(
     private val authClient: HttpClient,
     private val apiClient: HttpClient,
     private val baseUrl: String,
-    private val tokenProvider: () -> String?,
 ) : AuthApi {
 
     override suspend fun register(request: RegisterRequest): Result<AuthTokens> = runCatching {
@@ -64,10 +62,8 @@ class KtorAuthApi(
     }
 
     override suspend fun linkEmail(request: LinkEmailRequest): Result<Unit> = runCatching {
-        val token = tokenProvider() ?: error("Требуется авторизация")
         val envelope: ApiEnvelope<EmptyResponse> = apiClient.post("$baseUrl/auth/link/email") {
             contentType(ContentType.Application.Json)
-            header("Authorization", "Bearer $token")
             setBody(request)
         }.body()
         require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
@@ -75,10 +71,8 @@ class KtorAuthApi(
     }
 
     override suspend fun registerDevice(request: RegisterDeviceRequest): Result<Unit> = runCatching {
-        val token = tokenProvider() ?: error("Требуется авторизация")
         val envelope: ApiEnvelope<EmptyResponse> = apiClient.post("$baseUrl/auth/devices") {
             contentType(ContentType.Application.Json)
-            header("Authorization", "Bearer $token")
             setBody(request)
         }.body()
         require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }

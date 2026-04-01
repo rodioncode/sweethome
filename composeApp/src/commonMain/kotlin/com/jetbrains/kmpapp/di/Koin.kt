@@ -24,12 +24,12 @@ import com.jetbrains.kmpapp.screens.list.ListViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -54,18 +54,29 @@ val dataModule = module {
     single(named("apiClient")) {
         val json = Json { ignoreUnknownKeys = true }
         val tokenStorage = get<TokenStorage>()
+        val authRepository = get<AuthRepository>()
         HttpClient {
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
-                //sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Any)
             }
-            defaultRequest {
-                tokenStorage.getAccessToken()?.let { token ->
-                    header("Authorization", "Bearer $token")
+            install(Auth) {
+                bearer {
+                    loadTokens {
+                        val access = tokenStorage.getAccessToken() ?: return@loadTokens null
+                        val refresh = tokenStorage.getRefreshToken() ?: return@loadTokens null
+                        BearerTokens(access, refresh)
+                    }
+                    refreshTokens {
+                        authRepository.refreshTokens()
+                        val access = tokenStorage.getAccessToken() ?: return@refreshTokens null
+                        val refresh = tokenStorage.getRefreshToken() ?: return@refreshTokens null
+                        BearerTokens(access, refresh)
+                    }
+                    sendWithoutRequest { true }
                 }
             }
         }
@@ -76,7 +87,6 @@ val dataModule = module {
             authClient = get(named("authClient")),
             apiClient = get(named("apiClient")),
             baseUrl = getApiBaseUrl(),
-            tokenProvider = { get<TokenStorage>().getAccessToken() },
         )
     }
 
@@ -96,7 +106,6 @@ val dataModule = module {
         KtorListsApi(
             apiClient = get(named("apiClient")),
             baseUrl = getApiBaseUrl(),
-            tokenProvider = { get<TokenStorage>().getAccessToken() },
         )
     }
 
@@ -106,7 +115,6 @@ val dataModule = module {
         KtorGroupsApi(
             apiClient = get(named("apiClient")),
             baseUrl = getApiBaseUrl(),
-            tokenProvider = { get<TokenStorage>().getAccessToken() },
         )
     }
 
