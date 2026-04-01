@@ -2,9 +2,11 @@ package com.jetbrains.kmpapp.screens.todo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jetbrains.kmpapp.data.lists.CreateItemRequest
+import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ListsRepository
+import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
+import com.jetbrains.kmpapp.data.lists.TodoList
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
@@ -12,7 +14,7 @@ class TodoListDetailViewModel(
     private val listsRepository: ListsRepository,
 ) : ViewModel() {
 
-    val listWithItems: StateFlow<Pair<com.jetbrains.kmpapp.data.lists.TodoList, List<TodoItem>>?> =
+    val listWithItems: StateFlow<Pair<TodoList, List<TodoItem>>?> =
         listsRepository.currentListWithItems
     val error: StateFlow<String?> = listsRepository.error
 
@@ -22,9 +24,47 @@ class TodoListDetailViewModel(
         }
     }
 
-    fun addItem(listId: String, title: String) {
+    fun addItem(
+        listId: String,
+        title: String,
+        note: String? = null,
+        dueAt: String? = null,
+        isFavorite: Boolean = false,
+        shopping: ShoppingItemFields? = null,
+        choreSchedule: ChoreSchedule? = null,
+    ) {
         viewModelScope.launch {
-            listsRepository.createItem(listId, title)
+            listsRepository.createItem(
+                listId = listId,
+                title = title,
+                note = note?.takeIf { it.isNotBlank() },
+                dueAt = dueAt?.takeIf { it.isNotBlank() },
+                isFavorite = isFavorite.takeIf { it },
+                shopping = shopping,
+                choreSchedule = choreSchedule,
+            )
+        }
+    }
+
+    fun updateItem(
+        item: TodoItem,
+        title: String,
+        note: String,
+        dueAt: String,
+        isFavorite: Boolean,
+        shopping: ShoppingItemFields? = null,
+        choreSchedule: ChoreSchedule? = null,
+    ) {
+        viewModelScope.launch {
+            listsRepository.updateItem(
+                itemId = item.id,
+                title = title.takeIf { it.isNotBlank() && it != item.title },
+                note = note.takeIf { it.isNotBlank() },
+                dueAt = dueAt.takeIf { it.isNotBlank() },
+                isFavorite = isFavorite.takeIf { it != item.isFavorite },
+                shopping = shopping,
+                choreSchedule = choreSchedule,
+            )
         }
     }
 
