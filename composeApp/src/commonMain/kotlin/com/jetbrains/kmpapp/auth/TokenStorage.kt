@@ -7,6 +7,8 @@ interface TokenStorage {
     fun getIsGuest(): Boolean?
     fun saveTokens(tokens: AuthTokens, isGuest: Boolean = false)
     fun clear()
+    fun getSyncTimestamp(): String?
+    fun saveSyncTimestamp(timestamp: String)
 }
 
 expect fun createTokenStorage(platformContext: Any?): TokenStorage
