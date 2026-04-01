@@ -38,10 +38,17 @@ private class AndroidTokenStorage(context: Context) : TokenStorage {
         prefs.edit().clear().apply()
     }
 
+    override fun getSyncTimestamp(): String? = prefs.getString(KEY_SYNC_TS, null)
+
+    override fun saveSyncTimestamp(timestamp: String) {
+        prefs.edit().putString(KEY_SYNC_TS, timestamp).apply()
+    }
+
     companion object {
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_IS_GUEST = "is_guest"
+        private const val KEY_SYNC_TS = "sync_timestamp"
     }
 }

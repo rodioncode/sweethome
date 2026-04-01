@@ -3,6 +3,8 @@ package com.jetbrains.kmpapp.screens.main
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
@@ -19,14 +21,20 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.auth.AuthViewModel
+import com.jetbrains.kmpapp.data.sync.SyncRepository
+import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import com.jetbrains.kmpapp.screens.groups.GroupsContent
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupsUiEvent
@@ -49,6 +57,19 @@ fun MainScreen(
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
     val groupsViewModel = koinViewModel<GroupsViewModel>()
     val authViewModel = koinViewModel<AuthViewModel>()
+    val syncRepository = koinInject<SyncRepository>()
+    val coroutineScope = rememberCoroutineScope()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                coroutineScope.launch { syncRepository.sync() }
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
 
     val lists by todoListsViewModel.lists.collectAsStateWithLifecycle()
     val listsError by todoListsViewModel.error.collectAsStateWithLifecycle()

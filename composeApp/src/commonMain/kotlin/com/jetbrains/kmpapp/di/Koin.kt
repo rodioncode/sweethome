@@ -10,6 +10,9 @@ import com.jetbrains.kmpapp.data.KtorMuseumApi
 import com.jetbrains.kmpapp.data.MuseumApi
 import com.jetbrains.kmpapp.data.MuseumRepository
 import com.jetbrains.kmpapp.data.MuseumStorage
+import com.jetbrains.kmpapp.data.sync.KtorSyncApi
+import com.jetbrains.kmpapp.data.sync.SyncApi
+import com.jetbrains.kmpapp.data.sync.SyncRepository
 import com.jetbrains.kmpapp.data.categories.CategoriesApi
 import com.jetbrains.kmpapp.data.categories.CategoriesRepository
 import com.jetbrains.kmpapp.data.categories.KtorCategoriesApi
@@ -131,6 +134,9 @@ val dataModule = module {
 
     single<SuggestionsApi> { KtorSuggestionsApi(get(named("apiClient")), getApiBaseUrl()) }
     single { SuggestionsRepository(get()) }
+
+    single<SyncApi> { KtorSyncApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { SyncRepository(get(), get(), get(), get()) }
 }
 
 val viewModelModule = module {

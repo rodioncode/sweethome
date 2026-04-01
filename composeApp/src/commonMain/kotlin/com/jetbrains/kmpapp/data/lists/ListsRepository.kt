@@ -57,6 +57,14 @@ class ListsRepository(
         _currentListWithItems.value = null
     }
 
+    suspend fun reloadListsFromStorage() {
+        _lists.value = listsStorage.getLists()
+    }
+
+    suspend fun reloadCurrentListFromStorage(listId: String) {
+        listsStorage.getListWithItems(listId)?.let { _currentListWithItems.value = it }
+    }
+
     suspend fun updateList(listId: String, title: String? = null): Result<TodoList> {
         val result = listsApi.updateList(listId, UpdateListRequest(title = title))
         result.onSuccess { updated ->

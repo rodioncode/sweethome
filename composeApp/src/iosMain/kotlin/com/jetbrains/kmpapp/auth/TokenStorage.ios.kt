@@ -31,10 +31,18 @@ private class IosTokenStorage : TokenStorage {
         prefs.synchronize()
     }
 
+    override fun getSyncTimestamp(): String? = prefs.stringForKey(KEY_SYNC_TS)
+
+    override fun saveSyncTimestamp(timestamp: String) {
+        prefs.setObject(timestamp, forKey = KEY_SYNC_TS)
+        prefs.synchronize()
+    }
+
     companion object {
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
         private const val KEY_USER_ID = "user_id"
         private const val KEY_IS_GUEST = "is_guest"
+        private const val KEY_SYNC_TS = "sync_timestamp"
     }
 }

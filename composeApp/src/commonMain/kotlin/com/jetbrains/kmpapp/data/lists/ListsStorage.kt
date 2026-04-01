@@ -13,6 +13,7 @@ interface ListsStorage {
     suspend fun saveListWithItems(list: TodoList, items: List<TodoItem>)
     suspend fun getListWithItems(listId: String): Pair<TodoList, List<TodoItem>>?
     suspend fun clear()
+    suspend fun applySync(updatedItems: List<TodoItem>, deletedIds: List<String>)
 }
 
 fun createListsStorage(platformContext: Any?): ListsStorage {
@@ -57,6 +58,18 @@ private class RoomListsStorage(
     override suspend fun clear() = withContext(Dispatchers.IO) {
         listDao.deleteAll()
         itemDao.deleteAll()
+    }
+
+    override suspend fun applySync(updatedItems: List<TodoItem>, deletedIds: List<String>) = withContext(Dispatchers.IO) {
+        for (id in deletedIds) {
+            itemDao.deleteById(id)
+        }
+        for (item in updatedItems) {
+            val existing = itemDao.getById(item.id)
+            if (existing == null || item.version >= existing.version) {
+                itemDao.insert(item.toEntity())
+            }
+        }
     }
 
     private fun TodoList.toEntity() = TodoListEntity(

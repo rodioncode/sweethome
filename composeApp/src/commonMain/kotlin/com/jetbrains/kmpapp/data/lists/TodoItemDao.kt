@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TodoItemDao {
+    @Query("SELECT * FROM todo_items WHERE id = :itemId LIMIT 1")
+    suspend fun getById(itemId: String): TodoItemEntity?
+
     @Query("SELECT * FROM todo_items WHERE listId = :listId ORDER BY sortOrder ASC, createdAt ASC")
     fun getItemsByListId(listId: String): Flow<List<TodoItemEntity>>
 
