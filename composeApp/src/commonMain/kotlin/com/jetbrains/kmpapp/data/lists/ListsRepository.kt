@@ -28,8 +28,13 @@ class ListsRepository(
             .onFailure { _error.value = it.message }
     }
 
-    suspend fun createList(type: String, title: String, scope: String = "personal"): Result<TodoList> {
-        val result = listsApi.createList(CreateListRequest(type = type, title = title, scope = scope))
+    suspend fun createList(
+        type: String,
+        title: String,
+        scope: String = "personal",
+        groupId: String? = null,
+    ): Result<TodoList> {
+        val result = listsApi.createList(CreateListRequest(type = type, title = title, scope = scope, groupId = groupId))
         result.onSuccess {
             _lists.value = _lists.value + it
             listsStorage.saveLists(_lists.value)

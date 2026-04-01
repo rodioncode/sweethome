@@ -16,13 +16,13 @@ class TodoListsViewModel(
 
     init {
         viewModelScope.launch {
-            listsRepository.loadLists()
+            listsRepository.loadLists(scope = "personal")
         }
     }
 
     fun refresh() {
         viewModelScope.launch {
-            listsRepository.loadLists()
+            listsRepository.loadLists(scope = "personal")
         }
     }
 

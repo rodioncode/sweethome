@@ -10,11 +10,16 @@ import com.jetbrains.kmpapp.data.KtorMuseumApi
 import com.jetbrains.kmpapp.data.MuseumApi
 import com.jetbrains.kmpapp.data.MuseumRepository
 import com.jetbrains.kmpapp.data.MuseumStorage
+import com.jetbrains.kmpapp.data.groups.GroupsApi
+import com.jetbrains.kmpapp.data.groups.GroupsRepository
+import com.jetbrains.kmpapp.data.groups.KtorGroupsApi
 import com.jetbrains.kmpapp.data.lists.KtorListsApi
 import com.jetbrains.kmpapp.data.lists.ListsApi
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.detail.DetailViewModel
+import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
+import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.list.ListViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
@@ -96,6 +101,16 @@ val dataModule = module {
     }
 
     single { ListsRepository(get(), get()) }
+
+    single<GroupsApi> {
+        KtorGroupsApi(
+            apiClient = get(named("apiClient")),
+            baseUrl = getApiBaseUrl(),
+            tokenProvider = { get<TokenStorage>().getAccessToken() },
+        )
+    }
+
+    single { GroupsRepository(get()) }
 }
 
 val viewModelModule = module {
@@ -104,6 +119,8 @@ val viewModelModule = module {
     factoryOf(::DetailViewModel)
     factoryOf(::TodoListsViewModel)
     factoryOf(::TodoListDetailViewModel)
+    factoryOf(::GroupsViewModel)
+    factoryOf(::GroupDetailViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>
