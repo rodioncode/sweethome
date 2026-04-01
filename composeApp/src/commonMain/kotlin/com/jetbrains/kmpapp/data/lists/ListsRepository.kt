@@ -89,17 +89,23 @@ class ListsRepository(
     suspend fun createItem(
         listId: String,
         title: String,
+        note: String? = null,
         assignedTo: String? = null,
         dueAt: String? = null,
         isFavorite: Boolean? = null,
+        shopping: ShoppingItemFields? = null,
+        choreSchedule: ChoreSchedule? = null,
     ): Result<TodoItem> {
         val result = listsApi.createItem(
             listId,
             CreateItemRequest(
                 title = title,
+                note = note,
                 assignedTo = assignedTo,
                 dueAt = dueAt,
                 isFavorite = isFavorite,
+                shopping = shopping,
+                choreSchedule = choreSchedule,
             )
         )
         result.onSuccess { newItem ->
@@ -137,6 +143,8 @@ class ListsRepository(
         assignedTo: String? = null,  // null = не менять; "" = сбросить
         dueAt: String? = null,        // null = не менять; "" = сбросить
         isFavorite: Boolean? = null,
+        shopping: ShoppingItemFields? = null,
+        choreSchedule: ChoreSchedule? = null,
     ): Result<TodoItem> {
         val result = listsApi.updateItem(
             itemId,
@@ -146,6 +154,8 @@ class ListsRepository(
                 assignedTo = assignedTo,
                 dueAt = dueAt,
                 isFavorite = isFavorite,
+                shopping = shopping,
+                choreSchedule = choreSchedule,
             )
         )
         result.onSuccess { updated ->
