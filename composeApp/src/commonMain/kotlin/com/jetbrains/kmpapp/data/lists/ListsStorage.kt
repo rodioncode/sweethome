@@ -98,6 +98,10 @@ private class RoomListsStorage(
         updatedAt = updatedAt,
         shoppingJson = shopping?.let { json.encodeToString(it) },
         choreScheduleJson = choreSchedule?.let { json.encodeToString(it) },
+        assignedTo = assignedTo,
+        dueAt = dueAt,
+        isFavorite = isFavorite,
+        version = version,
     )
 
     private fun TodoItemEntity.toDomain() = TodoItem(
@@ -113,5 +117,9 @@ private class RoomListsStorage(
         updatedAt = updatedAt,
         shopping = shoppingJson?.let { json.decodeFromString<ShoppingItemFields>(it) },
         choreSchedule = choreScheduleJson?.let { json.decodeFromString<ChoreSchedule>(it) },
+        assignedTo = assignedTo,
+        dueAt = dueAt,
+        isFavorite = isFavorite,
+        version = version,
     )
 }

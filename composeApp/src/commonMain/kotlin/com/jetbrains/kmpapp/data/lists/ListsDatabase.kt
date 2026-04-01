@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [TodoListEntity::class, TodoItemEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class ListsDatabase : RoomDatabase() {

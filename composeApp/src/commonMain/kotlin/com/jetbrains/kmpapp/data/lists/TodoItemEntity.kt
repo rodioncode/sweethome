@@ -1,5 +1,6 @@
 package com.jetbrains.kmpapp.data.lists
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -30,4 +31,12 @@ data class TodoItemEntity(
     val updatedAt: String,
     val shoppingJson: String?,
     val choreScheduleJson: String?,
+    @ColumnInfo(defaultValue = "NULL")
+    val assignedTo: String?,
+    @ColumnInfo(defaultValue = "NULL")
+    val dueAt: String?,
+    @ColumnInfo(defaultValue = "0")
+    val isFavorite: Boolean,
+    @ColumnInfo(defaultValue = "0")
+    val version: Int,
 )

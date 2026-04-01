@@ -30,12 +30,17 @@ data class TodoItem(
     val updatedAt: String,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    val assignedTo: String? = null,
+    val dueAt: String? = null,
+    val isFavorite: Boolean = false,
+    val version: Int = 0,
 )
 
 @Serializable
 data class ShoppingItemFields(
     val quantity: Double? = null,
     val unit: String? = null,
+    val category: String? = null,
 )
 
 @Serializable
@@ -44,6 +49,8 @@ data class ChoreSchedule(
     val daysOfWeek: List<String>? = null,
     val startDate: String? = null,
     val endDate: String? = null,
+    val lastDoneAt: String? = null,
+    val category: String? = null,
 )
 
 @Serializable
@@ -80,6 +87,9 @@ data class CreateItemRequest(
     val sortOrder: Double? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    val assignedTo: String? = null,
+    val dueAt: String? = null,
+    val isFavorite: Boolean? = null,
 )
 
 @Serializable
@@ -90,4 +100,8 @@ data class UpdateItemRequest(
     val isDone: Boolean? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    // null = не менять; "" (пустая строка) = сбросить в NULL на сервере
+    val assignedTo: String? = null,
+    val dueAt: String? = null,
+    val isFavorite: Boolean? = null,
 )
