@@ -81,8 +81,22 @@ class ListsRepository(
         return result
     }
 
-    suspend fun createItem(listId: String, title: String): Result<TodoItem> {
-        val result = listsApi.createItem(listId, CreateItemRequest(title = title))
+    suspend fun createItem(
+        listId: String,
+        title: String,
+        assignedTo: String? = null,
+        dueAt: String? = null,
+        isFavorite: Boolean? = null,
+    ): Result<TodoItem> {
+        val result = listsApi.createItem(
+            listId,
+            CreateItemRequest(
+                title = title,
+                assignedTo = assignedTo,
+                dueAt = dueAt,
+                isFavorite = isFavorite,
+            )
+        )
         result.onSuccess { newItem ->
             _currentListWithItems.value?.let { (list, items) ->
                 if (list.id == listId) {
@@ -111,8 +125,24 @@ class ListsRepository(
         return result
     }
 
-    suspend fun updateItem(itemId: String, title: String? = null, note: String? = null): Result<TodoItem> {
-        val result = listsApi.updateItem(itemId, UpdateItemRequest(title = title, note = note))
+    suspend fun updateItem(
+        itemId: String,
+        title: String? = null,
+        note: String? = null,
+        assignedTo: String? = null,  // null = не менять; "" = сбросить
+        dueAt: String? = null,        // null = не менять; "" = сбросить
+        isFavorite: Boolean? = null,
+    ): Result<TodoItem> {
+        val result = listsApi.updateItem(
+            itemId,
+            UpdateItemRequest(
+                title = title,
+                note = note,
+                assignedTo = assignedTo,
+                dueAt = dueAt,
+                isFavorite = isFavorite,
+            )
+        )
         result.onSuccess { updated ->
             _currentListWithItems.value?.let { (list, items) ->
                 val newItems = items.map { if (it.id == itemId) updated else it }
