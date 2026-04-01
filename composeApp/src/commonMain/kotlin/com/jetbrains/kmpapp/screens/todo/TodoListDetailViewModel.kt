@@ -2,25 +2,46 @@ package com.jetbrains.kmpapp.screens.todo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jetbrains.kmpapp.data.categories.CategoriesRepository
+import com.jetbrains.kmpapp.data.categories.Category
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.lists.TodoList
+import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
+import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class TodoListDetailViewModel(
     private val listsRepository: ListsRepository,
+    private val categoriesRepository: CategoriesRepository,
+    private val suggestionsRepository: SuggestionsRepository,
 ) : ViewModel() {
 
     val listWithItems: StateFlow<Pair<TodoList, List<TodoItem>>?> =
         listsRepository.currentListWithItems
     val error: StateFlow<String?> = listsRepository.error
+    val categories: StateFlow<List<Category>> = categoriesRepository.categories
+    val choreTemplates: StateFlow<List<ChoreTemplate>> = suggestionsRepository.choreTemplates
+    val frequentItems: StateFlow<List<TodoItem>> = suggestionsRepository.frequentItems
 
     fun loadList(listId: String) {
         viewModelScope.launch {
             listsRepository.loadListWithItems(listId)
+            listsRepository.currentListWithItems.value?.first?.let { list ->
+                when (list.type) {
+                    "shopping" -> {
+                        launch { categoriesRepository.loadCategories("shopping") }
+                        launch { suggestionsRepository.loadFrequentItems(listId) }
+                    }
+                    "home_chores" -> {
+                        launch { categoriesRepository.loadCategories("chore") }
+                        launch { suggestionsRepository.loadChoreTemplates() }
+                    }
+                }
+            }
         }
     }
 
@@ -68,6 +89,12 @@ class TodoListDetailViewModel(
         }
     }
 
+    fun createCategory(scope: String, name: String) {
+        viewModelScope.launch {
+            categoriesRepository.createCategory(scope, name)
+        }
+    }
+
     fun toggleItem(item: TodoItem) {
         viewModelScope.launch {
             listsRepository.toggleItemDone(item)
@@ -87,5 +114,7 @@ class TodoListDetailViewModel(
     override fun onCleared() {
         super.onCleared()
         listsRepository.clearCurrentList()
+        categoriesRepository.clear()
+        suggestionsRepository.clear()
     }
 }

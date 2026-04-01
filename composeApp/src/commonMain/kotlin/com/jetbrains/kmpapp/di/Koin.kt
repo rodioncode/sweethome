@@ -10,12 +10,18 @@ import com.jetbrains.kmpapp.data.KtorMuseumApi
 import com.jetbrains.kmpapp.data.MuseumApi
 import com.jetbrains.kmpapp.data.MuseumRepository
 import com.jetbrains.kmpapp.data.MuseumStorage
+import com.jetbrains.kmpapp.data.categories.CategoriesApi
+import com.jetbrains.kmpapp.data.categories.CategoriesRepository
+import com.jetbrains.kmpapp.data.categories.KtorCategoriesApi
 import com.jetbrains.kmpapp.data.groups.GroupsApi
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.KtorGroupsApi
 import com.jetbrains.kmpapp.data.lists.KtorListsApi
 import com.jetbrains.kmpapp.data.lists.ListsApi
 import com.jetbrains.kmpapp.data.lists.ListsRepository
+import com.jetbrains.kmpapp.data.suggestions.KtorSuggestionsApi
+import com.jetbrains.kmpapp.data.suggestions.SuggestionsApi
+import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.detail.DetailViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
@@ -119,6 +125,12 @@ val dataModule = module {
     }
 
     single { GroupsRepository(get()) }
+
+    single<CategoriesApi> { KtorCategoriesApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { CategoriesRepository(get()) }
+
+    single<SuggestionsApi> { KtorSuggestionsApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { SuggestionsRepository(get()) }
 }
 
 val viewModelModule = module {

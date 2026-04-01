@@ -5,15 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -27,14 +26,17 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -48,11 +50,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.data.categories.Category
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
+import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -63,6 +68,9 @@ fun TodoListDetailScreen(
     val viewModel = koinViewModel<TodoListDetailViewModel>()
     val listWithItems by viewModel.listWithItems.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    val choreTemplates by viewModel.choreTemplates.collectAsStateWithLifecycle()
+    val frequentItems by viewModel.frequentItems.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
@@ -79,6 +87,11 @@ fun TodoListDetailScreen(
     }
 
     val listType = listWithItems?.first?.type ?: "general_todos"
+    val categoryScope = when (listType) {
+        "shopping" -> "shopping"
+        "home_chores" -> "chore"
+        else -> null
+    }
 
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
@@ -136,10 +149,16 @@ fun TodoListDetailScreen(
     if (showAddDialog) {
         ItemDialog(
             listType = listType,
+            categories = categories,
+            choreTemplates = choreTemplates,
+            frequentItems = frequentItems,
             onDismiss = { showAddDialog = false },
             onConfirm = { title, note, dueAt, isFavorite, shopping, choreSchedule ->
                 viewModel.addItem(listId, title, note, dueAt, isFavorite, shopping, choreSchedule)
                 showAddDialog = false
+            },
+            onCreateCategory = { name ->
+                categoryScope?.let { viewModel.createCategory(it, name) }
             },
         )
     }
@@ -148,10 +167,16 @@ fun TodoListDetailScreen(
         ItemDialog(
             listType = listType,
             item = item,
+            categories = categories,
+            choreTemplates = choreTemplates,
+            frequentItems = frequentItems,
             onDismiss = { editingItem = null },
             onConfirm = { title, note, dueAt, isFavorite, shopping, choreSchedule ->
                 viewModel.updateItem(item, title, note, dueAt, isFavorite, shopping, choreSchedule)
                 editingItem = null
+            },
+            onCreateCategory = { name ->
+                categoryScope?.let { viewModel.createCategory(it, name) }
             },
         )
     }
@@ -216,15 +241,16 @@ private fun TodoItemRow(
                     }
                 }
                 item.shopping?.let { s ->
-                    val qty = s.quantity
-                    val unit = s.unit
-                    if (qty != null || unit != null) {
-                        val display = buildString {
-                            if (qty != null) append(if (qty % 1 == 0.0) qty.toLong().toString() else qty.toString())
-                            if (unit != null) append(" $unit")
+                    val parts = buildList {
+                        s.quantity?.let { qty ->
+                            add(if (qty % 1 == 0.0) qty.toLong().toString() else qty.toString())
                         }
+                        s.unit?.let { if (it.isNotBlank()) add(it) }
+                        s.category?.let { if (it.isNotBlank()) add("· $it") }
+                    }
+                    if (parts.isNotEmpty()) {
                         Text(
-                            text = display.trim(),
+                            text = parts.joinToString(" "),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary,
                         )
@@ -239,12 +265,18 @@ private fun TodoItemRow(
                         )
                     }
                 }
-                item.choreSchedule?.intervalDays?.let { days ->
-                    Text(
-                        text = "Каждые $days д.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                item.choreSchedule?.let { sched ->
+                    val parts = buildList {
+                        sched.intervalDays?.let { add("Каждые $it д.") }
+                        sched.category?.let { if (it.isNotBlank()) add("· $it") }
+                    }
+                    if (parts.isNotEmpty()) {
+                        Text(
+                            text = parts.joinToString(" "),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             if (item.isFavorite) {
@@ -262,10 +294,14 @@ private fun TodoItemRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemDialog(
     listType: String,
     item: TodoItem? = null,
+    categories: List<Category>,
+    choreTemplates: List<ChoreTemplate>,
+    frequentItems: List<TodoItem>,
     onDismiss: () -> Unit,
     onConfirm: (
         title: String,
@@ -275,77 +311,222 @@ private fun ItemDialog(
         shopping: ShoppingItemFields?,
         choreSchedule: ChoreSchedule?,
     ) -> Unit,
+    onCreateCategory: (name: String) -> Unit,
 ) {
     var title by remember { mutableStateOf(item?.title ?: "") }
     var note by remember { mutableStateOf(item?.note ?: "") }
     var dueAt by remember { mutableStateOf(item?.dueAt ?: "") }
     var isFavorite by remember { mutableStateOf(item?.isFavorite ?: false) }
-    var quantity by remember { mutableStateOf(item?.shopping?.quantity?.let { if (it % 1 == 0.0) it.toLong().toString() else it.toString() } ?: "") }
+    var quantity by remember {
+        mutableStateOf(item?.shopping?.quantity?.let {
+            if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+        } ?: "")
+    }
     var unit by remember { mutableStateOf(item?.shopping?.unit ?: "") }
     var intervalDays by remember { mutableStateOf(item?.choreSchedule?.intervalDays?.toString() ?: "") }
+    var selectedCategory by remember {
+        mutableStateOf(item?.shopping?.category ?: item?.choreSchedule?.category)
+    }
+    var showNewCategoryField by remember { mutableStateOf(false) }
+    var newCategoryName by remember { mutableStateOf("") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (item == null) "Новая задача" else "Редактировать") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Название") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Заметка") },
-                    maxLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                when (listType) {
-                    "shopping" -> {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedTextField(
-                                value = quantity,
-                                onValueChange = { quantity = it },
-                                label = { Text("Кол-во") },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
-                            )
-                            OutlinedTextField(
-                                value = unit,
-                                onValueChange = { unit = it },
-                                label = { Text("Ед. изм.") },
-                                singleLine = true,
-                                modifier = Modifier.weight(1f),
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Suggestions (only in add mode)
+                if (item == null) {
+                    if (choreTemplates.isNotEmpty() && listType == "home_chores") {
+                        item {
+                            Text(
+                                "Шаблоны",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = isFavorite, onCheckedChange = { isFavorite = it })
-                            Text("Избранное")
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(choreTemplates) { template ->
+                                    SuggestionChip(
+                                        onClick = {
+                                            title = template.title
+                                            intervalDays = template.intervalDays.toString()
+                                            selectedCategory = template.category.takeIf { it.isNotBlank() }
+                                        },
+                                        label = {
+                                            Text(
+                                                template.title,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    if (frequentItems.isNotEmpty() && listType == "shopping") {
+                        item {
+                            Text(
+                                "Часто добавляли",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                items(frequentItems) { suggestion ->
+                                    SuggestionChip(
+                                        onClick = {
+                                            title = suggestion.title
+                                            selectedCategory = suggestion.shopping?.category
+                                            quantity = suggestion.shopping?.quantity?.let {
+                                                if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+                                            } ?: ""
+                                            unit = suggestion.shopping?.unit ?: ""
+                                        },
+                                        label = {
+                                            Text(
+                                                suggestion.title,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                            )
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Title
+                item {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Название") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                // Note
+                item {
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("Заметка") },
+                        maxLines = 3,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                // Type-specific fields
+                when (listType) {
+                    "shopping" -> {
+                        item {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                OutlinedTextField(
+                                    value = quantity,
+                                    onValueChange = { quantity = it },
+                                    label = { Text("Кол-во") },
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                OutlinedTextField(
+                                    value = unit,
+                                    onValueChange = { unit = it },
+                                    label = { Text("Ед. изм.") },
+                                    singleLine = true,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                        }
+                        item {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Checkbox(checked = isFavorite, onCheckedChange = { isFavorite = it })
+                                Text("Избранное")
+                            }
                         }
                     }
                     "general_todos" -> {
-                        OutlinedTextField(
-                            value = dueAt,
-                            onValueChange = { dueAt = it },
-                            label = { Text("Срок (ГГГГ-ММ-ДД)") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
+                        item {
+                            OutlinedTextField(
+                                value = dueAt,
+                                onValueChange = { dueAt = it },
+                                label = { Text("Срок (ГГГГ-ММ-ДД)") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
                     }
                     "home_chores" -> {
-                        OutlinedTextField(
-                            value = intervalDays,
-                            onValueChange = { intervalDays = it },
-                            label = { Text("Повтор каждые N дней") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                            modifier = Modifier.fillMaxWidth(),
+                        item {
+                            OutlinedTextField(
+                                value = intervalDays,
+                                onValueChange = { intervalDays = it },
+                                label = { Text("Повтор каждые N дней") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+
+                // Categories (shopping and home_chores)
+                if (categories.isNotEmpty() && listType != "general_todos") {
+                    item {
+                        Text(
+                            "Категория",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                    }
+                    item {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(categories) { category ->
+                                FilterChip(
+                                    selected = selectedCategory == category.name,
+                                    onClick = {
+                                        selectedCategory = if (selectedCategory == category.name) null
+                                        else category.name
+                                    },
+                                    label = { Text(category.name) },
+                                )
+                            }
+                            item {
+                                if (showNewCategoryField) {
+                                    OutlinedTextField(
+                                        value = newCategoryName,
+                                        onValueChange = { newCategoryName = it },
+                                        label = { Text("Название") },
+                                        singleLine = true,
+                                        trailingIcon = {
+                                            TextButton(
+                                                onClick = {
+                                                    if (newCategoryName.isNotBlank()) {
+                                                        onCreateCategory(newCategoryName)
+                                                        selectedCategory = newCategoryName
+                                                        newCategoryName = ""
+                                                        showNewCategoryField = false
+                                                    }
+                                                }
+                                            ) { Text("ОК") }
+                                        },
+                                    )
+                                } else {
+                                    InputChip(
+                                        selected = false,
+                                        onClick = { showNewCategoryField = true },
+                                        label = { Text("+ Создать") },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -353,14 +534,22 @@ private fun ItemDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val shopping = if (listType == "shopping" && (quantity.isNotBlank() || unit.isNotBlank())) {
+                    val shopping = if (listType == "shopping" &&
+                        (quantity.isNotBlank() || unit.isNotBlank() || selectedCategory != null)
+                    ) {
                         ShoppingItemFields(
                             quantity = quantity.toDoubleOrNull(),
                             unit = unit.takeIf { it.isNotBlank() },
+                            category = selectedCategory,
                         )
                     } else null
-                    val choreSchedule = if (listType == "home_chores" && intervalDays.isNotBlank()) {
-                        ChoreSchedule(intervalDays = intervalDays.toIntOrNull())
+                    val choreSchedule = if (listType == "home_chores" &&
+                        (intervalDays.isNotBlank() || selectedCategory != null)
+                    ) {
+                        ChoreSchedule(
+                            intervalDays = intervalDays.toIntOrNull(),
+                            category = selectedCategory,
+                        )
                     } else null
                     onConfirm(
                         title.ifBlank { "Новая задача" },
