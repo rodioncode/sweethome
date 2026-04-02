@@ -100,7 +100,13 @@ val dataModule = module {
     }
 
     single {
-        AuthRepository(get(), get(), get(), get(named("apiClient")))
+        AuthRepository(
+            authApi = get(),
+            tokenStorage = get(),
+            listsStorage = get(),
+            apiClient = get(named("apiClient")),
+            onLogout = { get<ListsRepository>().clearAll() },
+        )
     }
 
     single<MuseumApi> { KtorMuseumApi(get(named("authClient"))) }

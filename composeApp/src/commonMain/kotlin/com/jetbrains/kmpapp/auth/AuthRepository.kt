@@ -13,6 +13,7 @@ class AuthRepository(
     private val tokenStorage: TokenStorage,
     private val listsStorage: ListsStorage,
     private val apiClient: HttpClient,
+    private val onLogout: () -> Unit = {},
 ) {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -80,6 +81,7 @@ class AuthRepository(
         }
         tokenStorage.clear()
         listsStorage.clear()
+        onLogout()
         apiClient.plugin(Auth).providers
             .filterIsInstance<BearerAuthProvider>()
             .firstOrNull()
