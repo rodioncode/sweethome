@@ -33,12 +33,11 @@ import com.jetbrains.kmpapp.screens.list.ListViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.auth.Auth
-import io.ktor.client.plugins.auth.providers.BearerTokens
-import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.request.bearerAuth
 import io.ktor.http.ContentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
@@ -62,7 +61,6 @@ val dataModule = module {
 
     single(named("apiClient")) {
         val json = Json { ignoreUnknownKeys = true }
-        val scope = this
         val tokenStorage = get<TokenStorage>()
         HttpClient {
             install(Logging) {
@@ -72,21 +70,8 @@ val dataModule = module {
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Any)
             }
-            install(Auth) {
-                bearer {
-                    loadTokens {
-                        val access = tokenStorage.getAccessToken() ?: return@loadTokens null
-                        val refresh = tokenStorage.getRefreshToken() ?: return@loadTokens null
-                        BearerTokens(access, refresh)
-                    }
-                    refreshTokens {
-                        scope.get<AuthRepository>().refreshTokens()
-                        val access = tokenStorage.getAccessToken() ?: return@refreshTokens null
-                        val refresh = tokenStorage.getRefreshToken() ?: return@refreshTokens null
-                        BearerTokens(access, refresh)
-                    }
-                    sendWithoutRequest { true }
-                }
+            defaultRequest {
+                tokenStorage.getAccessToken()?.let { bearerAuth(it) }
             }
         }
     }
@@ -104,7 +89,6 @@ val dataModule = module {
             authApi = get(),
             tokenStorage = get(),
             listsStorage = get(),
-            apiClient = get(named("apiClient")),
             onLogout = { get<ListsRepository>().clearAll() },
         )
     }
