@@ -5,11 +5,6 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.KtorAuthApi
 import com.jetbrains.kmpapp.auth.TokenStorage
 import com.jetbrains.kmpapp.auth.getApiBaseUrl
-import com.jetbrains.kmpapp.data.InMemoryMuseumStorage
-import com.jetbrains.kmpapp.data.KtorMuseumApi
-import com.jetbrains.kmpapp.data.MuseumApi
-import com.jetbrains.kmpapp.data.MuseumRepository
-import com.jetbrains.kmpapp.data.MuseumStorage
 import com.jetbrains.kmpapp.data.sync.KtorSyncApi
 import com.jetbrains.kmpapp.data.sync.SyncApi
 import com.jetbrains.kmpapp.data.sync.SyncRepository
@@ -26,20 +21,23 @@ import com.jetbrains.kmpapp.data.suggestions.KtorSuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
-import com.jetbrains.kmpapp.screens.detail.DetailViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
-import com.jetbrains.kmpapp.screens.list.ListViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.bearerAuth
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.factoryOf
 import org.koin.core.qualifier.named
@@ -62,7 +60,8 @@ val dataModule = module {
     single(named("apiClient")) {
         val json = Json { ignoreUnknownKeys = true }
         val tokenStorage = get<TokenStorage>()
-        HttpClient {
+        val refreshMutex = Mutex()
+        val client = HttpClient {
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
@@ -74,6 +73,30 @@ val dataModule = module {
                 tokenStorage.getAccessToken()?.let { bearerAuth(it) }
             }
         }
+        client.plugin(HttpSend).intercept { request ->
+            val originalCall = execute(request)
+            if (originalCall.response.status != HttpStatusCode.Unauthorized) {
+                return@intercept originalCall
+            }
+            val refreshed = refreshMutex.withLock {
+                // If another coroutine already refreshed while we waited,
+                // check if the current token differs from the one used in the failed request
+                val authApi = get<AuthApi>()
+                val refreshToken = tokenStorage.getRefreshToken() ?: return@withLock false
+                authApi.refresh(refreshToken)
+                    .onSuccess { tokens -> tokenStorage.saveTokens(tokens, isGuest = false) }
+                    .onFailure { get<AuthRepository>().forceUnauthenticated() }
+                    .isSuccess
+            }
+            if (refreshed) {
+                // Retry with new token
+                tokenStorage.getAccessToken()?.let { request.bearerAuth(it) }
+                execute(request)
+            } else {
+                originalCall
+            }
+        }
+        client
     }
 
     single<AuthApi> {
@@ -89,16 +112,13 @@ val dataModule = module {
             authApi = get(),
             tokenStorage = get(),
             listsStorage = get(),
-            onLogout = { get<ListsRepository>().clearAll() },
+            onLogout = {
+                get<ListsRepository>().clearAll()
+                get<GroupsRepository>().clearAll()
+                get<CategoriesRepository>().clear()
+                get<SuggestionsRepository>().clear()
+            },
         )
-    }
-
-    single<MuseumApi> { KtorMuseumApi(get(named("authClient"))) }
-    single<MuseumStorage> { InMemoryMuseumStorage() }
-    single {
-        MuseumRepository(get(), get()).apply {
-            initialize()
-        }
     }
 
     single<ListsApi> {
@@ -131,8 +151,6 @@ val dataModule = module {
 
 val viewModelModule = module {
     factoryOf(::AuthViewModel)
-    factoryOf(::ListViewModel)
-    factoryOf(::DetailViewModel)
     factoryOf(::TodoListsViewModel)
     factoryOf(::TodoListDetailViewModel)
     factoryOf(::GroupsViewModel)

@@ -78,6 +78,11 @@ class GroupsRepository(
         return result
     }
 
+    fun clearAll() {
+        _groups.value = emptyList()
+        _error.value = null
+    }
+
     fun clearError() {
         _error.value = null
     }
