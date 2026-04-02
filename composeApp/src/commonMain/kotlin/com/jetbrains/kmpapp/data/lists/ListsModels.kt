@@ -28,6 +28,10 @@ data class TodoItem(
     val createdBy: String,
     val createdAt: String,
     val updatedAt: String,
+    val assignedTo: String? = null,
+    val dueAt: String? = null,
+    val isFavorite: Boolean = false,
+    val version: Int = 1,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
 )
@@ -36,6 +40,7 @@ data class TodoItem(
 data class ShoppingItemFields(
     val quantity: Double? = null,
     val unit: String? = null,
+    val category: String? = null,
 )
 
 @Serializable
@@ -44,6 +49,8 @@ data class ChoreSchedule(
     val daysOfWeek: List<String>? = null,
     val startDate: String? = null,
     val endDate: String? = null,
+    val lastDoneAt: String? = null,
+    val category: String? = null,
 )
 
 @Serializable
@@ -78,6 +85,9 @@ data class CreateItemRequest(
     val title: String,
     val note: String? = null,
     val sortOrder: Double? = null,
+    val assignedTo: String? = null,
+    val dueAt: String? = null,
+    val isFavorite: Boolean? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
 )
@@ -88,6 +98,11 @@ data class UpdateItemRequest(
     val note: String? = null,
     val sortOrder: Double? = null,
     val isDone: Boolean? = null,
+    // null = не менять, "" = сбросить в null, uuid = назначить
+    val assignedTo: String? = null,
+    // null = не менять, "" = сбросить дедлайн
+    val dueAt: String? = null,
+    val isFavorite: Boolean? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
 )

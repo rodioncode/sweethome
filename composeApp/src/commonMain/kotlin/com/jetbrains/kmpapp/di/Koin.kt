@@ -1,31 +1,41 @@
 package com.jetbrains.kmpapp.di
 
+import com.jetbrains.kmpapp.auth.ApiEnvelope
 import com.jetbrains.kmpapp.auth.AuthApi
 import com.jetbrains.kmpapp.auth.AuthRepository
+import com.jetbrains.kmpapp.auth.AuthTokens
 import com.jetbrains.kmpapp.auth.KtorAuthApi
+import com.jetbrains.kmpapp.auth.RefreshRequest
 import com.jetbrains.kmpapp.auth.TokenStorage
 import com.jetbrains.kmpapp.auth.getApiBaseUrl
-import com.jetbrains.kmpapp.data.InMemoryMuseumStorage
-import com.jetbrains.kmpapp.data.KtorMuseumApi
-import com.jetbrains.kmpapp.data.MuseumApi
-import com.jetbrains.kmpapp.data.MuseumRepository
-import com.jetbrains.kmpapp.data.MuseumStorage
+import com.jetbrains.kmpapp.data.groups.GroupsApi
+import com.jetbrains.kmpapp.data.groups.GroupsRepository
+import com.jetbrains.kmpapp.data.groups.KtorGroupsApi
 import com.jetbrains.kmpapp.data.lists.KtorListsApi
 import com.jetbrains.kmpapp.data.lists.ListsApi
 import com.jetbrains.kmpapp.data.lists.ListsRepository
+import com.jetbrains.kmpapp.data.sync.KtorSyncApi
+import com.jetbrains.kmpapp.data.sync.SyncApi
+import com.jetbrains.kmpapp.data.sync.SyncRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
-import com.jetbrains.kmpapp.screens.detail.DetailViewModel
-import com.jetbrains.kmpapp.screens.list.ListViewModel
+import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
+import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.plugin
 import io.ktor.client.request.header
-import io.ktor.http.HttpHeaders
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.factoryOf
@@ -33,6 +43,8 @@ import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 val dataModule = module {
+
+    // Клиент без авторизации — только для auth-эндпоинтов
     single(named("authClient")) {
         val json = Json { ignoreUnknownKeys = true }
         HttpClient {
@@ -46,21 +58,60 @@ val dataModule = module {
         }
     }
 
+    // Клиент с Bearer-токеном и авто-обновлением при 401
     single(named("apiClient")) {
         val json = Json { ignoreUnknownKeys = true }
         val tokenStorage = get<TokenStorage>()
+        val authClient = get<HttpClient>(named("authClient"))
+        val baseUrl = getApiBaseUrl()
+
         HttpClient {
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
-                //sanitizeHeader { header -> header == HttpHeaders.Authorization }
             }
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Any)
             }
+            // Добавляем свежий токен к каждому запросу
             defaultRequest {
                 tokenStorage.getAccessToken()?.let { token ->
                     header("Authorization", "Bearer $token")
+                }
+            }
+        }.also { client ->
+            // Интерцептор 401: авто-обновление токена и повтор запроса
+            client.plugin(HttpSend).intercept { request ->
+                val originalCall = execute(request)
+                if (originalCall.response.status == HttpStatusCode.Unauthorized) {
+                    val refreshToken = tokenStorage.getRefreshToken()
+                    if (refreshToken != null) {
+                        try {
+                            val envelope: ApiEnvelope<AuthTokens> = authClient
+                                .post("$baseUrl/auth/refresh") {
+                                    contentType(ContentType.Application.Json)
+                                    setBody(RefreshRequest(refreshToken))
+                                }.body()
+                            if (envelope.error == null && envelope.data != null) {
+                                val isGuest = tokenStorage.getIsGuest() ?: false
+                                tokenStorage.saveTokens(envelope.data, isGuest)
+                                // Повторяем исходный запрос — defaultRequest подхватит новый токен
+                                execute(request)
+                            } else {
+                                // Refresh-токен невалиден — разлогиниваем
+                                tokenStorage.clear()
+                                originalCall
+                            }
+                        } catch (e: Exception) {
+                            tokenStorage.clear()
+                            originalCall
+                        }
+                    } else {
+                        tokenStorage.clear()
+                        originalCall
+                    }
+                } else {
+                    originalCall
                 }
             }
         }
@@ -79,14 +130,6 @@ val dataModule = module {
         AuthRepository(get(), get())
     }
 
-    single<MuseumApi> { KtorMuseumApi(get(named("authClient"))) }
-    single<MuseumStorage> { InMemoryMuseumStorage() }
-    single {
-        MuseumRepository(get(), get()).apply {
-            initialize()
-        }
-    }
-
     single<ListsApi> {
         KtorListsApi(
             apiClient = get(named("apiClient")),
@@ -96,14 +139,41 @@ val dataModule = module {
     }
 
     single { ListsRepository(get(), get()) }
+
+    single<GroupsApi> {
+        KtorGroupsApi(
+            apiClient = get(named("apiClient")),
+            baseUrl = getApiBaseUrl(),
+        )
+    }
+
+    single { GroupsRepository(get()) }
+
+    single<SyncApi> {
+        KtorSyncApi(
+            apiClient = get(named("apiClient")),
+            baseUrl = getApiBaseUrl(),
+        )
+    }
+
+    single {
+        val listsStorage = get<com.jetbrains.kmpapp.data.lists.ListsStorage>()
+        SyncRepository(
+            syncApi = get(),
+            listsApi = get(),
+            listsStorage = listsStorage,
+            pendingDao = listsStorage.pendingOperationDao(),
+            tokenStorage = get(),
+        )
+    }
 }
 
 val viewModelModule = module {
     factoryOf(::AuthViewModel)
-    factoryOf(::ListViewModel)
-    factoryOf(::DetailViewModel)
     factoryOf(::TodoListsViewModel)
     factoryOf(::TodoListDetailViewModel)
+    factoryOf(::GroupsViewModel)
+    factory { (groupId: String) -> GroupDetailViewModel(groupId, get(), get()) }
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>

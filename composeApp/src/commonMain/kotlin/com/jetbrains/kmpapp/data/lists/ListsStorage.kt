@@ -13,6 +13,14 @@ interface ListsStorage {
     suspend fun saveListWithItems(list: TodoList, items: List<TodoItem>)
     suspend fun getListWithItems(listId: String): Pair<TodoList, List<TodoItem>>?
     suspend fun clear()
+
+    // Методы для sync-движка
+    suspend fun getItemById(itemId: String): TodoItemEntity?
+    suspend fun upsertItem(entity: TodoItemEntity)
+    suspend fun deleteItemById(itemId: String)
+
+    // Доступ к DAO очереди (живёт в той же БД)
+    fun pendingOperationDao(): com.jetbrains.kmpapp.data.sync.PendingOperationDao
 }
 
 fun createListsStorage(platformContext: Any?): ListsStorage {
@@ -59,6 +67,20 @@ private class RoomListsStorage(
         itemDao.deleteAll()
     }
 
+    override suspend fun getItemById(itemId: String): TodoItemEntity? = withContext(Dispatchers.IO) {
+        itemDao.getItemById(itemId)
+    }
+
+    override suspend fun upsertItem(entity: TodoItemEntity) = withContext(Dispatchers.IO) {
+        itemDao.insert(entity)
+    }
+
+    override suspend fun deleteItemById(itemId: String) = withContext(Dispatchers.IO) {
+        itemDao.deleteById(itemId)
+    }
+
+    override fun pendingOperationDao() = db.pendingOperationDao()
+
     private fun TodoList.toEntity() = TodoListEntity(
         id = id,
         type = type,
@@ -96,6 +118,10 @@ private class RoomListsStorage(
         createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        assignedTo = assignedTo,
+        dueAt = dueAt,
+        isFavorite = isFavorite,
+        version = version,
         shoppingJson = shopping?.let { json.encodeToString(it) },
         choreScheduleJson = choreSchedule?.let { json.encodeToString(it) },
     )
@@ -111,6 +137,10 @@ private class RoomListsStorage(
         createdBy = createdBy,
         createdAt = createdAt,
         updatedAt = updatedAt,
+        assignedTo = assignedTo,
+        dueAt = dueAt,
+        isFavorite = isFavorite,
+        version = version,
         shopping = shoppingJson?.let { json.decodeFromString<ShoppingItemFields>(it) },
         choreSchedule = choreScheduleJson?.let { json.decodeFromString<ChoreSchedule>(it) },
     )

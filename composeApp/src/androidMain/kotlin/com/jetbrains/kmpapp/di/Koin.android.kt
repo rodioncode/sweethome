@@ -8,7 +8,7 @@ actual fun platformModules(): List<Module> = listOf(platformModule)
 
 actual fun initKoin() {
     startKoin {
-        androidContext(com.jetbrains.kmpapp.MuseumApp.appContext)
+        androidContext(com.jetbrains.kmpapp.SweetHomeApp.appContext)
         modules(platformModules() + dataModule + viewModelModule)
     }
 }

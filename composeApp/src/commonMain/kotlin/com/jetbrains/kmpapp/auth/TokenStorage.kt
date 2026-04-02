@@ -7,6 +7,10 @@ interface TokenStorage {
     fun getIsGuest(): Boolean?
     fun saveTokens(tokens: AuthTokens, isGuest: Boolean = false)
     fun clear()
+
+    /** Курсор инкрементальной синхронизации (RFC3339). null = ещё не синхронизировались. */
+    fun getLastSyncTimestamp(): String?
+    fun saveLastSyncTimestamp(timestamp: String)
 }
 
 expect fun createTokenStorage(platformContext: Any?): TokenStorage

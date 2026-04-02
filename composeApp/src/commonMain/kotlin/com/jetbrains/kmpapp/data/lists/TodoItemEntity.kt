@@ -28,6 +28,10 @@ data class TodoItemEntity(
     val createdBy: String,
     val createdAt: String,
     val updatedAt: String,
+    val assignedTo: String?,
+    val dueAt: String?,
+    val isFavorite: Boolean,
+    val version: Int,
     val shoppingJson: String?,
     val choreScheduleJson: String?,
 )

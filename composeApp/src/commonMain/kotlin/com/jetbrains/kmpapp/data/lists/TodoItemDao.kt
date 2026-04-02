@@ -14,6 +14,9 @@ interface TodoItemDao {
     @Query("SELECT * FROM todo_items WHERE listId = :listId ORDER BY sortOrder ASC, createdAt ASC")
     suspend fun getItemsByListIdSync(listId: String): List<TodoItemEntity>
 
+    @Query("SELECT * FROM todo_items WHERE id = :itemId LIMIT 1")
+    suspend fun getItemById(itemId: String): TodoItemEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(items: List<TodoItemEntity>)
 
