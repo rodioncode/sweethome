@@ -96,6 +96,12 @@ class AuthRepository(
         return result
     }
 
+    fun forceUnauthenticated() {
+        tokenStorage.clear()
+        onLogout()
+        _authState.value = AuthState.Unauthenticated
+    }
+
     fun getAccessToken(): String? = tokenStorage.getAccessToken()
     fun getRefreshToken(): String? = tokenStorage.getRefreshToken()
 }

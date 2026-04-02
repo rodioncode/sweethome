@@ -20,7 +20,6 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.LinkEmailScreen
 import com.jetbrains.kmpapp.auth.RegisterScreen
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
-import com.jetbrains.kmpapp.screens.detail.DetailScreen
 import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
@@ -31,7 +30,6 @@ import org.koin.compose.koinInject
 @Serializable object RegisterDestination
 @Serializable object LinkEmailDestination
 @Serializable object ListDestination
-@Serializable data class DetailDestination(val objectId: Int)
 @Serializable data class TodoListDetailDestination(val listId: String)
 @Serializable data class GroupDetailDestination(val groupId: String, val groupName: String)
 @Serializable data class InviteDestination(val token: String)
@@ -154,12 +152,6 @@ fun App() {
                             }
                         },
                         onError = { navController.popBackStack() },
-                    )
-                }
-                composable<DetailDestination> { backStackEntry ->
-                    DetailScreen(
-                        objectId = backStackEntry.toRoute<DetailDestination>().objectId,
-                        navigateBack = { navController.popBackStack() }
                     )
                 }
             }
