@@ -62,8 +62,8 @@ val dataModule = module {
 
     single(named("apiClient")) {
         val json = Json { ignoreUnknownKeys = true }
+        val scope = this
         val tokenStorage = get<TokenStorage>()
-        val authRepository = get<AuthRepository>()
         HttpClient {
             install(Logging) {
                 logger = createHttpLogger()
@@ -80,7 +80,7 @@ val dataModule = module {
                         BearerTokens(access, refresh)
                     }
                     refreshTokens {
-                        authRepository.refreshTokens()
+                        scope.get<AuthRepository>().refreshTokens()
                         val access = tokenStorage.getAccessToken() ?: return@refreshTokens null
                         val refresh = tokenStorage.getRefreshToken() ?: return@refreshTokens null
                         BearerTokens(access, refresh)
