@@ -192,6 +192,12 @@ class ListsRepository(
         return result
     }
 
+    fun clearAll() {
+        _lists.value = emptyList()
+        _currentListWithItems.value = null
+        _error.value = null
+    }
+
     fun clearError() {
         _error.value = null
     }

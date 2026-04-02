@@ -1,6 +1,9 @@
 package com.jetbrains.kmpapp.auth
 
 import com.jetbrains.kmpapp.data.lists.ListsStorage
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerAuthProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -9,6 +12,8 @@ class AuthRepository(
     private val authApi: AuthApi,
     private val tokenStorage: TokenStorage,
     private val listsStorage: ListsStorage,
+    private val apiClient: HttpClient,
+    private val onLogout: () -> Unit = {},
 ) {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -76,6 +81,11 @@ class AuthRepository(
         }
         tokenStorage.clear()
         listsStorage.clear()
+        onLogout()
+        apiClient.plugin(Auth).providers
+            .filterIsInstance<BearerAuthProvider>()
+            .firstOrNull()
+            ?.clearToken()
         _authState.value = AuthState.Unauthenticated
         return Result.success(Unit)
     }
