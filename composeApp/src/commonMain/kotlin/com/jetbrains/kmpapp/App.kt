@@ -20,7 +20,6 @@ import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.LinkEmailScreen
 import com.jetbrains.kmpapp.auth.RegisterScreen
-import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
@@ -58,21 +57,12 @@ fun App() {
             val authRepository: AuthRepository = koinInject()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
 
-            // Case 1: deep link arrives when user is already authenticated
+            // Handle deep links: reacts to both new links and auth state changes,
+            // so it covers "link arrives while authenticated" and "link was pending during login"
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
-            LaunchedEffect(pendingLink) {
+            LaunchedEffect(pendingLink, authState) {
                 val url = pendingLink ?: return@LaunchedEffect
                 if (authState !is AuthState.Authenticated) return@LaunchedEffect
-                DeepLinkHandler.pendingDeepLink.value = null
-                val token = url.removePrefix("familytodo://invite/")
-                if (token.isNotEmpty() && token != url) {
-                    navController.navigate(InviteDestination(token))
-                }
-            }
-
-            // Case 2: deep link was pending while user was logging in — call this after navigating to ListDestination
-            fun navigatePendingInvite() {
-                val url = DeepLinkHandler.pendingDeepLink.value ?: return
                 DeepLinkHandler.pendingDeepLink.value = null
                 val token = url.removePrefix("familytodo://invite/")
                 if (token.isNotEmpty() && token != url) {
@@ -104,7 +94,6 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
-                            navigatePendingInvite()
                         },
                         onNavigateToRegister = { navController.navigate(RegisterDestination) },
                         onNavigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
@@ -116,7 +105,6 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
-                            navigatePendingInvite()
                         },
                         onNavigateBack = { navController.popBackStack() },
                     )
@@ -127,7 +115,6 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
-                            navigatePendingInvite()
                         },
                         onNavigateBack = { navController.popBackStack() },
                     )
