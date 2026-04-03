@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -26,13 +27,26 @@ import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 
-@Serializable object AuthDestination
-@Serializable object RegisterDestination
-@Serializable object LinkEmailDestination
-@Serializable object ListDestination
-@Serializable data class TodoListDetailDestination(val listId: String)
-@Serializable data class GroupDetailDestination(val groupId: String, val groupName: String)
-@Serializable data class InviteDestination(val token: String)
+@Serializable
+object AuthDestination
+
+@Serializable
+object RegisterDestination
+
+@Serializable
+object LinkEmailDestination
+
+@Serializable
+object ListDestination
+
+@Serializable
+data class TodoListDetailDestination(val listId: String)
+
+@Serializable
+data class GroupDetailDestination(val groupId: String, val groupName: String)
+
+@Serializable
+data class InviteDestination(val token: String)
 
 @Composable
 fun App() {
@@ -56,35 +70,23 @@ fun App() {
                 }
             }
 
-            LaunchedEffect(authState) {
-                when (authState) {
-                    is AuthState.Authenticated -> {
-                        navController.navigate(ListDestination) {
-                            popUpTo(AuthDestination) { inclusive = true }
-                        }
-                        // Case 2: deep link was pending while user was logging in
-                        val url = DeepLinkHandler.pendingDeepLink.value
-                        if (url != null) {
-                            DeepLinkHandler.pendingDeepLink.value = null
-                            val token = url.removePrefix("familytodo://invite/")
-                            if (token.isNotEmpty() && token != url) {
-                                navController.navigate(InviteDestination(token))
-                            }
-                        }
-                    }
-                    is AuthState.Unauthenticated -> {
-                        navController.navigate(AuthDestination) {
-                            popUpTo<ListDestination> { inclusive = true }
-                        }
-                    }
-                    else -> {}
+            val startDestination = when (authState) {
+                is AuthState.Authenticated -> {
+                    ListDestination
+                }
+
+                is AuthState.Unauthenticated -> {
+                    AuthDestination
+                }
+                else -> {
+                    AuthDestination
                 }
             }
 
             NavHost(
                 navController = navController,
-                startDestination = AuthDestination,
-                modifier = androidx.compose.ui.Modifier,
+                startDestination = startDestination,
+                modifier = Modifier,
             ) {
                 composable<AuthDestination> {
                     AuthScreen(
