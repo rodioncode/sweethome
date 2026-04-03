@@ -70,6 +70,16 @@ fun App() {
                 }
             }
 
+            // Case 2: deep link was pending while user was logging in — call this after navigating to ListDestination
+            fun navigatePendingInvite() {
+                val url = DeepLinkHandler.pendingDeepLink.value ?: return
+                DeepLinkHandler.pendingDeepLink.value = null
+                val token = url.removePrefix("familytodo://invite/")
+                if (token.isNotEmpty() && token != url) {
+                    navController.navigate(InviteDestination(token))
+                }
+            }
+
             val startDestination = when (authState) {
                 is AuthState.Authenticated -> {
                     ListDestination
@@ -94,6 +104,7 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
+                            navigatePendingInvite()
                         },
                         onNavigateToRegister = { navController.navigate(RegisterDestination) },
                         onNavigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
@@ -105,6 +116,7 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
+                            navigatePendingInvite()
                         },
                         onNavigateBack = { navController.popBackStack() },
                     )
@@ -115,6 +127,7 @@ fun App() {
                             navController.navigate(ListDestination) {
                                 popUpTo(AuthDestination) { inclusive = true }
                             }
+                            navigatePendingInvite()
                         },
                         onNavigateBack = { navController.popBackStack() },
                     )
