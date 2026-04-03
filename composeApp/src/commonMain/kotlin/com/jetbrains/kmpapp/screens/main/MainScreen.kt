@@ -52,7 +52,6 @@ fun MainScreen(
     navigateToListDetail: (String) -> Unit,
     navigateToGroupDetail: (groupId: String, groupName: String) -> Unit,
     navigateToLinkEmail: () -> Unit,
-    pendingInviteToken: String? = null,
 ) {
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
     val groupsViewModel = koinViewModel<GroupsViewModel>()
@@ -107,14 +106,6 @@ fun MainScreen(
                 is GroupsUiEvent.NavigateToGroup ->
                     navigateToGroupDetail(event.groupId, event.groupName)
             }
-        }
-    }
-
-    // Handle pending invite token (from deep link on iOS or direct navigation)
-    LaunchedEffect(pendingInviteToken) {
-        pendingInviteToken?.let { token ->
-            // Switch to groups tab and let InviteScreen handle it
-            selectedTab = MainTab.GROUPS
         }
     }
 
