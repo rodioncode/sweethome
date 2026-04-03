@@ -44,15 +44,15 @@ fun App() {
             val authRepository: AuthRepository = koinInject()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
 
-            // Handle iOS deep links via DeepLinkHandler
+            // Handle deep links — wait for authentication before navigating to invite
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
-            LaunchedEffect(pendingLink) {
-                pendingLink?.let { url ->
-                    DeepLinkHandler.pendingDeepLink.value = null
-                    val token = url.removePrefix("familytodo://invite/")
-                    if (token.isNotEmpty() && token != url) {
-                        navController.navigate(InviteDestination(token))
-                    }
+            LaunchedEffect(pendingLink, authState) {
+                val url = pendingLink ?: return@LaunchedEffect
+                if (authState !is AuthState.Authenticated) return@LaunchedEffect
+                DeepLinkHandler.pendingDeepLink.value = null
+                val token = url.removePrefix("familytodo://invite/")
+                if (token.isNotEmpty() && token != url) {
+                    navController.navigate(InviteDestination(token))
                 }
             }
 

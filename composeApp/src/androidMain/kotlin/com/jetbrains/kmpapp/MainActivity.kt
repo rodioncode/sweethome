@@ -1,5 +1,6 @@
 package com.jetbrains.kmpapp
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        intent?.data?.toString()?.let { DeepLinkHandler.handleDeepLink(it) }
         setContent {
             // Remove when https://issuetracker.google.com/issues/364713509 is fixed
             LaunchedEffect(isSystemInDarkTheme()) {
@@ -18,5 +20,10 @@ class MainActivity : ComponentActivity() {
             }
             App()
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.data?.toString()?.let { DeepLinkHandler.handleDeepLink(it) }
     }
 }
