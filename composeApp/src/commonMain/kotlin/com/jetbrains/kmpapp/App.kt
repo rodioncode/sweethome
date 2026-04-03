@@ -44,9 +44,9 @@ fun App() {
             val authRepository: AuthRepository = koinInject()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
 
-            // Handle deep links — wait for authentication before navigating to invite
+            // Case 1: deep link arrives when user is already authenticated
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
-            LaunchedEffect(pendingLink, authState) {
+            LaunchedEffect(pendingLink) {
                 val url = pendingLink ?: return@LaunchedEffect
                 if (authState !is AuthState.Authenticated) return@LaunchedEffect
                 DeepLinkHandler.pendingDeepLink.value = null
@@ -61,6 +61,15 @@ fun App() {
                     is AuthState.Authenticated -> {
                         navController.navigate(ListDestination) {
                             popUpTo(AuthDestination) { inclusive = true }
+                        }
+                        // Case 2: deep link was pending while user was logging in
+                        val url = DeepLinkHandler.pendingDeepLink.value
+                        if (url != null) {
+                            DeepLinkHandler.pendingDeepLink.value = null
+                            val token = url.removePrefix("familytodo://invite/")
+                            if (token.isNotEmpty() && token != url) {
+                                navController.navigate(InviteDestination(token))
+                            }
                         }
                     }
                     is AuthState.Unauthenticated -> {
