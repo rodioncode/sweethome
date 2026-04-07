@@ -109,6 +109,8 @@ internal fun TodoListsContent(
     onShowCreateDialog: (Boolean) -> Unit,
     onCreateList: (title: String, type: String) -> Unit,
     onListClick: (String) -> Unit,
+    isGuest: Boolean = false,
+    navigateToLinkEmail: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     AnimatedContent(lists.isNotEmpty()) { hasLists ->
@@ -120,6 +122,14 @@ internal fun TodoListsContent(
                 contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                if (isGuest && navigateToLinkEmail != null) {
+                    item(key = "guest_banner") {
+                        GuestLinkEmailBanner(
+                            onLinkEmail = navigateToLinkEmail,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        )
+                    }
+                }
                 items(lists, key = { it.id }) { list ->
                     TodoListCard(
                         list = list,
@@ -133,6 +143,8 @@ internal fun TodoListsContent(
                     .fillMaxSize()
                     .padding(contentPadding),
                 onCreateList = { onShowCreateDialog(true) },
+                isGuest = isGuest,
+                navigateToLinkEmail = navigateToLinkEmail,
             )
         }
     }
@@ -237,11 +249,19 @@ internal fun TodoListCard(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                listTypeIcon(list.type),
-                contentDescription = null,
-                modifier = Modifier.padding(end = 12.dp),
-            )
+            if (!list.icon.isNullOrBlank()) {
+                Text(
+                    text = list.icon,
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+            } else {
+                Icon(
+                    listTypeIcon(list.type),
+                    contentDescription = null,
+                    modifier = Modifier.padding(end = 12.dp),
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = list.title, style = MaterialTheme.typography.titleMedium)
                 Text(
@@ -255,15 +275,51 @@ internal fun TodoListCard(
 }
 
 @Composable
+private fun GuestLinkEmailBanner(
+    onLinkEmail: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = "Привяжите email, чтобы не\nпотерять свои данные",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = onLinkEmail) {
+                Text("Привязать")
+            }
+        }
+    }
+}
+
+@Composable
 private fun EmptyTodoListsContent(
     modifier: Modifier = Modifier,
     onCreateList: () -> Unit,
+    isGuest: Boolean = false,
+    navigateToLinkEmail: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        if (isGuest && navigateToLinkEmail != null) {
+            GuestLinkEmailBanner(
+                onLinkEmail = navigateToLinkEmail,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+        }
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),

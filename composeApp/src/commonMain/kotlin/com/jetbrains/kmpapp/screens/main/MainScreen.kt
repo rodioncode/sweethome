@@ -183,8 +183,10 @@ fun MainScreen(
                 contentPadding = paddingValues,
                 showCreateDialog = showCreateListDialog,
                 onShowCreateDialog = { showCreateListDialog = it },
-                onCreateList = { title -> todoListsViewModel.createList(title) },
+                onCreateList = { title, type -> todoListsViewModel.createList(title, type) },
                 onListClick = navigateToListDetail,
+                isGuest = isGuest,
+                navigateToLinkEmail = navigateToLinkEmail,
             )
             MainTab.HOME -> FamilyContent(
                 contentPadding = paddingValues,
@@ -209,8 +211,8 @@ fun MainScreen(
     if (showCreateListDialog) {
         CreateListDialog(
             onDismiss = { showCreateListDialog = false },
-            onConfirm = { title ->
-                todoListsViewModel.createList(title)
+            onConfirm = { title, type ->
+                todoListsViewModel.createList(title, type)
                 showCreateListDialog = false
             },
         )
