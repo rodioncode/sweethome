@@ -790,10 +790,18 @@ private fun ItemDialog(
                             category = selectedCategory,
                         )
                     } else null
+                    val dueAtRfc3339 = dueAt.takeIf { it.isNotBlank() }
+                        ?.let { dateStr ->
+                            if ("T" in dateStr) dateStr
+                            else parseDateOrNull(dateStr)
+                                ?.atStartOfDayIn(TimeZone.currentSystemDefault())
+                                ?.toString()
+                                ?: dateStr
+                        } ?: ""
                     onConfirm(
                         title.ifBlank { "Новая задача" },
                         note,
-                        dueAt,
+                        dueAtRfc3339,
                         isFavorite,
                         assignedTo,
                         shopping,
