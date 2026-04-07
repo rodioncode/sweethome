@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetbrains.kmpapp.data.categories.CategoriesRepository
 import com.jetbrains.kmpapp.data.categories.Category
+import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ListsRepository
@@ -37,6 +38,15 @@ class TodoListDetailViewModel(
         val members = groups.find { it.id == groupId }?.members ?: return@combine emptyMap()
         members.associate { it.userId to it.displayName }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    val groupMembers: StateFlow<List<GroupMember>> = combine(
+        listsRepository.currentListWithItems,
+        groupsRepository.groups,
+    ) { listData, groups ->
+        val groupId = listData?.first?.ownerGroupId ?: return@combine emptyList()
+        groups.find { it.id == groupId }?.members ?: emptyList()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
     val categories: StateFlow<List<Category>> = categoriesRepository.categories
     val choreTemplates: StateFlow<List<ChoreTemplate>> = suggestionsRepository.choreTemplates
     val frequentItems: StateFlow<List<TodoItem>> = suggestionsRepository.frequentItems
@@ -65,6 +75,7 @@ class TodoListDetailViewModel(
         note: String? = null,
         dueAt: String? = null,
         isFavorite: Boolean = false,
+        assignedTo: String? = null,
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
     ) {
@@ -73,6 +84,7 @@ class TodoListDetailViewModel(
                 listId = listId,
                 title = title,
                 note = note?.takeIf { it.isNotBlank() },
+                assignedTo = assignedTo?.takeIf { it.isNotBlank() },
                 dueAt = dueAt?.takeIf { it.isNotBlank() },
                 isFavorite = isFavorite.takeIf { it },
                 shopping = shopping,
@@ -87,6 +99,7 @@ class TodoListDetailViewModel(
         note: String,
         dueAt: String,
         isFavorite: Boolean,
+        assignedTo: String? = null,
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
     ) {
@@ -95,6 +108,7 @@ class TodoListDetailViewModel(
                 itemId = item.id,
                 title = title.takeIf { it.isNotBlank() && it != item.title },
                 note = note.takeIf { it.isNotBlank() },
+                assignedTo = assignedTo,
                 dueAt = dueAt.takeIf { it.isNotBlank() },
                 isFavorite = isFavorite.takeIf { it != item.isFavorite },
                 shopping = shopping,
