@@ -50,6 +50,7 @@ class GroupDetailViewModel(
     fun load(groupId: String) {
         _groupId.value = groupId
         viewModelScope.launch {
+            groupsRepository.loadGroups()
             listsRepository.loadLists(scope = "group", groupId = groupId)
         }
     }
@@ -83,6 +84,22 @@ class GroupDetailViewModel(
                             _uiEvent.emit(GroupDetailUiEvent.ShowError("Сначала передайте роль владельца"))
                         is EmailRequiredException ->
                             _uiEvent.emit(GroupDetailUiEvent.NavigateToLinkEmail)
+                        else ->
+                            _uiEvent.emit(GroupDetailUiEvent.ShowError(err.message ?: "Ошибка"))
+                    }
+                }
+        }
+    }
+
+    fun leaveGroup() {
+        val groupId = _groupId.value ?: return
+        val userId = (authRepository.authState.value as? AuthState.Authenticated)?.userId ?: return
+        viewModelScope.launch {
+            groupsRepository.removeMember(groupId, userId, userId)
+                .onFailure { err ->
+                    when (err) {
+                        is OwnerCannotLeaveException ->
+                            _uiEvent.emit(GroupDetailUiEvent.ShowError("Сначала передайте роль владельца"))
                         else ->
                             _uiEvent.emit(GroupDetailUiEvent.ShowError(err.message ?: "Ошибка"))
                     }

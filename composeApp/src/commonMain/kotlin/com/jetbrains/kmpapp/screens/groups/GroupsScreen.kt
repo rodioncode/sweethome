@@ -9,18 +9,21 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,6 +44,7 @@ internal fun GroupsContent(
     contentPadding: PaddingValues,
     onGroupClick: (Group) -> Unit,
     navigateToLinkEmail: () -> Unit,
+    navigateToJoinByCode: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -53,6 +57,15 @@ internal fun GroupsContent(
                 onLinkEmail = navigateToLinkEmail,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
             )
+        } else {
+            TextButton(
+                onClick = navigateToJoinByCode,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            ) {
+                Text("Вступить по коду")
+            }
         }
 
         if (groups.isEmpty()) {
@@ -158,22 +171,50 @@ private fun GroupCard(
 @Composable
 internal fun CreateGroupDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (name: String, type: String) -> Unit,
 ) {
     var name by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf("group") }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Новая группа") },
+        title = { Text("Новое пространство") },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Название группы") },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Название") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                listOf("group" to "Группа", "family" to "Семейное пространство").forEach { (type, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectable(
+                                selected = selectedType == type,
+                                onClick = { selectedType = type },
+                            )
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(name.ifBlank { "Моя группа" }) }) {
+            TextButton(onClick = {
+                val defaultName = if (selectedType == "family") "Наш дом" else "Моя группа"
+                onConfirm(name.ifBlank { defaultName }, selectedType)
+            }) {
                 Text("Создать")
             }
         },

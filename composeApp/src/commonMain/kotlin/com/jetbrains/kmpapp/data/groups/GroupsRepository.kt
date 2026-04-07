@@ -19,8 +19,8 @@ class GroupsRepository(
             .onFailure { _error.value = it.message }
     }
 
-    suspend fun createGroup(name: String): Result<Group> {
-        val result = groupsApi.createGroup(CreateGroupRequest(name = name))
+    suspend fun createGroup(name: String, type: String = "group"): Result<Group> {
+        val result = groupsApi.createGroup(CreateGroupRequest(name = name, type = type))
         result.onSuccess { _groups.value = listOf(it) + _groups.value }
         result.onFailure { _error.value = it.message }
         return result
