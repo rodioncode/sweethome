@@ -17,21 +17,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -49,6 +51,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.auth.AuthViewModel
+import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.lists.TodoList
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -59,6 +62,7 @@ fun TodoListsScreen(
     val viewModel = koinViewModel<TodoListsViewModel>()
     val authViewModel = koinViewModel<AuthViewModel>()
     val lists by viewModel.lists.collectAsStateWithLifecycle()
+    val groups by viewModel.groups.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -92,10 +96,13 @@ fun TodoListsScreen(
     ) { paddingValues ->
         TodoListsContent(
             lists = lists,
+            groups = groups,
             contentPadding = paddingValues,
             showCreateDialog = showCreateDialog,
             onShowCreateDialog = { showCreateDialog = it },
-            onCreateList = { title, type -> viewModel.createList(title, type) },
+            onCreateList = { title, type, icon, scope, groupId ->
+                viewModel.createList(title, type, icon, scope, groupId)
+            },
             onListClick = navigateToListDetail,
         )
     }
@@ -104,10 +111,11 @@ fun TodoListsScreen(
 @Composable
 internal fun TodoListsContent(
     lists: List<TodoList>,
+    groups: List<Group> = emptyList(),
     contentPadding: PaddingValues,
     showCreateDialog: Boolean,
     onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (title: String, type: String) -> Unit,
+    onCreateList: (title: String, type: String, icon: String?, scope: String, groupId: String?) -> Unit,
     onListClick: (String) -> Unit,
     isGuest: Boolean = false,
     navigateToLinkEmail: (() -> Unit)? = null,
@@ -151,9 +159,10 @@ internal fun TodoListsContent(
 
     if (showCreateDialog) {
         CreateListDialog(
+            groups = groups,
             onDismiss = { onShowCreateDialog(false) },
-            onConfirm = { title, type ->
-                onCreateList(title, type)
+            onConfirm = { title, type, icon, scope, groupId ->
+                onCreateList(title, type, icon, scope, groupId)
                 onShowCreateDialog(false)
             },
         )
@@ -161,51 +170,166 @@ internal fun TodoListsContent(
 }
 
 private val listTypeOptions = listOf(
-    Triple("common", "Общий", Icons.Default.List),
+    Triple("general_todos", "Общий", Icons.Default.List),
     Triple("shopping", "Покупки", Icons.Default.ShoppingCart),
     Triple("home_chores", "Дела по дому", Icons.Default.Home),
-    Triple("goal", "Цели", Icons.Default.Star),
-    Triple("wishlist", "Хотелки", Icons.Default.Favorite),
 )
 
+private val scopeOptions = listOf(
+    "personal" to "Личный",
+    "group" to "Групповой",
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CreateListDialog(
+    groups: List<Group> = emptyList(),
     onDismiss: () -> Unit,
-    onConfirm: (title: String, type: String) -> Unit,
+    onConfirm: (title: String, type: String, icon: String?, scope: String, groupId: String?) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("common") }
+    var icon by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf("general_todos") }
+    var selectedScope by remember { mutableStateOf("personal") }
+    var selectedGroupId by remember { mutableStateOf<String?>(null) }
+    var scopeExpanded by remember { mutableStateOf(false) }
+    var groupExpanded by remember { mutableStateOf(false) }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Новый список") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Название") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                listTypeOptions.forEach { (type, label, icon) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedType = type },
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Title
+                item {
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        label = { Text("Название") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                // Icon (emoji)
+                item {
+                    OutlinedTextField(
+                        value = icon,
+                        onValueChange = { icon = it },
+                        label = { Text("Иконка (эмодзи)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                // Type selection
+                item {
+                    Text(
+                        "Тип списка",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item {
+                    Column {
+                        listTypeOptions.forEach { (type, label, typeIcon) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { selectedType = type },
+                            ) {
+                                RadioButton(
+                                    selected = selectedType == type,
+                                    onClick = { selectedType = type },
+                                )
+                                Icon(typeIcon, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                                Text(label, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+                // Scope dropdown
+                item {
+                    ExposedDropdownMenuBox(
+                        expanded = scopeExpanded,
+                        onExpandedChange = { scopeExpanded = it },
                     ) {
-                        RadioButton(
-                            selected = selectedType == type,
-                            onClick = { selectedType = type },
+                        OutlinedTextField(
+                            value = scopeOptions.first { it.first == selectedScope }.second,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Область") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = scopeExpanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
                         )
-                        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                        ExposedDropdownMenu(
+                            expanded = scopeExpanded,
+                            onDismissRequest = { scopeExpanded = false },
+                        ) {
+                            scopeOptions.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        selectedScope = value
+                                        if (value == "personal") selectedGroupId = null
+                                        scopeExpanded = false
+                                    },
+                                )
+                            }
+                        }
+                    }
+                }
+                // Group dropdown (when scope = group)
+                if (selectedScope == "group" && groups.isNotEmpty()) {
+                    item {
+                        val selectedGroupName = groups.find { it.id == selectedGroupId }?.name ?: "Выберите группу"
+                        ExposedDropdownMenuBox(
+                            expanded = groupExpanded,
+                            onExpandedChange = { groupExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = selectedGroupName,
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Группа") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                            )
+                            ExposedDropdownMenu(
+                                expanded = groupExpanded,
+                                onDismissRequest = { groupExpanded = false },
+                            ) {
+                                groups.forEach { group ->
+                                    DropdownMenuItem(
+                                        text = { Text(group.name) },
+                                        onClick = {
+                                            selectedGroupId = group.id
+                                            groupExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(title.ifBlank { "Мой список" }, selectedType) }) {
+            TextButton(
+                onClick = {
+                    onConfirm(
+                        title.ifBlank { "Мой список" },
+                        selectedType,
+                        icon.takeIf { it.isNotBlank() },
+                        selectedScope,
+                        selectedGroupId,
+                    )
+                },
+                enabled = selectedScope == "personal" || selectedGroupId != null,
+            ) {
                 Text("Создать")
             }
         },
@@ -218,17 +342,13 @@ internal fun CreateListDialog(
 private fun listTypeIcon(type: String) = when (type) {
     "shopping" -> Icons.Default.ShoppingCart
     "home_chores" -> Icons.Default.Home
-    "goal" -> Icons.Default.Star
-    "wishlist" -> Icons.Default.Favorite
-    else -> Icons.Default.List // "common", "general_todos", unknown
+    else -> Icons.Default.List
 }
 
 private fun listTypeLabel(type: String) = when (type) {
     "shopping" -> "Покупки"
     "home_chores" -> "Дела по дому"
-    "goal" -> "Цели"
-    "wishlist" -> "Хотелки"
-    else -> "Общий" // "common", "general_todos"
+    else -> "Общий"
 }
 
 @Composable

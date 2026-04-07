@@ -31,10 +31,11 @@ class ListsRepository(
     suspend fun createList(
         type: String,
         title: String,
+        icon: String? = null,
         scope: String = "personal",
         groupId: String? = null,
     ): Result<TodoList> {
-        val result = listsApi.createList(CreateListRequest(type = type, title = title, scope = scope, groupId = groupId))
+        val result = listsApi.createList(CreateListRequest(type = type, title = title, icon = icon, scope = scope, groupId = groupId))
         result.onSuccess {
             _lists.value = _lists.value + it
             listsStorage.saveLists(_lists.value)

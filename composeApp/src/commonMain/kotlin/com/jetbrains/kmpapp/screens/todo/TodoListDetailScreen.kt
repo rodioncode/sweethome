@@ -19,12 +19,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
@@ -40,6 +43,7 @@ import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,15 +58,19 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.categories.Category
+import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.daysUntil
 import kotlinx.datetime.todayIn
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -77,6 +85,7 @@ fun TodoListDetailScreen(
     val choreTemplates by viewModel.choreTemplates.collectAsStateWithLifecycle()
     val frequentItems by viewModel.frequentItems.collectAsStateWithLifecycle()
     val memberNames by viewModel.memberNames.collectAsStateWithLifecycle()
+    val groupMembers by viewModel.groupMembers.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
@@ -93,6 +102,7 @@ fun TodoListDetailScreen(
     }
 
     val listType = listWithItems?.first?.type ?: "general_todos"
+    val isGroupList = listWithItems?.first?.scope == "group"
     val categoryScope = when (listType) {
         "shopping" -> "shopping"
         "home_chores" -> "chore"
@@ -159,9 +169,11 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            isGroupList = isGroupList,
+            members = groupMembers,
             onDismiss = { showAddDialog = false },
-            onConfirm = { title, note, dueAt, isFavorite, shopping, choreSchedule ->
-                viewModel.addItem(listId, title, note, dueAt, isFavorite, shopping, choreSchedule)
+            onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
+                viewModel.addItem(listId, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
                 showAddDialog = false
             },
             onCreateCategory = { name ->
@@ -177,9 +189,11 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            isGroupList = isGroupList,
+            members = groupMembers,
             onDismiss = { editingItem = null },
-            onConfirm = { title, note, dueAt, isFavorite, shopping, choreSchedule ->
-                viewModel.updateItem(item, title, note, dueAt, isFavorite, shopping, choreSchedule)
+            onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
+                viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
                 editingItem = null
             },
             onCreateCategory = { name ->
@@ -199,11 +213,21 @@ private fun parseDateOrNull(dateStr: String): LocalDate? {
 
 private fun choreStatusColor(daysRemaining: Int): androidx.compose.ui.graphics.Color {
     return when {
-        daysRemaining < 0 -> androidx.compose.ui.graphics.Color(0xFFD32F2F) // red — overdue
-        daysRemaining <= 1 -> androidx.compose.ui.graphics.Color(0xFFF57C00) // orange — due soon
-        daysRemaining <= 3 -> androidx.compose.ui.graphics.Color(0xFFFBC02D) // yellow — upcoming
-        else -> androidx.compose.ui.graphics.Color(0xFF388E3C) // green — plenty of time
+        daysRemaining < 0 -> androidx.compose.ui.graphics.Color(0xFFD32F2F)
+        daysRemaining <= 1 -> androidx.compose.ui.graphics.Color(0xFFF57C00)
+        daysRemaining <= 3 -> androidx.compose.ui.graphics.Color(0xFFFBC02D)
+        else -> androidx.compose.ui.graphics.Color(0xFF388E3C)
     }
+}
+
+private fun millisToDateString(millis: Long): String {
+    val instant = Instant.fromEpochMilliseconds(millis)
+    val date = instant.toLocalDateTime(TimeZone.UTC).date
+    return date.toString() // YYYY-MM-DD
+}
+
+private fun dateStringToMillis(dateStr: String): Long? {
+    return parseDateOrNull(dateStr)?.atStartOfDayIn(TimeZone.UTC)?.toEpochMilliseconds()
 }
 
 @Composable
@@ -267,7 +291,6 @@ private fun TodoItemRow(
                         )
                     }
                 }
-                // 4.11 — Assigned member name
                 item.assignedTo?.let { userId ->
                     if (userId.isNotBlank()) {
                         val name = memberNames[userId] ?: userId.take(8)
@@ -294,7 +317,6 @@ private fun TodoItemRow(
                         )
                     }
                 }
-                // 4.12 — Due date with overdue highlighting
                 item.dueAt?.let { due ->
                     if (due.isNotBlank()) {
                         val dueDate = parseDateOrNull(due)
@@ -314,7 +336,6 @@ private fun TodoItemRow(
                         )
                     }
                 }
-                // 4.13 / 4.14 — Chore status with days remaining and color coding
                 item.choreSchedule?.let { sched ->
                     val parts = buildList {
                         sched.intervalDays?.let { add("Каждые $it д.") }
@@ -327,7 +348,6 @@ private fun TodoItemRow(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    // Show "last done" and "days remaining" with color coding
                     val interval = sched.intervalDays
                     val lastDone = sched.lastDoneAt?.let { parseDateOrNull(it) }
                     if (interval != null && interval > 0 && lastDone != null && !item.isDone) {
@@ -362,6 +382,71 @@ private fun TodoItemRow(
     }
 }
 
+private val dayOptions = listOf(
+    "monday" to "Пн",
+    "tuesday" to "Вт",
+    "wednesday" to "Ср",
+    "thursday" to "Чт",
+    "friday" to "Пт",
+    "saturday" to "Сб",
+    "sunday" to "Вс",
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DatePickerField(
+    label: String,
+    dateValue: String,
+    onDateSelected: (String) -> Unit,
+    onClear: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    var showPicker by remember { mutableStateOf(false) }
+    val initialMillis = dateStringToMillis(dateValue)
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = if (dateValue.isNotBlank()) dateValue else "Не выбрана",
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(label) },
+            trailingIcon = {
+                IconButton(onClick = { showPicker = true }) {
+                    Icon(Icons.Default.DateRange, "Выбрать дату")
+                }
+            },
+            modifier = Modifier.weight(1f),
+        )
+        if (dateValue.isNotBlank() && onClear != null) {
+            TextButton(onClick = onClear) { Text("Сбросить") }
+        }
+    }
+
+    if (showPicker) {
+        DatePickerDialog(
+            onDismissRequest = { showPicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        onDateSelected(millisToDateString(millis))
+                    }
+                    showPicker = false
+                }) { Text("ОК") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPicker = false }) { Text("Отмена") }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ItemDialog(
@@ -370,12 +455,15 @@ private fun ItemDialog(
     categories: List<Category>,
     choreTemplates: List<ChoreTemplate>,
     frequentItems: List<TodoItem>,
+    isGroupList: Boolean = false,
+    members: List<GroupMember> = emptyList(),
     onDismiss: () -> Unit,
     onConfirm: (
         title: String,
         note: String,
         dueAt: String,
         isFavorite: Boolean,
+        assignedTo: String?,
         shopping: ShoppingItemFields?,
         choreSchedule: ChoreSchedule?,
     ) -> Unit,
@@ -383,8 +471,9 @@ private fun ItemDialog(
 ) {
     var title by remember { mutableStateOf(item?.title ?: "") }
     var note by remember { mutableStateOf(item?.note ?: "") }
-    var dueAt by remember { mutableStateOf(item?.dueAt ?: "") }
+    var dueAt by remember { mutableStateOf(item?.dueAt?.take(10) ?: "") }
     var isFavorite by remember { mutableStateOf(item?.isFavorite ?: false) }
+    var assignedTo by remember { mutableStateOf(item?.assignedTo) }
     var quantity by remember {
         mutableStateOf(item?.shopping?.quantity?.let {
             if (it % 1 == 0.0) it.toLong().toString() else it.toString()
@@ -392,6 +481,9 @@ private fun ItemDialog(
     }
     var unit by remember { mutableStateOf(item?.shopping?.unit ?: "") }
     var intervalDays by remember { mutableStateOf(item?.choreSchedule?.intervalDays?.toString() ?: "") }
+    var selectedDays by remember { mutableStateOf(item?.choreSchedule?.daysOfWeek ?: emptyList()) }
+    var startDate by remember { mutableStateOf(item?.choreSchedule?.startDate ?: "") }
+    var endDate by remember { mutableStateOf(item?.choreSchedule?.endDate ?: "") }
     var selectedCategory by remember {
         mutableStateOf(item?.shopping?.category ?: item?.choreSchedule?.category)
     }
@@ -490,6 +582,56 @@ private fun ItemDialog(
                     )
                 }
 
+                // Due date — universal for all types (DatePicker)
+                item {
+                    DatePickerField(
+                        label = "Срок",
+                        dateValue = dueAt,
+                        onDateSelected = { dueAt = it },
+                        onClear = { dueAt = "" },
+                    )
+                }
+
+                // Favorite — universal for all types
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = isFavorite, onCheckedChange = { isFavorite = it })
+                        Text("Избранное")
+                    }
+                }
+
+                // Assigned to — for group lists
+                if (isGroupList && members.isNotEmpty()) {
+                    item {
+                        Text(
+                            "Исполнитель",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    item {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            item {
+                                FilterChip(
+                                    selected = assignedTo == null,
+                                    onClick = { assignedTo = null },
+                                    label = { Text("Никто") },
+                                )
+                            }
+                            items(members) { member ->
+                                FilterChip(
+                                    selected = assignedTo == member.userId,
+                                    onClick = {
+                                        assignedTo = if (assignedTo == member.userId) null
+                                        else member.userId
+                                    },
+                                    label = { Text(member.displayName) },
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Type-specific fields
                 when (listType) {
                     "shopping" -> {
@@ -512,24 +654,6 @@ private fun ItemDialog(
                                 )
                             }
                         }
-                        item {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Checkbox(checked = isFavorite, onCheckedChange = { isFavorite = it })
-                                Text("Избранное")
-                            }
-                        }
-                    }
-                    "general_todos" -> {
-                        item {
-                            OutlinedTextField(
-                                value = dueAt,
-                                onValueChange = { dueAt = it },
-                                label = { Text("Срок (ГГГГ-ММ-ДД)") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
                     }
                     "home_chores" -> {
                         item {
@@ -540,6 +664,49 @@ private fun ItemDialog(
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                        // Days of week
+                        item {
+                            Text(
+                                "Дни недели",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        item {
+                            LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                items(dayOptions) { (dayKey, dayLabel) ->
+                                    FilterChip(
+                                        selected = dayKey in selectedDays,
+                                        onClick = {
+                                            selectedDays = if (dayKey in selectedDays) {
+                                                selectedDays - dayKey
+                                            } else {
+                                                selectedDays + dayKey
+                                            }
+                                        },
+                                        label = { Text(dayLabel) },
+                                    )
+                                }
+                            }
+                        }
+                        // Start date
+                        item {
+                            DatePickerField(
+                                label = "Дата начала",
+                                dateValue = startDate,
+                                onDateSelected = { startDate = it },
+                                onClear = { startDate = "" },
+                            )
+                        }
+                        // End date
+                        item {
+                            DatePickerField(
+                                label = "Дата окончания",
+                                dateValue = endDate,
+                                onDateSelected = { endDate = it },
+                                onClear = { endDate = "" },
                             )
                         }
                     }
@@ -612,10 +779,14 @@ private fun ItemDialog(
                         )
                     } else null
                     val choreSchedule = if (listType == "home_chores" &&
-                        (intervalDays.isNotBlank() || selectedCategory != null)
+                        (intervalDays.isNotBlank() || selectedCategory != null ||
+                                selectedDays.isNotEmpty() || startDate.isNotBlank())
                     ) {
                         ChoreSchedule(
                             intervalDays = intervalDays.toIntOrNull(),
+                            daysOfWeek = selectedDays.takeIf { it.isNotEmpty() },
+                            startDate = startDate.takeIf { it.isNotBlank() },
+                            endDate = endDate.takeIf { it.isNotBlank() },
                             category = selectedCategory,
                         )
                     } else null
@@ -624,6 +795,7 @@ private fun ItemDialog(
                         note,
                         dueAt,
                         isFavorite,
+                        assignedTo,
                         shopping,
                         choreSchedule,
                     )

@@ -74,6 +74,7 @@ fun MainScreen(
 
     val lists by todoListsViewModel.lists.collectAsStateWithLifecycle()
     val listsError by todoListsViewModel.error.collectAsStateWithLifecycle()
+    val allGroups by todoListsViewModel.groups.collectAsStateWithLifecycle()
     val groupSpaces by groupsViewModel.groupSpaces.collectAsStateWithLifecycle()
     val groupsError by groupsViewModel.error.collectAsStateWithLifecycle()
     val isGuest by groupsViewModel.isGuest.collectAsStateWithLifecycle()
@@ -180,10 +181,13 @@ fun MainScreen(
         when (selectedTab) {
             MainTab.MY_LISTS -> TodoListsContent(
                 lists = lists,
+                groups = allGroups,
                 contentPadding = paddingValues,
                 showCreateDialog = showCreateListDialog,
                 onShowCreateDialog = { showCreateListDialog = it },
-                onCreateList = { title, type -> todoListsViewModel.createList(title, type) },
+                onCreateList = { title, type, icon, scope, groupId ->
+                    todoListsViewModel.createList(title, type, icon, scope, groupId)
+                },
                 onListClick = navigateToListDetail,
                 isGuest = isGuest,
                 navigateToLinkEmail = navigateToLinkEmail,
@@ -210,9 +214,10 @@ fun MainScreen(
 
     if (showCreateListDialog) {
         CreateListDialog(
+            groups = allGroups,
             onDismiss = { showCreateListDialog = false },
-            onConfirm = { title, type ->
-                todoListsViewModel.createList(title, type)
+            onConfirm = { title, type, icon, scope, groupId ->
+                todoListsViewModel.createList(title, type, icon, scope, groupId)
                 showCreateListDialog = false
             },
         )
