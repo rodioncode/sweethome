@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetbrains.kmpapp.data.categories.CategoriesRepository
 import com.jetbrains.kmpapp.data.categories.Category
+import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
@@ -11,18 +12,31 @@ import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class TodoListDetailViewModel(
     private val listsRepository: ListsRepository,
     private val categoriesRepository: CategoriesRepository,
     private val suggestionsRepository: SuggestionsRepository,
+    private val groupsRepository: GroupsRepository,
 ) : ViewModel() {
 
     val listWithItems: StateFlow<Pair<TodoList, List<TodoItem>>?> =
         listsRepository.currentListWithItems
     val error: StateFlow<String?> = listsRepository.error
+
+    val memberNames: StateFlow<Map<String, String>> = combine(
+        listsRepository.currentListWithItems,
+        groupsRepository.groups,
+    ) { listData, groups ->
+        val groupId = listData?.first?.ownerGroupId ?: return@combine emptyMap()
+        val members = groups.find { it.id == groupId }?.members ?: return@combine emptyMap()
+        members.associate { it.userId to it.displayName }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
     val categories: StateFlow<List<Category>> = categoriesRepository.categories
     val choreTemplates: StateFlow<List<ChoreTemplate>> = suggestionsRepository.choreTemplates
     val frequentItems: StateFlow<List<TodoItem>> = suggestionsRepository.frequentItems

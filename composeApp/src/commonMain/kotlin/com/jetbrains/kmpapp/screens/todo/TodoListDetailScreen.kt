@@ -58,6 +58,11 @@ import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.todayIn
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -71,6 +76,7 @@ fun TodoListDetailScreen(
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val choreTemplates by viewModel.choreTemplates.collectAsStateWithLifecycle()
     val frequentItems by viewModel.frequentItems.collectAsStateWithLifecycle()
+    val memberNames by viewModel.memberNames.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
@@ -129,6 +135,7 @@ fun TodoListDetailScreen(
                             onToggle = { viewModel.toggleItem(item) },
                             onDelete = { viewModel.deleteItem(item) },
                             onEdit = { editingItem = item },
+                            memberNames = memberNames,
                         )
                     }
                 }
@@ -182,14 +189,34 @@ fun TodoListDetailScreen(
     }
 }
 
+private fun parseDateOrNull(dateStr: String): LocalDate? {
+    return try {
+        LocalDate.parse(dateStr.take(10))
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun choreStatusColor(daysRemaining: Int): androidx.compose.ui.graphics.Color {
+    return when {
+        daysRemaining < 0 -> androidx.compose.ui.graphics.Color(0xFFD32F2F) // red — overdue
+        daysRemaining <= 1 -> androidx.compose.ui.graphics.Color(0xFFF57C00) // orange — due soon
+        daysRemaining <= 3 -> androidx.compose.ui.graphics.Color(0xFFFBC02D) // yellow — upcoming
+        else -> androidx.compose.ui.graphics.Color(0xFF388E3C) // green — plenty of time
+    }
+}
+
 @Composable
 private fun TodoItemRow(
     item: TodoItem,
     onToggle: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit,
+    memberNames: Map<String, String> = emptyMap(),
     modifier: Modifier = Modifier,
 ) {
+    val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -240,6 +267,17 @@ private fun TodoItemRow(
                         )
                     }
                 }
+                // 4.11 — Assigned member name
+                item.assignedTo?.let { userId ->
+                    if (userId.isNotBlank()) {
+                        val name = memberNames[userId] ?: userId.take(8)
+                        Text(
+                            text = "→ $name",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.tertiary,
+                        )
+                    }
+                }
                 item.shopping?.let { s ->
                     val parts = buildList {
                         s.quantity?.let { qty ->
@@ -256,15 +294,27 @@ private fun TodoItemRow(
                         )
                     }
                 }
+                // 4.12 — Due date with overdue highlighting
                 item.dueAt?.let { due ->
                     if (due.isNotBlank()) {
+                        val dueDate = parseDateOrNull(due)
+                        val isOverdue = dueDate != null && !item.isDone && dueDate < today
+                        val daysLeft = dueDate?.let { today.daysUntil(it) }
+                        val label = when {
+                            isOverdue -> "Просрочено: $due"
+                            daysLeft != null && daysLeft == 0 -> "Сегодня: $due"
+                            daysLeft != null && daysLeft == 1 -> "Завтра: $due"
+                            else -> "До: $due"
+                        }
                         Text(
-                            text = "До: $due",
+                            text = label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
+                            color = if (isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
+                // 4.13 / 4.14 — Chore status with days remaining and color coding
                 item.choreSchedule?.let { sched ->
                     val parts = buildList {
                         sched.intervalDays?.let { add("Каждые $it д.") }
@@ -275,6 +325,24 @@ private fun TodoItemRow(
                             text = parts.joinToString(" "),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    // Show "last done" and "days remaining" with color coding
+                    val interval = sched.intervalDays
+                    val lastDone = sched.lastDoneAt?.let { parseDateOrNull(it) }
+                    if (interval != null && interval > 0 && lastDone != null && !item.isDone) {
+                        val daysSinceDone = lastDone.daysUntil(today)
+                        val daysRemaining = interval - daysSinceDone
+                        val statusText = when {
+                            daysRemaining < 0 -> "Просрочено на ${-daysRemaining} д."
+                            daysRemaining == 0 -> "Нужно сделать сегодня"
+                            daysRemaining == 1 -> "Осталось 1 день"
+                            else -> "Осталось $daysRemaining д."
+                        }
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = choreStatusColor(daysRemaining),
                         )
                     }
                 }
