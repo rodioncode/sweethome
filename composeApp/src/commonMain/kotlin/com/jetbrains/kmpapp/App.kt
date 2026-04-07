@@ -23,6 +23,7 @@ import com.jetbrains.kmpapp.auth.RegisterScreen
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
+import com.jetbrains.kmpapp.screens.spaces.JoinByCodeScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
@@ -47,6 +48,9 @@ data class GroupDetailDestination(val groupId: String, val groupName: String)
 
 @Serializable
 data class InviteDestination(val token: String)
+
+@Serializable
+data class JoinByCodeDestination(val prefillCode: String = "")
 
 @Composable
 fun App() {
@@ -141,6 +145,7 @@ fun App() {
                             navController.navigate(GroupDetailDestination(groupId, groupName))
                         },
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                        navigateToJoinByCode = { navController.navigate(JoinByCodeDestination()) },
                     )
                 }
                 composable<TodoListDetailDestination> { backStackEntry ->
@@ -159,6 +164,23 @@ fun App() {
                             navController.navigate(TodoListDetailDestination(listId))
                         },
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                    )
+                }
+                composable<JoinByCodeDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<JoinByCodeDestination>()
+                    JoinByCodeScreen(
+                        prefillCode = dest.prefillCode,
+                        onSuccess = { groupId, groupName ->
+                            navController.navigate(GroupDetailDestination(groupId, groupName)) {
+                                popUpTo(JoinByCodeDestination()) { inclusive = true }
+                            }
+                        },
+                        onEmailRequired = {
+                            navController.navigate(LinkEmailDestination) {
+                                popUpTo(JoinByCodeDestination()) { inclusive = true }
+                            }
+                        },
+                        onNavigateBack = { navController.popBackStack() },
                     )
                 }
                 composable<InviteDestination> { backStackEntry ->

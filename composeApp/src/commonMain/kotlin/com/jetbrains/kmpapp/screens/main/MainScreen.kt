@@ -7,12 +7,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -31,8 +31,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.data.sync.SyncRepository
+import com.jetbrains.kmpapp.screens.family.FamilyContent
+import com.jetbrains.kmpapp.screens.profile.ProfileContent
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import com.jetbrains.kmpapp.screens.groups.GroupsContent
@@ -44,7 +45,7 @@ import com.jetbrains.kmpapp.screens.todo.TodoListsContent
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { MY_LISTS, GROUPS }
+enum class MainTab { MY_LISTS, HOME, GROUPS, PROFILE }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,11 +53,11 @@ fun MainScreen(
     navigateToListDetail: (String) -> Unit,
     navigateToGroupDetail: (groupId: String, groupName: String) -> Unit,
     navigateToLinkEmail: () -> Unit,
+    navigateToJoinByCode: () -> Unit,
     pendingInviteToken: String? = null,
 ) {
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
     val groupsViewModel = koinViewModel<GroupsViewModel>()
-    val authViewModel = koinViewModel<AuthViewModel>()
     val syncRepository = koinInject<SyncRepository>()
     val coroutineScope = rememberCoroutineScope()
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -73,7 +74,7 @@ fun MainScreen(
 
     val lists by todoListsViewModel.lists.collectAsStateWithLifecycle()
     val listsError by todoListsViewModel.error.collectAsStateWithLifecycle()
-    val groups by groupsViewModel.groups.collectAsStateWithLifecycle()
+    val groupSpaces by groupsViewModel.groupSpaces.collectAsStateWithLifecycle()
     val groupsError by groupsViewModel.error.collectAsStateWithLifecycle()
     val isGuest by groupsViewModel.isGuest.collectAsStateWithLifecycle()
 
@@ -122,13 +123,15 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(if (selectedTab == MainTab.MY_LISTS) "Мои списки" else "Группы")
+                    Text(
+                        when (selectedTab) {
+                            MainTab.MY_LISTS -> "Мои списки"
+                            MainTab.HOME -> "Мой дом"
+                            MainTab.GROUPS -> "Группы"
+                            MainTab.PROFILE -> "Профиль"
+                        }
+                    )
                 },
-                actions = {
-                    IconButton(onClick = { authViewModel.logout() }) {
-                        Icon(Icons.Default.ExitToApp, "Выйти")
-                    }
-                }
             )
         },
         bottomBar = {
@@ -137,13 +140,25 @@ fun MainScreen(
                     selected = selectedTab == MainTab.MY_LISTS,
                     onClick = { selectedTab = MainTab.MY_LISTS },
                     icon = { Icon(Icons.Default.List, contentDescription = null) },
-                    label = { Text("Мои списки") },
+                    label = { Text("Списки") },
+                )
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.HOME,
+                    onClick = { selectedTab = MainTab.HOME },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    label = { Text("Мой дом") },
                 )
                 NavigationBarItem(
                     selected = selectedTab == MainTab.GROUPS,
                     onClick = { selectedTab = MainTab.GROUPS },
-                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
                     label = { Text("Группы") },
+                )
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.PROFILE,
+                    onClick = { selectedTab = MainTab.PROFILE },
+                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
+                    label = { Text("Профиль") },
                 )
             }
         },
@@ -157,6 +172,7 @@ fun MainScreen(
                     FloatingActionButton(onClick = { showCreateGroupDialog = true }) {
                         Icon(Icons.Default.Add, "Создать группу")
                     }
+                else -> Unit
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -170,12 +186,22 @@ fun MainScreen(
                 onCreateList = { title -> todoListsViewModel.createList(title) },
                 onListClick = navigateToListDetail,
             )
+            MainTab.HOME -> FamilyContent(
+                contentPadding = paddingValues,
+                onSpaceClick = navigateToGroupDetail,
+                onListClick = navigateToListDetail,
+            )
             MainTab.GROUPS -> GroupsContent(
-                groups = groups,
+                groups = groupSpaces,
                 isGuest = isGuest,
                 contentPadding = paddingValues,
                 onGroupClick = { group -> navigateToGroupDetail(group.id, group.name) },
                 navigateToLinkEmail = navigateToLinkEmail,
+                navigateToJoinByCode = navigateToJoinByCode,
+            )
+            MainTab.PROFILE -> ProfileContent(
+                navigateToLinkEmail = navigateToLinkEmail,
+                modifier = Modifier.padding(paddingValues),
             )
         }
     }
@@ -193,8 +219,8 @@ fun MainScreen(
     if (showCreateGroupDialog) {
         CreateGroupDialog(
             onDismiss = { showCreateGroupDialog = false },
-            onConfirm = { name ->
-                groupsViewModel.createGroup(name)
+            onConfirm = { name, type ->
+                groupsViewModel.createGroup(name, type)
                 showCreateGroupDialog = false
             },
         )

@@ -104,8 +104,9 @@ fun GroupDetailScreen(
                 },
                 actions = {
                     val isOwner = group?.role == "owner"
-                    if (isOwner) {
-                        Box {
+                    val isAdmin = group?.role == "admin"
+                    when {
+                        isOwner -> Box {
                             IconButton(onClick = { menuExpanded = true }) {
                                 Icon(Icons.Default.MoreVert, "Действия")
                             }
@@ -141,15 +142,10 @@ fun GroupDetailScreen(
                                 )
                             }
                         }
-                    } else {
-                        IconButton(onClick = {
-                            val currentUserId = group?.members
-                                ?.firstOrNull { it.role != "owner" }?.userId
-                            // Self-leave: remove own userId
-                            group?.members
-                                ?.firstOrNull { it.role == "member" }
-                                ?.let { viewModel.removeMember(it.userId) }
-                        }) {
+                        isAdmin -> IconButton(onClick = { viewModel.createInvite() }) {
+                            Icon(Icons.Default.Add, "Пригласить")
+                        }
+                        else -> IconButton(onClick = { viewModel.leaveGroup() }) {
                             Text("Выйти", style = MaterialTheme.typography.labelMedium)
                         }
                     }
@@ -184,7 +180,7 @@ fun GroupDetailScreen(
                 items(members, key = { "member_${it.userId}" }) { member ->
                     MemberRow(
                         member = member,
-                        isOwner = group?.role == "owner",
+                        isOwnerOrAdmin = group?.role == "owner" || group?.role == "admin",
                         onRemove = { viewModel.removeMember(member.userId) },
                     )
                 }
@@ -242,18 +238,31 @@ fun GroupDetailScreen(
 
     // Invite dialog
     if (showInviteDialog && currentInvite != null) {
-        val deepLink = "familytodo://invite/${currentInvite!!.token}"
+        val token = currentInvite!!.token
+        val deepLink = "sweethome://invite/$token"
         AlertDialog(
             onDismissRequest = { showInviteDialog = false },
-            title = { Text("Ссылка-приглашение") },
+            title = { Text("Приглашение в группу") },
             text = {
                 Column {
                     Text(
-                        text = deepLink,
+                        text = "Код:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = token,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Поделитесь кодом или ссылкой. Участник вводит код на экране «Вступить по коду».",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "Действует до: ${currentInvite!!.expiresAt.take(10)}",
                         style = MaterialTheme.typography.bodySmall,
@@ -262,14 +271,17 @@ fun GroupDetailScreen(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    clipboardManager.setText(AnnotatedString(deepLink))
+                    clipboardManager.setText(AnnotatedString(token))
                     showInviteDialog = false
                 }) {
-                    Text("Скопировать")
+                    Text("Скопировать код")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showInviteDialog = false }) { Text("Закрыть") }
+                TextButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(deepLink))
+                    showInviteDialog = false
+                }) { Text("Скопировать ссылку") }
             },
         )
     }
@@ -338,10 +350,15 @@ fun GroupDetailScreen(
 @Composable
 private fun MemberRow(
     member: GroupMember,
-    isOwner: Boolean,
+    isOwnerOrAdmin: Boolean,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val roleLabel = when (member.role) {
+        "owner" -> "Владелец"
+        "admin" -> "Администратор"
+        else -> "Участник"
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -353,9 +370,9 @@ private fun MemberRow(
         }
         SuggestionChip(
             onClick = {},
-            label = { Text(if (member.role == "owner") "Владелец" else "Участник") },
+            label = { Text(roleLabel) },
         )
-        if (isOwner && member.role != "owner") {
+        if (isOwnerOrAdmin && member.role !in setOf("owner", "admin")) {
             IconButton(onClick = onRemove) {
                 Icon(
                     Icons.Default.Delete,

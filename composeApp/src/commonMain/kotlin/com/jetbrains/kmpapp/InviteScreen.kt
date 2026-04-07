@@ -3,11 +3,17 @@ package com.jetbrains.kmpapp
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.jetbrains.kmpapp.data.groups.EmailRequiredException
@@ -23,6 +29,7 @@ fun InviteScreen(
     onError: () -> Unit,
 ) {
     val groupsRepository: GroupsRepository = koinInject()
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(token) {
         groupsRepository.acceptInvite(token)
@@ -33,9 +40,21 @@ fun InviteScreen(
             .onFailure { err ->
                 when (err) {
                     is EmailRequiredException -> onEmailRequired()
-                    else -> onError()
+                    is InvalidInviteException -> errorMessage = "Приглашение недействительно или истекло"
+                    else -> errorMessage = err.message ?: "Ошибка при принятии приглашения"
                 }
             }
+    }
+
+    errorMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = onError,
+            title = { Text("Ошибка") },
+            text = { Text(msg) },
+            confirmButton = {
+                TextButton(onClick = onError) { Text("ОК") }
+            },
+        )
     }
 
     Column(
@@ -43,10 +62,12 @@ fun InviteScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CircularProgressIndicator()
-        Text(
-            text = "Принимаем приглашение...",
-            style = MaterialTheme.typography.bodyMedium,
-        )
+        if (errorMessage == null) {
+            CircularProgressIndicator()
+            Text(
+                text = "Принимаем приглашение...",
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
     }
 }

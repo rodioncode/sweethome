@@ -23,6 +23,8 @@ import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
+import com.jetbrains.kmpapp.screens.family.FamilyViewModel
+import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import io.ktor.client.HttpClient
@@ -155,6 +157,8 @@ val viewModelModule = module {
     factoryOf(::TodoListDetailViewModel)
     factoryOf(::GroupsViewModel)
     factoryOf(::GroupDetailViewModel)
+    factoryOf(::ProfileViewModel)
+    factoryOf(::FamilyViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>

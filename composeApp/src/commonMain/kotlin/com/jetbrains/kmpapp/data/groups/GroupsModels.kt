@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 data class GroupMember(
     val userId: String,
     val displayName: String,
-    val role: String, // "owner" | "member"
+    val role: String, // "owner" | "admin" | "member"
 )
 
 @Serializable
@@ -15,7 +15,8 @@ data class Group(
     val name: String,
     val createdBy: String,
     val createdAt: String,
-    val role: String,                        // "owner" | "member" — роль текущего пользователя
+    val role: String,                        // "owner" | "member" | "admin" — роль текущего пользователя
+    val type: String = "group",              // "group" | "family"
     val members: List<GroupMember>? = null,  // опционально — если сервер вернёт
 )
 
@@ -27,6 +28,7 @@ data class GroupsWrapper(
 @Serializable
 data class CreateGroupRequest(
     val name: String,
+    val type: String = "group",             // "group" | "family"
 )
 
 @Serializable

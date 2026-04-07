@@ -17,8 +17,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -90,7 +95,7 @@ fun TodoListsScreen(
             contentPadding = paddingValues,
             showCreateDialog = showCreateDialog,
             onShowCreateDialog = { showCreateDialog = it },
-            onCreateList = { title -> viewModel.createList(title) },
+            onCreateList = { title, type -> viewModel.createList(title, type) },
             onListClick = navigateToListDetail,
         )
     }
@@ -102,7 +107,7 @@ internal fun TodoListsContent(
     contentPadding: PaddingValues,
     showCreateDialog: Boolean,
     onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (String) -> Unit,
+    onCreateList: (title: String, type: String) -> Unit,
     onListClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -135,33 +140,60 @@ internal fun TodoListsContent(
     if (showCreateDialog) {
         CreateListDialog(
             onDismiss = { onShowCreateDialog(false) },
-            onConfirm = { title ->
-                onCreateList(title)
+            onConfirm = { title, type ->
+                onCreateList(title, type)
                 onShowCreateDialog(false)
             },
         )
     }
 }
 
+private val listTypeOptions = listOf(
+    Triple("common", "Общий", Icons.Default.List),
+    Triple("shopping", "Покупки", Icons.Default.ShoppingCart),
+    Triple("home_chores", "Дела по дому", Icons.Default.Home),
+    Triple("goal", "Цели", Icons.Default.Star),
+    Triple("wishlist", "Хотелки", Icons.Default.Favorite),
+)
+
 @Composable
 internal fun CreateListDialog(
     onDismiss: () -> Unit,
-    onConfirm: (String) -> Unit,
+    onConfirm: (title: String, type: String) -> Unit,
 ) {
     var title by remember { mutableStateOf("") }
+    var selectedType by remember { mutableStateOf("common") }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Новый список") },
         text = {
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("Название") },
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Название") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                listTypeOptions.forEach { (type, label, icon) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedType = type },
+                    ) {
+                        RadioButton(
+                            selected = selectedType == type,
+                            onClick = { selectedType = type },
+                        )
+                        Icon(icon, contentDescription = null, modifier = Modifier.padding(end = 8.dp))
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
         },
         confirmButton = {
-            TextButton(onClick = { onConfirm(title.ifBlank { "Мой список" }) }) {
+            TextButton(onClick = { onConfirm(title.ifBlank { "Мой список" }, selectedType) }) {
                 Text("Создать")
             }
         },
@@ -169,6 +201,22 @@ internal fun CreateListDialog(
             TextButton(onClick = onDismiss) { Text("Отмена") }
         },
     )
+}
+
+private fun listTypeIcon(type: String) = when (type) {
+    "shopping" -> Icons.Default.ShoppingCart
+    "home_chores" -> Icons.Default.Home
+    "goal" -> Icons.Default.Star
+    "wishlist" -> Icons.Default.Favorite
+    else -> Icons.Default.List // "common", "general_todos", unknown
+}
+
+private fun listTypeLabel(type: String) = when (type) {
+    "shopping" -> "Покупки"
+    "home_chores" -> "Дела по дому"
+    "goal" -> "Цели"
+    "wishlist" -> "Хотелки"
+    else -> "Общий" // "common", "general_todos"
 }
 
 @Composable
@@ -190,14 +238,14 @@ internal fun TodoListCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
-                Icons.Default.List,
+                listTypeIcon(list.type),
                 contentDescription = null,
                 modifier = Modifier.padding(end = 12.dp),
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = list.title, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = list.type,
+                    text = listTypeLabel(list.type),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
