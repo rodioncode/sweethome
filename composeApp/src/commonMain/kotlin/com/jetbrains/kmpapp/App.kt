@@ -1,10 +1,17 @@
 package com.jetbrains.kmpapp
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -23,10 +30,17 @@ import com.jetbrains.kmpapp.auth.RegisterScreen
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
+import com.jetbrains.kmpapp.screens.profile.ProfileContent
+import com.jetbrains.kmpapp.screens.splash.SplashScreen
+import com.jetbrains.kmpapp.screens.settings.SettingsScreen
 import com.jetbrains.kmpapp.screens.spaces.JoinByCodeScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
+import com.jetbrains.kmpapp.ui.SweetHomeTheme
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
+
+@Serializable
+object SplashDestination
 
 @Serializable
 object AuthDestination
@@ -41,6 +55,9 @@ object LinkEmailDestination
 object ListDestination
 
 @Serializable
+object ProfileDestination
+
+@Serializable
 data class TodoListDetailDestination(val listId: String)
 
 @Serializable
@@ -50,13 +67,15 @@ data class GroupDetailDestination(val groupId: String, val groupName: String)
 data class InviteDestination(val token: String)
 
 @Serializable
+object SettingsDestination
+
+@Serializable
 data class JoinByCodeDestination(val prefillCode: String = "")
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()
-    ) {
+    SweetHomeTheme {
         Surface {
             val navController: NavHostController = rememberNavController()
             val authRepository: AuthRepository = koinInject()
@@ -74,7 +93,7 @@ fun App() {
                 }
             }
 
-            // Case 2: deep link was pending while user was logging in — call this after navigating to ListDestination
+            // Case 2: deep link was pending while user was logging in
             fun navigatePendingInvite() {
                 val url = DeepLinkHandler.pendingDeepLink.value ?: return
                 DeepLinkHandler.pendingDeepLink.value = null
@@ -84,24 +103,24 @@ fun App() {
                 }
             }
 
-            val startDestination = when (authState) {
-                is AuthState.Authenticated -> {
-                    ListDestination
-                }
-
-                is AuthState.Unauthenticated -> {
-                    AuthDestination
-                }
-                else -> {
-                    AuthDestination
-                }
-            }
-
             NavHost(
                 navController = navController,
-                startDestination = startDestination,
+                startDestination = SplashDestination,
                 modifier = Modifier,
             ) {
+                composable<SplashDestination> {
+                    SplashScreen(
+                        onFinished = {
+                            val destination = when (authState) {
+                                is AuthState.Authenticated -> ListDestination
+                                else -> AuthDestination
+                            }
+                            navController.navigate(destination) {
+                                popUpTo(SplashDestination) { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable<AuthDestination> {
                     AuthScreen(
                         onAuthSuccess = {
@@ -146,6 +165,33 @@ fun App() {
                         },
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
                         navigateToJoinByCode = { navController.navigate(JoinByCodeDestination()) },
+                        navigateToProfile = { navController.navigate(ProfileDestination) },
+                    )
+                }
+                composable<ProfileDestination> {
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
+                                title = { Text("Профиль") },
+                                navigationIcon = {
+                                    IconButton(onClick = { navController.popBackStack() }) {
+                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                                    }
+                                }
+                            )
+                        },
+                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
+                    ) { paddingValues ->
+                        ProfileContent(
+                            navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                            navigateToSettings = { navController.navigate(SettingsDestination) },
+                            modifier = Modifier,
+                        )
+                    }
+                }
+                composable<SettingsDestination> {
+                    SettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
                     )
                 }
                 composable<TodoListDetailDestination> { backStackEntry ->

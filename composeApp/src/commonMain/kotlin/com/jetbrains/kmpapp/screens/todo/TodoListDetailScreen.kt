@@ -1,26 +1,35 @@
 package com.jetbrains.kmpapp.screens.todo
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -31,15 +40,18 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -52,6 +64,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -109,6 +122,8 @@ fun TodoListDetailScreen(
         else -> null
     }
 
+    var completedExpanded by remember { mutableStateOf(false) }
+
     @OptIn(ExperimentalMaterial3Api::class)
     Scaffold(
         topBar = {
@@ -132,6 +147,12 @@ fun TodoListDetailScreen(
         AnimatedContent(listWithItems != null) { hasData ->
             if (hasData) {
                 val (_, items) = listWithItems!!
+                val activeItems = items.filter { !it.isDone }
+                val completedItems = items.filter { it.isDone }
+                val total = items.size
+                val done = completedItems.size
+                val progress = if (total > 0) done.toFloat() / total else 0f
+
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -139,7 +160,20 @@ fun TodoListDetailScreen(
                     contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    items(items, key = { it.id }) { item ->
+                    // Progress header
+                    if (total > 0) {
+                        item(key = "progress_header") {
+                            ProgressHeader(
+                                done = done,
+                                total = total,
+                                progress = progress,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            )
+                        }
+                    }
+
+                    // Active items
+                    items(activeItems, key = { it.id }) { item ->
                         TodoItemRow(
                             item = item,
                             onToggle = { viewModel.toggleItem(item) },
@@ -147,6 +181,33 @@ fun TodoListDetailScreen(
                             onEdit = { editingItem = item },
                             memberNames = memberNames,
                         )
+                    }
+
+                    // Completed section
+                    if (completedItems.isNotEmpty()) {
+                        item(key = "completed_divider") {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                            )
+                        }
+                        item(key = "completed_header") {
+                            CompletedSectionHeader(
+                                count = completedItems.size,
+                                expanded = completedExpanded,
+                                onClick = { completedExpanded = !completedExpanded },
+                            )
+                        }
+                        if (completedExpanded) {
+                            items(completedItems, key = { it.id }) { item ->
+                                TodoItemRow(
+                                    item = item,
+                                    onToggle = { viewModel.toggleItem(item) },
+                                    onDelete = { viewModel.deleteItem(item) },
+                                    onEdit = { editingItem = item },
+                                    memberNames = memberNames,
+                                )
+                            }
+                        }
                     }
                 }
             } else {
@@ -199,6 +260,87 @@ fun TodoListDetailScreen(
             onCreateCategory = { name ->
                 categoryScope?.let { viewModel.createCategory(it, name) }
             },
+        )
+    }
+}
+
+@Composable
+private fun ProgressHeader(
+    done: Int,
+    total: Int,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "$done из $total задач выполнено",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = "${(progress * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompletedSectionHeader(
+    count: Int,
+    expanded: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Check,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Выполнено · $count",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Icon(
+            if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = if (expanded) "Свернуть" else "Развернуть",
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -474,6 +616,7 @@ private fun ItemDialog(
     var dueAt by remember { mutableStateOf(item?.dueAt?.take(10) ?: "") }
     var isFavorite by remember { mutableStateOf(item?.isFavorite ?: false) }
     var assignedTo by remember { mutableStateOf(item?.assignedTo) }
+    var priority by remember { mutableStateOf("medium") } // UI-only, backend not yet supported
     var quantity by remember {
         mutableStateOf(item?.shopping?.quantity?.let {
             if (it % 1 == 0.0) it.toLong().toString() else it.toString()
@@ -484,8 +627,17 @@ private fun ItemDialog(
     var selectedDays by remember { mutableStateOf(item?.choreSchedule?.daysOfWeek ?: emptyList()) }
     var startDate by remember { mutableStateOf(item?.choreSchedule?.startDate ?: "") }
     var endDate by remember { mutableStateOf(item?.choreSchedule?.endDate ?: "") }
+    // For home_chores: zone is stored as choreSchedule.category
+    val homeZones = listOf("Кухня", "Гостиная", "Спальня", "Ванная", "Другое")
+    var selectedZone by remember {
+        mutableStateOf(
+            if (listType == "home_chores") item?.choreSchedule?.category else null
+        )
+    }
     var selectedCategory by remember {
-        mutableStateOf(item?.shopping?.category ?: item?.choreSchedule?.category)
+        mutableStateOf(
+            if (listType == "shopping") item?.shopping?.category else null
+        )
     }
     var showNewCategoryField by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
@@ -565,10 +717,78 @@ private fun ItemDialog(
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        label = { Text("Название") },
+                        label = { Text(if (listType == "home_chores") "Что нужно сделать?" else "Название") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
                     )
+                }
+
+                // Home zones (home_chores only)
+                if (listType == "home_chores") {
+                    item {
+                        Text(
+                            "Зона дома",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    item {
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(homeZones) { zone ->
+                                FilterChip(
+                                    selected = selectedZone == zone,
+                                    onClick = {
+                                        selectedZone = if (selectedZone == zone) null else zone
+                                    },
+                                    label = { Text(zone) },
+                                )
+                            }
+                        }
+                    }
+                    // Recurrence presets
+                    item {
+                        Text(
+                            "Повторяемость",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    item {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            listOf("1" to "Каждый день", "7" to "Еженедельно").forEach { (days, label) ->
+                                FilterChip(
+                                    selected = intervalDays == days,
+                                    onClick = { intervalDays = if (intervalDays == days) "" else days },
+                                    label = { Text(label) },
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Priority selector (all types)
+                item {
+                    Text(
+                        "Приоритет",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                item {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf(
+                            Triple("low", "Низкий", MaterialTheme.colorScheme.outline),
+                            Triple("medium", "Средний", MaterialTheme.colorScheme.secondary),
+                            Triple("high", "Высокий", MaterialTheme.colorScheme.error),
+                        ).forEach { (value, label, _) ->
+                            FilterChip(
+                                selected = priority == value,
+                                onClick = { priority = value },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
                 }
 
                 // Note
@@ -576,16 +796,17 @@ private fun ItemDialog(
                     OutlinedTextField(
                         value = note,
                         onValueChange = { note = it },
-                        label = { Text("Заметка") },
+                        label = { Text("Заметка...") },
                         maxLines = 3,
                         modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
                     )
                 }
 
                 // Due date — universal for all types (DatePicker)
                 item {
                     DatePickerField(
-                        label = "Срок",
+                        label = "Дедлайн",
                         dateValue = dueAt,
                         onDateSelected = { dueAt = it },
                         onClear = { dueAt = "" },
@@ -644,6 +865,7 @@ private fun ItemDialog(
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
+                                    shape = MaterialTheme.shapes.medium,
                                 )
                                 OutlinedTextField(
                                     value = unit,
@@ -651,22 +873,13 @@ private fun ItemDialog(
                                     label = { Text("Ед. изм.") },
                                     singleLine = true,
                                     modifier = Modifier.weight(1f),
+                                    shape = MaterialTheme.shapes.medium,
                                 )
                             }
                         }
                     }
                     "home_chores" -> {
-                        item {
-                            OutlinedTextField(
-                                value = intervalDays,
-                                onValueChange = { intervalDays = it },
-                                label = { Text("Повтор каждые N дней") },
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                        // Days of week
+                        // Custom interval (days of week selector)
                         item {
                             Text(
                                 "Дни недели",
@@ -691,29 +904,11 @@ private fun ItemDialog(
                                 }
                             }
                         }
-                        // Start date
-                        item {
-                            DatePickerField(
-                                label = "Дата начала",
-                                dateValue = startDate,
-                                onDateSelected = { startDate = it },
-                                onClear = { startDate = "" },
-                            )
-                        }
-                        // End date
-                        item {
-                            DatePickerField(
-                                label = "Дата окончания",
-                                dateValue = endDate,
-                                onDateSelected = { endDate = it },
-                                onClear = { endDate = "" },
-                            )
-                        }
                     }
                 }
 
-                // Categories (shopping and home_chores)
-                if (categories.isNotEmpty() && listType != "general_todos") {
+                // Categories (shopping only — home_chores uses zones)
+                if (categories.isNotEmpty() && listType == "shopping") {
                     item {
                         Text(
                             "Категория",
@@ -779,7 +974,7 @@ private fun ItemDialog(
                         )
                     } else null
                     val choreSchedule = if (listType == "home_chores" &&
-                        (intervalDays.isNotBlank() || selectedCategory != null ||
+                        (intervalDays.isNotBlank() || selectedZone != null ||
                                 selectedDays.isNotEmpty() || startDate.isNotBlank())
                     ) {
                         ChoreSchedule(
@@ -787,7 +982,7 @@ private fun ItemDialog(
                             daysOfWeek = selectedDays.takeIf { it.isNotEmpty() },
                             startDate = startDate.takeIf { it.isNotBlank() },
                             endDate = endDate.takeIf { it.isNotBlank() },
-                            category = selectedCategory,
+                            category = selectedZone,
                         )
                     } else null
                     val dueAtRfc3339 = dueAt.takeIf { it.isNotBlank() }

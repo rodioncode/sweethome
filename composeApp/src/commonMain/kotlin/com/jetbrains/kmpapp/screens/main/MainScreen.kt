@@ -5,11 +5,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -33,7 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.sync.SyncRepository
 import com.jetbrains.kmpapp.screens.family.FamilyContent
-import com.jetbrains.kmpapp.screens.profile.ProfileContent
+import com.jetbrains.kmpapp.screens.home.HomeContent
+import com.jetbrains.kmpapp.screens.templates.TemplatesContent
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import com.jetbrains.kmpapp.screens.groups.GroupsContent
@@ -45,7 +46,7 @@ import com.jetbrains.kmpapp.screens.todo.TodoListsContent
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { MY_LISTS, HOME, GROUPS, PROFILE }
+enum class MainTab { DASHBOARD, HOME, LISTS, TEMPLATES, GROUPS }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +55,7 @@ fun MainScreen(
     navigateToGroupDetail: (groupId: String, groupName: String) -> Unit,
     navigateToLinkEmail: () -> Unit,
     navigateToJoinByCode: () -> Unit,
+    navigateToProfile: () -> Unit,
     pendingInviteToken: String? = null,
 ) {
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
@@ -79,14 +81,13 @@ fun MainScreen(
     val groupsError by groupsViewModel.error.collectAsStateWithLifecycle()
     val isGuest by groupsViewModel.isGuest.collectAsStateWithLifecycle()
 
-    var selectedTab by remember { mutableStateOf(MainTab.MY_LISTS) }
+    var selectedTab by remember { mutableStateOf(MainTab.DASHBOARD) }
     var showCreateListDialog by remember { mutableStateOf(false) }
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Reload personal lists when switching back to MY_LISTS tab
     LaunchedEffect(selectedTab) {
-        if (selectedTab == MainTab.MY_LISTS) todoListsViewModel.refresh()
+        if (selectedTab == MainTab.LISTS) todoListsViewModel.refresh()
     }
 
     LaunchedEffect(listsError) {
@@ -112,10 +113,8 @@ fun MainScreen(
         }
     }
 
-    // Handle pending invite token (from deep link on iOS or direct navigation)
     LaunchedEffect(pendingInviteToken) {
-        pendingInviteToken?.let { token ->
-            // Switch to groups tab and let InviteScreen handle it
+        pendingInviteToken?.let {
             selectedTab = MainTab.GROUPS
         }
     }
@@ -126,10 +125,11 @@ fun MainScreen(
                 title = {
                     Text(
                         when (selectedTab) {
-                            MainTab.MY_LISTS -> "Мои списки"
+                            MainTab.DASHBOARD -> "Главная"
                             MainTab.HOME -> "Мой дом"
+                            MainTab.LISTS -> "Мои списки"
+                            MainTab.TEMPLATES -> "Шаблоны"
                             MainTab.GROUPS -> "Группы"
-                            MainTab.PROFILE -> "Профиль"
                         }
                     )
                 },
@@ -138,10 +138,10 @@ fun MainScreen(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = selectedTab == MainTab.MY_LISTS,
-                    onClick = { selectedTab = MainTab.MY_LISTS },
-                    icon = { Icon(Icons.Default.List, contentDescription = null) },
-                    label = { Text("Списки") },
+                    selected = selectedTab == MainTab.DASHBOARD,
+                    onClick = { selectedTab = MainTab.DASHBOARD },
+                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    label = { Text("Главная") },
                 )
                 NavigationBarItem(
                     selected = selectedTab == MainTab.HOME,
@@ -150,22 +150,28 @@ fun MainScreen(
                     label = { Text("Мой дом") },
                 )
                 NavigationBarItem(
+                    selected = selectedTab == MainTab.LISTS,
+                    onClick = { selectedTab = MainTab.LISTS },
+                    icon = { Icon(Icons.Default.List, contentDescription = null) },
+                    label = { Text("Списки") },
+                )
+                NavigationBarItem(
+                    selected = selectedTab == MainTab.TEMPLATES,
+                    onClick = { selectedTab = MainTab.TEMPLATES },
+                    icon = { Icon(Icons.Default.Star, contentDescription = null) },
+                    label = { Text("Шаблоны") },
+                )
+                NavigationBarItem(
                     selected = selectedTab == MainTab.GROUPS,
                     onClick = { selectedTab = MainTab.GROUPS },
                     icon = { Icon(Icons.Default.Person, contentDescription = null) },
                     label = { Text("Группы") },
                 )
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.PROFILE,
-                    onClick = { selectedTab = MainTab.PROFILE },
-                    icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
-                    label = { Text("Профиль") },
-                )
             }
         },
         floatingActionButton = {
             when {
-                selectedTab == MainTab.MY_LISTS ->
+                selectedTab == MainTab.LISTS ->
                     FloatingActionButton(onClick = { showCreateListDialog = true }) {
                         Icon(Icons.Default.Add, "Добавить список")
                     }
@@ -179,7 +185,20 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         when (selectedTab) {
-            MainTab.MY_LISTS -> TodoListsContent(
+            MainTab.DASHBOARD -> HomeContent(
+                contentPadding = paddingValues,
+                navigateToListDetail = navigateToListDetail,
+                onCreateList = { showCreateListDialog = true },
+                onNavigateToHome = { selectedTab = MainTab.HOME },
+                onNavigateToGroups = { selectedTab = MainTab.GROUPS },
+                navigateToProfile = navigateToProfile,
+            )
+            MainTab.HOME -> FamilyContent(
+                contentPadding = paddingValues,
+                onSpaceClick = navigateToGroupDetail,
+                onListClick = navigateToListDetail,
+            )
+            MainTab.LISTS -> TodoListsContent(
                 lists = lists,
                 groups = allGroups,
                 contentPadding = paddingValues,
@@ -192,10 +211,8 @@ fun MainScreen(
                 isGuest = isGuest,
                 navigateToLinkEmail = navigateToLinkEmail,
             )
-            MainTab.HOME -> FamilyContent(
+            MainTab.TEMPLATES -> TemplatesContent(
                 contentPadding = paddingValues,
-                onSpaceClick = navigateToGroupDetail,
-                onListClick = navigateToListDetail,
             )
             MainTab.GROUPS -> GroupsContent(
                 groups = groupSpaces,
@@ -204,10 +221,6 @@ fun MainScreen(
                 onGroupClick = { group -> navigateToGroupDetail(group.id, group.name) },
                 navigateToLinkEmail = navigateToLinkEmail,
                 navigateToJoinByCode = navigateToJoinByCode,
-            )
-            MainTab.PROFILE -> ProfileContent(
-                navigateToLinkEmail = navigateToLinkEmail,
-                modifier = Modifier.padding(paddingValues),
             )
         }
     }
