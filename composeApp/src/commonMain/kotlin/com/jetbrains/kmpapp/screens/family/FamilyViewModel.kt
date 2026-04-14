@@ -19,11 +19,15 @@ class FamilyViewModel(
     private val listsRepository: ListsRepository,
 ) : ViewModel() {
 
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+
     val familySpace: StateFlow<Group?> = groupsRepository.groups
         .map { groups -> groups.firstOrNull { it.type == "family" } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val familyLists: StateFlow<List<TodoList>> = listsRepository.lists
+    private val _familyLists = MutableStateFlow<List<TodoList>>(emptyList())
+    val familyLists: StateFlow<List<TodoList>> = _familyLists.asStateFlow()
 
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
@@ -34,13 +38,23 @@ class FamilyViewModel(
     init {
         viewModelScope.launch {
             groupsRepository.loadGroups()
+            _isLoading.value = false
+            // After groups are loaded, check if we need to load family lists
+            familySpace.value?.let { loadFamilyListsForGroup(it.id) }
         }
     }
 
     fun loadFamilyLists() {
         val space = familySpace.value ?: return
+        loadFamilyListsForGroup(space.id)
+    }
+
+    private fun loadFamilyListsForGroup(groupId: String) {
         viewModelScope.launch {
-            listsRepository.loadLists(scope = "group", groupId = space.id)
+            listsRepository.loadLists(scope = "group", groupId = groupId)
+            _familyLists.value = listsRepository.lists.value.filter {
+                it.scope == "group" && it.ownerGroupId == groupId
+            }
         }
     }
 
@@ -48,7 +62,9 @@ class FamilyViewModel(
         _isCreating.value = true
         viewModelScope.launch {
             groupsRepository.createGroup(name, type = "family")
-                .onSuccess { loadFamilyLists() }
+                .onSuccess { createdGroup ->
+                    loadFamilyListsForGroup(createdGroup.id)
+                }
                 .onFailure { _error.value = it.message }
             _isCreating.value = false
         }

@@ -2,11 +2,13 @@ package com.jetbrains.kmpapp.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.systemBars
@@ -16,13 +18,17 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,10 +38,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.ui.PrimaryGreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -71,12 +80,23 @@ private fun RegisterContent(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
+    var termsAccepted by remember { mutableStateOf(false) }
+
+    val passwordMismatch = confirmPassword.isNotEmpty() && password != confirmPassword
+    val canSubmit = email.isNotBlank()
+        && password.isNotBlank()
+        && confirmPassword.isNotBlank()
+        && displayName.isNotBlank()
+        && !passwordMismatch
+        && termsAccepted
+        && uiState !is AuthUiState.Loading
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Регистрация") },
+                title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
@@ -91,62 +111,177 @@ private fun RegisterContent(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
-                .padding(24.dp),
+                .padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
+            Spacer(Modifier.height(8.dp))
+
+            // Title block
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    text = "Создать аккаунт",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Заполните данные ниже",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+
+            Spacer(Modifier.height(28.dp))
+
             OutlinedTextField(
                 value = displayName,
                 onValueChange = { displayName = it },
-                label = { Text("Имя") },
+                label = { Text("Ваше имя") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
+                placeholder = { Text("your@email.com") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                shape = MaterialTheme.shapes.medium,
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Пароль") },
+                placeholder = { Text("Минимум 8 символов") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                shape = MaterialTheme.shapes.medium,
             )
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
 
-            when (uiState) {
-                is AuthUiState.Error -> {
+            OutlinedTextField(
+                value = confirmPassword,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Повторите пароль") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                isError = passwordMismatch,
+                supportingText = if (passwordMismatch) {
+                    { Text("Пароли не совпадают") }
+                } else null,
+                shape = MaterialTheme.shapes.medium,
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Terms checkbox
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Checkbox(
+                    checked = termsAccepted,
+                    onCheckedChange = { termsAccepted = it },
+                )
+                Text(
+                    text = "Согласен с ",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                TextButton(
+                    onClick = { /* open terms */ },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                ) {
                     Text(
-                        (uiState as AuthUiState.Error).message,
-                        color = androidx.compose.material3.MaterialTheme.colorScheme.error
+                        text = "условиями использования",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = PrimaryGreen,
                     )
-                    Spacer(Modifier.height(8.dp))
                 }
-                else -> {}
             }
+
+            if (uiState is AuthUiState.Error) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Spacer(Modifier.height(20.dp))
 
             Button(
                 onClick = { onRegister(email, password, displayName) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState !is AuthUiState.Loading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                enabled = canSubmit,
+                shape = MaterialTheme.shapes.medium,
             ) {
                 if (uiState is AuthUiState.Loading) {
-                    CircularProgressIndicator(Modifier.height(24.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp,
+                    )
                 } else {
-                    Text("Зарегистрироваться")
+                    Text("Зарегистрироваться", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
+
+            DividerWithText("или")
+
+            Spacer(Modifier.height(16.dp))
+
+            OutlinedButton(
+                onClick = { /* Coming soon */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text("G", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
+                Text("Зарегистрироваться через Google")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = { /* Coming soon */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text("◆", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
+                Text("Зарегистрироваться через Apple")
+            }
+
+            Spacer(Modifier.height(20.dp))
+
+            TextButton(onClick = onNavigateBack) {
+                Text("Уже есть аккаунт? ")
+                Text("Войти", fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }

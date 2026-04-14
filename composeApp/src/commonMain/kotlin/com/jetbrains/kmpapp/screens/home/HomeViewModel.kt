@@ -1,22 +1,19 @@
-package com.jetbrains.kmpapp.screens.profile
+package com.jetbrains.kmpapp.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
-import com.jetbrains.kmpapp.data.groups.Group
-import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.lists.ListsRepository
+import com.jetbrains.kmpapp.data.lists.TodoList
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 
-class ProfileViewModel(
+class HomeViewModel(
     private val authRepository: AuthRepository,
     private val listsRepository: ListsRepository,
-    private val groupsRepository: GroupsRepository,
 ) : ViewModel() {
 
     val isGuest: StateFlow<Boolean> = authRepository.authState
@@ -27,18 +24,7 @@ class ProfileViewModel(
         .map { (it as? AuthState.Authenticated)?.userId }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val listCount: StateFlow<Int> = listsRepository.lists
-        .map { it.size }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    val groupCount: StateFlow<Int> = groupsRepository.groups
-        .map { it.size }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    val groups: StateFlow<List<Group>> = groupsRepository.groups
+    val recentLists: StateFlow<List<TodoList>> = listsRepository.lists
+        .map { it.take(3) }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
-
-    fun logout() {
-        viewModelScope.launch { authRepository.logout() }
-    }
 }
