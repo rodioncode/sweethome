@@ -56,6 +56,8 @@ fun MainScreen(
     navigateToLinkEmail: () -> Unit,
     navigateToJoinByCode: () -> Unit,
     navigateToProfile: () -> Unit,
+    navigateToGamification: () -> Unit = {},
+    navigateToShop: () -> Unit = {},
     pendingInviteToken: String? = null,
 ) {
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
@@ -170,16 +172,10 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            when {
-                selectedTab == MainTab.LISTS ->
-                    FloatingActionButton(onClick = { showCreateListDialog = true }) {
-                        Icon(Icons.Default.Add, "Добавить список")
-                    }
-                selectedTab == MainTab.GROUPS && !isGuest ->
-                    FloatingActionButton(onClick = { showCreateGroupDialog = true }) {
-                        Icon(Icons.Default.Add, "Создать группу")
-                    }
-                else -> Unit
+            if (selectedTab == MainTab.LISTS) {
+                FloatingActionButton(onClick = { showCreateListDialog = true }) {
+                    Icon(Icons.Default.Add, "Добавить список")
+                }
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -197,6 +193,8 @@ fun MainScreen(
                 contentPadding = paddingValues,
                 onSpaceClick = navigateToGroupDetail,
                 onListClick = navigateToListDetail,
+                navigateToGamification = navigateToGamification,
+                navigateToShop = navigateToShop,
             )
             MainTab.LISTS -> TodoListsContent(
                 lists = lists,
@@ -204,8 +202,8 @@ fun MainScreen(
                 contentPadding = paddingValues,
                 showCreateDialog = showCreateListDialog,
                 onShowCreateDialog = { showCreateListDialog = it },
-                onCreateList = { title, type, icon, scope, groupId ->
-                    todoListsViewModel.createList(title, type, icon, scope, groupId)
+                onCreateList = { title, type, icon, color, scope, groupId ->
+                    todoListsViewModel.createList(title, type, icon, color, scope, groupId)
                 },
                 onListClick = navigateToListDetail,
                 isGuest = isGuest,
@@ -221,6 +219,7 @@ fun MainScreen(
                 onGroupClick = { group -> navigateToGroupDetail(group.id, group.name) },
                 navigateToLinkEmail = navigateToLinkEmail,
                 navigateToJoinByCode = navigateToJoinByCode,
+                onCreateGroup = if (!isGuest) ({ showCreateGroupDialog = true }) else null,
             )
         }
     }
@@ -229,8 +228,8 @@ fun MainScreen(
         CreateListDialog(
             groups = allGroups,
             onDismiss = { showCreateListDialog = false },
-            onConfirm = { title, type, icon, scope, groupId ->
-                todoListsViewModel.createList(title, type, icon, scope, groupId)
+            onConfirm = { title, type, icon, color, scope, groupId ->
+                todoListsViewModel.createList(title, type, icon, color, scope, groupId)
                 showCreateListDialog = false
             },
         )

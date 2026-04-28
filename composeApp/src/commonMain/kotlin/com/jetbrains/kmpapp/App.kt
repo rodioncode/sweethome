@@ -25,10 +25,17 @@ import androidx.navigation.toRoute
 import com.jetbrains.kmpapp.auth.AuthScreen
 import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.auth.AuthRepository
+import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.auth.LinkEmailScreen
 import com.jetbrains.kmpapp.auth.RegisterScreen
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
+import com.jetbrains.kmpapp.screens.family.FamilyMembersScreen
+import com.jetbrains.kmpapp.screens.family.FamilyShopScreen
+import com.jetbrains.kmpapp.screens.family.GamificationScreen
 import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
+import com.jetbrains.kmpapp.screens.chat.ChatScreen
+import com.jetbrains.kmpapp.screens.notifications.NotificationsScreen
+import com.jetbrains.kmpapp.screens.templates.TemplateDetailScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
 import com.jetbrains.kmpapp.screens.profile.ProfileContent
 import com.jetbrains.kmpapp.screens.splash.SplashScreen
@@ -38,6 +45,7 @@ import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.ui.SweetHomeTheme
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
+import org.koin.compose.viewmodel.koinViewModel
 
 @Serializable
 object SplashDestination
@@ -72,6 +80,24 @@ object SettingsDestination
 @Serializable
 data class JoinByCodeDestination(val prefillCode: String = "")
 
+@Serializable
+object GamificationDestination
+
+@Serializable
+object FamilyShopDestination
+
+@Serializable
+object FamilyMembersDestination
+
+@Serializable
+data class TemplateDetailDestination(val title: String = "Список покупок", val icon: String = "🛒")
+
+@Serializable
+object NotificationsDestination
+
+@Serializable
+data class ChatDestination(val title: String = "Наша семья", val memberCount: Int = 4)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
@@ -79,6 +105,7 @@ fun App() {
         Surface {
             val navController: NavHostController = rememberNavController()
             val authRepository: AuthRepository = koinInject()
+            val authViewModel = koinViewModel<AuthViewModel>()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
 
             // Case 1: deep link arrives when user is already authenticated
@@ -110,15 +137,25 @@ fun App() {
             ) {
                 composable<SplashDestination> {
                     SplashScreen(
-                        onFinished = {
-                            val destination = when (authState) {
-                                is AuthState.Authenticated -> ListDestination
-                                else -> AuthDestination
-                            }
-                            navController.navigate(destination) {
+                        isAuthenticated = authState is AuthState.Authenticated,
+                        onNavigateToMain = {
+                            navController.navigate(ListDestination) {
                                 popUpTo(SplashDestination) { inclusive = true }
                             }
-                        }
+                        },
+                        onNavigateToLogin = {
+                            navController.navigate(AuthDestination) {
+                                popUpTo(SplashDestination) { inclusive = true }
+                            }
+                        },
+                        onNavigateToRegister = {
+                            navController.navigate(RegisterDestination) {
+                                popUpTo(SplashDestination) { inclusive = true }
+                            }
+                        },
+                        onGuestLogin = {
+                            authViewModel.loginAsGuest()
+                        },
                     )
                 }
                 composable<AuthDestination> {
@@ -166,6 +203,8 @@ fun App() {
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
                         navigateToJoinByCode = { navController.navigate(JoinByCodeDestination()) },
                         navigateToProfile = { navController.navigate(ProfileDestination) },
+                        navigateToGamification = { navController.navigate(GamificationDestination) },
+                        navigateToShop = { navController.navigate(FamilyShopDestination) },
                     )
                 }
                 composable<ProfileDestination> {
@@ -244,6 +283,46 @@ fun App() {
                             }
                         },
                         onError = { navController.popBackStack() },
+                    )
+                }
+                composable<GamificationDestination> {
+                    GamificationScreen(
+                        navigateBack = { navController.popBackStack() },
+                        navigateToShop = { navController.navigate(FamilyShopDestination) },
+                    )
+                }
+                composable<FamilyShopDestination> {
+                    FamilyShopScreen(
+                        navigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable<FamilyMembersDestination> {
+                    FamilyMembersScreen(
+                        navigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable<TemplateDetailDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<TemplateDetailDestination>()
+                    TemplateDetailScreen(
+                        templateTitle = dest.title,
+                        templateIcon = dest.icon,
+                        navigateBack = { navController.popBackStack() },
+                        navigateToLists = {
+                            navController.navigate(ListDestination) {
+                                popUpTo(ListDestination) { inclusive = false }
+                            }
+                        },
+                    )
+                }
+                composable<NotificationsDestination> {
+                    NotificationsScreen()
+                }
+                composable<ChatDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<ChatDestination>()
+                    ChatScreen(
+                        chatTitle = dest.title,
+                        memberCount = dest.memberCount,
+                        navigateBack = { navController.popBackStack() },
                     )
                 }
             }
