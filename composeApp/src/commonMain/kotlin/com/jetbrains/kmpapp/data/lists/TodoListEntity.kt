@@ -9,6 +9,7 @@ data class TodoListEntity(
     val type: String,
     val title: String,
     val icon: String?,
+    val color: String?,
     val scope: String,
     val ownerUserId: String?,
     val ownerGroupId: String?,

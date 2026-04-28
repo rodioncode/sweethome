@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -76,6 +79,10 @@ import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.ui.PrimaryGreen
+import com.jetbrains.kmpapp.ui.listColorForType
+import com.jetbrains.kmpapp.ui.listEmojiForType
+import com.jetbrains.kmpapp.ui.toComposeColor
+import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -124,8 +131,8 @@ fun TodoListsScreen(
             contentPadding = paddingValues,
             showCreateDialog = showCreateDialog,
             onShowCreateDialog = { showCreateDialog = it },
-            onCreateList = { title, type, icon, scope, groupId ->
-                viewModel.createList(title, type, icon, scope, groupId)
+            onCreateList = { title, type, icon, color, scope, groupId ->
+                viewModel.createList(title, type, icon, color, scope, groupId)
             },
             onListClick = navigateToListDetail,
         )
@@ -146,7 +153,7 @@ internal fun TodoListsContent(
     contentPadding: PaddingValues,
     showCreateDialog: Boolean,
     onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (title: String, type: String, icon: String?, scope: String, groupId: String?) -> Unit,
+    onCreateList: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
     onListClick: (String) -> Unit,
     isGuest: Boolean = false,
     navigateToLinkEmail: (() -> Unit)? = null,
@@ -201,23 +208,34 @@ internal fun TodoListsContent(
 
         AnimatedContent(filteredLists.isNotEmpty()) { hasLists ->
             if (hasLists) {
-                LazyColumn(
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp, end = 16.dp,
+                        top = 8.dp,
+                        bottom = WindowInsets.safeDrawing.asPaddingValues().calculateBottomPadding() + 80.dp,
+                    ),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     if (isGuest && navigateToLinkEmail != null) {
-                        item(key = "guest_banner") {
+                        gridItems(listOf("guest_banner")) {
                             GuestLinkEmailBanner(
                                 onLinkEmail = navigateToLinkEmail,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
                     }
-                    items(filteredLists, key = { it.id }) { list ->
-                        TodoListCard(
-                            list = list,
+                    gridItems(filteredLists, key = { it.id }) { list ->
+                        val listColor = list.color?.toComposeColor() ?: listColorForType(list.type)
+                        SweetHomeListCard(
+                            title = list.title,
                             onClick = { onListClick(list.id) },
+                            icon = list.icon ?: listEmojiForType(list.type),
+                            listColor = listColor,
+                            doneCount = list.doneCount,
+                            totalCount = list.totalCount,
                         )
                     }
                 }
@@ -236,359 +254,396 @@ internal fun TodoListsContent(
         CreateListDialog(
             groups = groups,
             onDismiss = { onShowCreateDialog(false) },
-            onConfirm = { title, type, icon, scope, groupId ->
-                onCreateList(title, type, icon, scope, groupId)
+            onConfirm = { title, type, icon, color, scope, groupId ->
+                onCreateList(title, type, icon, color, scope, groupId)
                 onShowCreateDialog(false)
             },
         )
     }
 }
 
-private val listTypeOptions = listOf(
-    Triple("general_todos", "Общий", Icons.Default.List),
-    Triple("shopping", "Покупки", Icons.Default.ShoppingCart),
-    Triple("home_chores", "Дела по дому", Icons.Default.Home),
-)
-
 private val scopeOptions = listOf(
     "personal" to "Личный",
     "group" to "Групповой",
 )
 
-// Grid of list types shown in the bottom sheet
+// List types with label, emoji and description
+private data class ListTypeOption(val type: String, val emoji: String, val label: String, val desc: String)
+
 private val listTypeGrid = listOf(
-    Triple("general_todos", "Задачи", "📋"),
-    Triple("shopping", "Покупки", "🛒"),
-    Triple("home_chores", "Дом", "🏠"),
-    Triple("study", "Учёба", "📚"),
-    Triple("travel", "Путешествие", "✈️"),
-    Triple("custom", "Свой тип", "⭐"),
+    ListTypeOption("shopping",      "🛒", "Список покупок",  "Продукты, товары, покупки"),
+    ListTypeOption("home_chores",   "🏠", "Домашние дела",   "Уборка, ремонт, расписание"),
+    ListTypeOption("general_todos", "✅", "Задачи",           "Дела с дедлайнами"),
+    ListTypeOption("study",         "📚", "Учёба",            "Курсы, книги, обучение"),
+    ListTypeOption("travel",        "✈️", "Поездка",          "Вещи, документы, маршрут"),
+    ListTypeOption("wishlist",      "🎁", "Вишлист",          "Список желаний для других"),
+    ListTypeOption("media",         "🎬", "Медиа-трекер",    "Книги, фильмы, игры"),
+    ListTypeOption("custom",        "📋", "Произвольный",     "Своя структура"),
 )
 
-// Colors for the color picker
-private val listColors = listOf(
-    Color(0xFF5B7C5A),
-    Color(0xFFE8A87C),
-    Color(0xFFD4574E),
-    Color(0xFF4A7FA5),
-    Color(0xFF9B59B6),
-    Color(0xFF95A5A6),
+// Colors for the color picker — 7 design presets (color → hex)
+private val listColorPresets = listOf(
+    Color(0xFFFF7043) to "#FF7043", // Coral
+    Color(0xFF42A5F5) to "#42A5F5", // Sky
+    Color(0xFF66BB6A) to "#66BB6A", // Mint
+    Color(0xFFAB47BC) to "#AB47BC", // Lavender
+    Color(0xFFFFA726) to "#FFA726", // Amber
+    Color(0xFFEC407A) to "#EC407A", // Rose
+    Color(0xFF78909C) to "#78909C", // Slate
 )
 
 // Icons for the icon picker
-private val listIconOptions = listOf("🛒", "🏠", "📋", "✅", "🎯", "🌿", "💡", "⭐")
+private val listIconOptions = listOf("📋", "🛍", "📦", "🎯", "💡", "🌿", "🏋️", "🍳", "💊", "🐾", "🎵", "💼")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CreateListBottomSheet(
     groups: List<Group> = emptyList(),
     onDismiss: () -> Unit,
-    onConfirm: (title: String, type: String, icon: String?, scope: String, groupId: String?) -> Unit,
+    onConfirm: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
 ) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    var step by remember { mutableStateOf(1) } // 1 = type selection, 2 = form
-    var selectedType by remember { mutableStateOf("general_todos") }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var step by remember { mutableStateOf(1) }
+    var selectedTypeOption by remember { mutableStateOf(listTypeGrid[2]) } // default: general_todos
     var title by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf(listColors[0]) }
+    var selectedColorIndex by remember { mutableStateOf(0) }
+    val selectedColor = listColorPresets[selectedColorIndex].first
+    val selectedColorHex = listColorPresets[selectedColorIndex].second
     var selectedIcon by remember { mutableStateOf<String?>(null) }
     var description by remember { mutableStateOf("") }
     var selectedScope by remember { mutableStateOf("personal") }
     var selectedGroupId by remember { mutableStateOf<String?>(null) }
-    var scopeExpanded by remember { mutableStateOf(false) }
     var groupExpanded by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
+        containerColor = com.jetbrains.kmpapp.ui.SurfaceWhite,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
-        if (step == 1) {
-            // Step 1: Type selection grid
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 32.dp),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "Тип списка",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    TextButton(onClick = onDismiss) {
-                        Text("✕")
-                    }
+        // Header row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (step == 2) {
+                TextButton(onClick = { step = 1 }) {
+                    Text("‹ Назад", color = PrimaryGreen, fontWeight = FontWeight.SemiBold)
                 }
-                Spacer(Modifier.height(16.dp))
-
-                // 2-column grid of type options
-                val rows = listTypeGrid.chunked(2)
-                rows.forEach { rowItems ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        rowItems.forEach { (type, label, emoji) ->
-                            val isSelected = selectedType == type
-                            Card(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(80.dp)
-                                    .clickable { selectedType = type },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isSelected)
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.surfaceVariant,
-                                ),
-                                shape = MaterialTheme.shapes.medium,
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center,
-                                ) {
-                                    Text(emoji, fontSize = 26.sp)
-                                    Spacer(Modifier.height(4.dp))
-                                    Text(
-                                        label,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                        color = if (isSelected)
-                                            MaterialTheme.colorScheme.onPrimaryContainer
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                        // Fill remaining space if odd item
-                        if (rowItems.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
-                    Spacer(Modifier.height(12.dp))
-                }
-
-                Spacer(Modifier.height(4.dp))
-                Button(
-                    onClick = { step = 2 },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text("Далее", fontWeight = FontWeight.SemiBold)
-                }
+            } else {
+                Spacer(Modifier.width(72.dp))
             }
-        } else {
-            // Step 2: Full create form
-            val typeEmoji = listTypeGrid.find { it.first == selectedType }?.third ?: "📋"
-            val typeName = listTypeGrid.find { it.first == selectedType }?.second ?: "Список"
+            Text(
+                "Новый список",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = com.jetbrains.kmpapp.ui.TextPrimary,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "$step/2",
+                    fontSize = 12.sp,
+                    color = com.jetbrains.kmpapp.ui.TextSecondary,
+                )
+                Spacer(Modifier.width(8.dp))
+                TextButton(onClick = onDismiss) { Text("✕") }
+            }
+        }
 
+        // Progress bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .background(com.jetbrains.kmpapp.ui.DividerColor),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction = step * 0.5f)
+                    .fillMaxSize()
+                    .background(PrimaryGreen),
+            )
+        }
+
+        if (step == 1) {
+            // Step 1: Vertical list of type cards
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 32.dp),
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    TextButton(onClick = { step = 1 }) { Text("← Назад") }
-                    Text(
-                        "Новый список",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    TextButton(onClick = onDismiss) { Text("✕") }
-                }
-
-                // Type tag
-                Surface(
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primaryContainer,
-                    modifier = Modifier.padding(vertical = 8.dp),
-                ) {
-                    Text(
-                        "$typeEmoji $typeName",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("Название") },
-                    placeholder = { Text("Мой список") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                // Color picker
                 Text(
-                    "Цвет",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "Выберите тип",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = com.jetbrains.kmpapp.ui.TextPrimary,
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listColors.forEach { color ->
-                        val isSelected = selectedColor == color
-                        Box(
-                            modifier = Modifier
-                                .size(if (isSelected) 36.dp else 32.dp)
-                                .background(color, CircleShape)
-                                .then(
-                                    if (isSelected) Modifier.border(
-                                        3.dp, MaterialTheme.colorScheme.onBackground, CircleShape
-                                    ) else Modifier
-                                )
-                                .clickable { selectedColor = color },
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                // Icon picker
                 Text(
-                    "Иконка",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "Что будем отслеживать?",
+                    fontSize = 14.sp,
+                    color = com.jetbrains.kmpapp.ui.TextSecondary,
+                    modifier = Modifier.padding(bottom = 10.dp),
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listIconOptions.forEach { emoji ->
-                        val isSelected = selectedIcon == emoji
-                        Surface(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clickable { selectedIcon = if (isSelected) null else emoji },
-                            shape = MaterialTheme.shapes.small,
-                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(emoji, fontSize = 18.sp)
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
-
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("Описание") },
-                    placeholder = { Text("Добавьте описание (необязательно)") },
-                    maxLines = 3,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium,
-                )
-
-                Spacer(Modifier.height(16.dp))
-
-                // Scope selector
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf("personal" to "Личное", "group" to "Групповое").forEach { (scope, label) ->
-                        FilterChip(
-                            selected = selectedScope == scope,
-                            onClick = {
-                                selectedScope = scope
-                                if (scope == "personal") selectedGroupId = null
-                            },
-                            label = { Text(label) },
-                        )
-                    }
-                }
-
-                // Group selection
-                if (selectedScope == "group" && groups.isNotEmpty()) {
-                    Spacer(Modifier.height(8.dp))
-                    ExposedDropdownMenuBox(
-                        expanded = groupExpanded,
-                        onExpandedChange = { groupExpanded = it },
+                listTypeGrid.forEach { option ->
+                    Surface(
+                        onClick = {
+                            selectedTypeOption = option
+                            selectedIcon = option.emoji
+                            step = 2
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                        color = com.jetbrains.kmpapp.ui.SurfaceWhite,
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.5.dp,
+                            if (selectedTypeOption.type == option.type) PrimaryGreen
+                            else com.jetbrains.kmpapp.ui.DividerColor
+                        ),
+                        shadowElevation = 0.dp,
                     ) {
-                        OutlinedTextField(
-                            value = groups.find { it.id == selectedGroupId }?.name ?: "Выберите группу",
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text("Группа") },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                            shape = MaterialTheme.shapes.medium,
-                        )
-                        ExposedDropdownMenu(
-                            expanded = groupExpanded,
-                            onDismissRequest = { groupExpanded = false },
+                                .padding(14.dp, 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
                         ) {
-                            groups.forEach { group ->
-                                DropdownMenuItem(
-                                    text = { Text(group.name) },
-                                    onClick = {
-                                        selectedGroupId = group.id
-                                        groupExpanded = false
-                                    },
-                                )
+                            Box(
+                                modifier = Modifier
+                                    .size(44.dp)
+                                    .background(com.jetbrains.kmpapp.ui.SurfaceVariantCream, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(option.emoji, fontSize = 22.sp)
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(option.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextPrimary)
+                                Text(option.desc, fontSize = 12.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                            }
+                            Text("›", fontSize = 18.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                        }
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        } else {
+            // Step 2: Configure
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                Column {
+                    Text("Настройте список", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextPrimary)
+                    Text(
+                        "${selectedTypeOption.label} · ${selectedTypeOption.desc}",
+                        fontSize = 14.sp,
+                        color = com.jetbrains.kmpapp.ui.TextSecondary,
+                    )
+                }
+
+                // Title field
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("НАЗВАНИЕ *", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = { title = it },
+                        placeholder = { Text("Например: Продукты на неделю", color = com.jetbrains.kmpapp.ui.TextSecondary) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    )
+                }
+
+                // Description field
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("ОПИСАНИЕ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        placeholder = { Text("Для чего этот список...", color = com.jetbrains.kmpapp.ui.TextSecondary) },
+                        maxLines = 2,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    )
+                }
+
+                // Scope selector
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("ПРОСТРАНСТВО", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("personal" to "Личное", "group" to "Групповое").forEach { (scope, label) ->
+                            FilterChip(
+                                selected = selectedScope == scope,
+                                onClick = {
+                                    selectedScope = scope
+                                    if (scope == "personal") selectedGroupId = null
+                                },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                    if (selectedScope == "group" && groups.isNotEmpty()) {
+                        ExposedDropdownMenuBox(
+                            expanded = groupExpanded,
+                            onExpandedChange = { groupExpanded = it },
+                        ) {
+                            OutlinedTextField(
+                                value = groups.find { it.id == selectedGroupId }?.name ?: "Выберите группу",
+                                onValueChange = {},
+                                readOnly = true,
+                                label = { Text("Группа") },
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                                shape = MaterialTheme.shapes.medium,
+                            )
+                            ExposedDropdownMenu(expanded = groupExpanded, onDismissRequest = { groupExpanded = false }) {
+                                groups.forEach { group ->
+                                    DropdownMenuItem(
+                                        text = { Text(group.name) },
+                                        onClick = { selectedGroupId = group.id; groupExpanded = false },
+                                    )
+                                }
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.height(24.dp))
-
-                Button(
-                    onClick = {
-                        val finalType = when (selectedType) {
-                            "study", "travel", "custom" -> "general_todos"
-                            else -> selectedType
+                // Icon picker
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("ИКОНКА", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    val iconRows = listIconOptions.chunked(6)
+                    iconRows.forEach { rowIcons ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            rowIcons.forEach { emoji ->
+                                val isSelected = selectedIcon == emoji
+                                Surface(
+                                    onClick = { selectedIcon = if (isSelected) null else emoji },
+                                    modifier = Modifier.size(40.dp),
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
+                                    color = if (isSelected) PrimaryGreen.copy(alpha = 0.15f)
+                                    else com.jetbrains.kmpapp.ui.SurfaceVariantCream,
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryGreen) else null,
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(emoji, fontSize = 18.sp)
+                                    }
+                                }
+                            }
                         }
-                        onConfirm(
-                            title.ifBlank { "Мой список" },
-                            finalType,
-                            selectedIcon,
-                            selectedScope,
-                            selectedGroupId,
-                        )
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    enabled = selectedScope == "personal" || selectedGroupId != null,
-                    shape = MaterialTheme.shapes.medium,
-                ) {
-                    Text("Создать список", fontWeight = FontWeight.SemiBold)
+                    }
                 }
+
+                // Color picker
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("ЦВЕТ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        listColorPresets.forEachIndexed { index, (color, _) ->
+                            val isSelected = selectedColorIndex == index
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(color, CircleShape)
+                                    .then(
+                                        if (isSelected) Modifier.border(3.dp, com.jetbrains.kmpapp.ui.TextPrimary, CircleShape)
+                                        else Modifier
+                                    )
+                                    .clickable { selectedColorIndex = index },
+                            )
+                        }
+                    }
+                }
+
+                // Preview card
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                    color = com.jetbrains.kmpapp.ui.SurfaceWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.jetbrains.kmpapp.ui.DividerColor),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+                    ) {
+                        Box(modifier = Modifier.width(4.dp).fillMaxSize().background(selectedColor))
+                        Column(modifier = Modifier.weight(1f).padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(selectedIcon ?: selectedTypeOption.emoji, fontSize = 18.sp)
+                                Text(
+                                    title.ifBlank { "Название списка" },
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = com.jetbrains.kmpapp.ui.TextPrimary,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(4.dp)
+                                    .background(com.jetbrains.kmpapp.ui.DividerColor, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
+                            ) {
+                                Box(modifier = Modifier.fillMaxWidth(0f).fillMaxSize().background(selectedColor, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text("0 элементов", fontSize = 11.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                        }
+                    }
+                }
+
+                // Create button
+                Surface(
+                    onClick = {
+                        if (selectedScope == "personal" || selectedGroupId != null) {
+                            val finalType = when (selectedTypeOption.type) {
+                                "study", "travel", "custom", "wishlist", "media" -> "general_todos"
+                                else -> selectedTypeOption.type
+                            }
+                            onConfirm(
+                                title.ifBlank { "Мой список" },
+                                finalType,
+                                selectedIcon,
+                                selectedColorHex,
+                                selectedScope,
+                                selectedGroupId,
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(54.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+                    color = if (title.isNotBlank()) selectedColor else com.jetbrains.kmpapp.ui.DividerColor,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            "Создать список",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = com.jetbrains.kmpapp.ui.OnPrimaryWhite,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
             }
         }
     }
 }
 
-// Keep the old dialog for backwards compatibility within the screen
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CreateListDialog(
     groups: List<Group> = emptyList(),
     onDismiss: () -> Unit,
-    onConfirm: (title: String, type: String, icon: String?, scope: String, groupId: String?) -> Unit,
+    onConfirm: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
 ) {
     CreateListBottomSheet(groups = groups, onDismiss = onDismiss, onConfirm = onConfirm)
 }

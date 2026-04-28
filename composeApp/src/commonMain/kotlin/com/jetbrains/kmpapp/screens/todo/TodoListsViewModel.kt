@@ -34,6 +34,7 @@ class TodoListsViewModel(
         title: String,
         type: String = "general_todos",
         icon: String? = null,
+        color: String? = null,
         scope: String = "personal",
         groupId: String? = null,
     ) {
@@ -42,6 +43,7 @@ class TodoListsViewModel(
                 type = type,
                 title = title,
                 icon = icon,
+                color = color,
                 scope = scope,
                 groupId = groupId,
             )

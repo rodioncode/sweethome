@@ -61,6 +61,8 @@ internal fun FamilyContent(
     contentPadding: PaddingValues,
     onSpaceClick: (groupId: String, groupName: String) -> Unit,
     onListClick: (String) -> Unit,
+    navigateToGamification: () -> Unit = {},
+    navigateToShop: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<FamilyViewModel>()
@@ -110,6 +112,8 @@ internal fun FamilyContent(
                 onSettingsClick = { onSpaceClick(familySpace!!.id, familySpace!!.name) },
                 onListClick = onListClick,
                 onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.name) },
+                onGamificationClick = navigateToGamification,
+                onShopClick = navigateToShop,
             )
         }
     }
@@ -329,117 +333,191 @@ private fun FamilyHomeContent(
     onSettingsClick: () -> Unit,
     onListClick: (String) -> Unit,
     onSpaceClick: () -> Unit,
+    onGamificationClick: () -> Unit = {},
+    onShopClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
-        // Green header
+        // Green header with mini stats inside
+        item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(PrimaryGreen),
+            ) {
+                // Decorative circle
+                Box(
+                    modifier = Modifier
+                        .size(180.dp)
+                        .align(Alignment.TopEnd)
+                        .background(Color.White.copy(alpha = 0.05f), CircleShape),
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = SweetHomeSpacing.lg)
+                        .padding(top = 14.dp, bottom = 16.dp),
+                ) {
+                    // Top row
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "Семейное пространство",
+                                fontSize = 12.sp,
+                                color = OnPrimaryWhite.copy(alpha = 0.65f),
+                            )
+                            Text(
+                                spaceName,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimaryWhite,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            HeaderIconButton("🏆", onClick = onGamificationClick)
+                            HeaderIconButton("⚙️", onClick = onSettingsClick)
+                        }
+                    }
+                    // Mini stats grid
+                    Spacer(Modifier.height(14.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        listOf(
+                            "0" to "выполнено",
+                            lists.size.toString() to "списка",
+                            "0" to "задач сегодня",
+                        ).forEach { (value, label) ->
+                            Surface(
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White.copy(alpha = 0.12f),
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                ) {
+                                    Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                                    Text(label, fontSize = 10.sp, color = OnPrimaryWhite.copy(alpha = 0.7f), modifier = Modifier.padding(top = 1.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Nav cards
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryGreen)
-                    .padding(horizontal = SweetHomeSpacing.lg, vertical = SweetHomeSpacing.md),
-                verticalAlignment = Alignment.Top,
+                    .padding(horizontal = SweetHomeSpacing.lg, vertical = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = spaceName,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = OnPrimaryWhite,
-                    )
-                    Spacer(Modifier.height(SweetHomeSpacing.xxs))
-                    Text(
-                        text = if (memberCount > 0) "$memberCount участников" else "",
-                        fontSize = 14.sp,
-                        color = OnPrimaryWhite.copy(alpha = 0.85f),
+                listOf(
+                    Triple("📋", "Списки",    Color(0xFFE8F3E8)),
+                    Triple("💬", "Чат",       Color(0xFFFFF3E0)),
+                    Triple("⚙️", "Настройки", Color(0xFFF3E5F5)),
+                ).forEach { (emoji, label, bg) ->
+                    NavCard(
+                        emoji = emoji,
+                        label = label,
+                        bgColor = bg,
+                        onClick = onSpaceClick,
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                Text(
-                    text = "⚙",
-                    fontSize = 22.sp,
-                    color = OnPrimaryWhite,
-                    modifier = Modifier.clickable(onClick = onSettingsClick),
-                )
             }
         }
 
-        // Stats bar
+        // Gamification banner
         item {
-            StatsBar(
-                completedCount = 0,
-                activeListsCount = lists.size,
-                todayTasksCount = 0,
-            )
+            Surface(
+                onClick = onGamificationClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.lg),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF3D5C3C),
+                shadowElevation = 2.dp,
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text(
+                        "🏆",
+                        fontSize = 60.sp,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        color = Color.White.copy(alpha = 0.15f),
+                    )
+                    Column {
+                        Text("Семейный рейтинг", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                        Text(
+                            "Посмотреть результаты →",
+                            fontSize = 13.sp,
+                            color = OnPrimaryWhite.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
+            }
+        }
+
+        // Family shop banner
+        item {
+            Spacer(Modifier.height(10.dp))
+            Surface(
+                onClick = onShopClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.lg),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFD4956B),
+                shadowElevation = 2.dp,
+            ) {
+                Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                    Text(
+                        "🛍",
+                        fontSize = 60.sp,
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        color = Color.White.copy(alpha = 0.15f),
+                    )
+                    Column {
+                        Text("Семейный магазин", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                        Text(
+                            "Трать баллы на награды!",
+                            fontSize = 13.sp,
+                            color = OnPrimaryWhite.copy(alpha = 0.85f),
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                }
+            }
         }
 
         // Activity section
         item {
             Spacer(Modifier.height(SweetHomeSpacing.lg))
             Text(
-                text = "Активность сегодня",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold,
+                "Активность сегодня",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
                 color = TextPrimary,
                 modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
             )
             Spacer(Modifier.height(SweetHomeSpacing.xs))
         }
 
-        if (lists.isEmpty()) {
-            item {
-                ActivityCard(
-                    emoji = "📋",
-                    text = "Нет недавней активности",
-                    time = "",
-                )
-            }
-        } else {
-            // Show a couple of placeholder activity items
-            item {
-                ActivityCard(emoji = "✅", text = "Нет недавней активности", time = "")
-            }
-        }
-
-        // Navigate section
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.lg))
-            Text(
-                text = "Перейти",
-                fontSize = 17.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+            ActivityCard(
+                emoji = "✅",
+                text = "Нет недавней активности",
+                time = "",
             )
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.lg),
-                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.md),
-            ) {
-                NavCard(
-                    emoji = "📋",
-                    label = "Списки",
-                    bgColor = Color(0xFFE8F3E8),
-                    onClick = onSpaceClick,
-                    modifier = Modifier.weight(1f),
-                )
-                NavCard(
-                    emoji = "💬",
-                    label = "Чат",
-                    bgColor = Color(0xFFFFF0E6),
-                    onClick = {},
-                    modifier = Modifier.weight(1f),
-                )
-                NavCard(
-                    emoji = "👥",
-                    label = "Участники",
-                    bgColor = SurfaceVariantCream,
-                    onClick = onSpaceClick,
-                    modifier = Modifier.weight(1f),
-                )
-            }
         }
 
         // Lists section
@@ -447,9 +525,9 @@ private fun FamilyHomeContent(
             item {
                 Spacer(Modifier.height(SweetHomeSpacing.lg))
                 Text(
-                    text = "Списки",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    "Списки семьи",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
                     color = TextPrimary,
                     modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
                 )
@@ -460,7 +538,7 @@ private fun FamilyHomeContent(
             }
         }
 
-        // Chat banner
+        // Chat button
         item {
             Spacer(Modifier.height(SweetHomeSpacing.lg))
             Surface(
@@ -468,21 +546,35 @@ private fun FamilyHomeContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.lg)
-                    .height(52.dp),
-                shape = RoundedCornerShape(10.dp),
+                    .height(50.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = PrimaryGreen,
                 shadowElevation = 4.dp,
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = "💬  Открыть чат семьи",
+                        "💬  Открыть чат семьи",
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = OnPrimaryWhite,
                     )
                 }
             }
             Spacer(Modifier.height(SweetHomeSpacing.lg))
+        }
+    }
+}
+
+@Composable
+private fun HeaderIconButton(emoji: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(36.dp),
+        shape = CircleShape,
+        color = Color.White.copy(alpha = 0.15f),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Text(emoji, fontSize = 18.sp)
         }
     }
 }

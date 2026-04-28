@@ -14,20 +14,26 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,11 +46,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.ui.BackgroundWarm
+import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
+import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -90,175 +100,255 @@ private fun LoginContent(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .background(BackgroundWarm)
+            .verticalScroll(rememberScrollState()),
     ) {
-        Spacer(Modifier.height(48.dp))
-
-        // Hero section
-        HeroSection(
-            subtitle = "Войдите в свой аккаунт",
-        )
-
-        Spacer(Modifier.height(40.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            label = { Text("Email") },
-            placeholder = { Text("your@email.com") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            shape = MaterialTheme.shapes.medium,
-        )
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Пароль") },
-            placeholder = { Text("Минимум 8 символов") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            shape = MaterialTheme.shapes.medium,
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        if (uiState is AuthUiState.Error) {
-            Text(
-                text = uiState.message,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Button(
-            onClick = { onLogin(email, password) },
+        // Green hero header
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp),
-            enabled = uiState !is AuthUiState.Loading,
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            if (uiState is AuthUiState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp,
+                .background(
+                    color = PrimaryGreen,
+                    shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
-            } else {
-                Text("Войти", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(horizontal = 24.dp, vertical = 40.dp),
+        ) {
+            // Decorative circles
+            Box(
+                modifier = Modifier
+                    .size(160.dp)
+                    .align(Alignment.TopEnd)
+                    .background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(50)),
+            )
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .align(Alignment.TopEnd)
+                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(50)),
+            )
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text("🏠", fontSize = 28.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "SweetHome",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Войдите в свой аккаунт",
+                    fontSize = 14.sp,
+                    color = Color.White.copy(alpha = 0.75f),
+                )
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-
-        DividerWithText("или")
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedButton(
-            onClick = { /* Coming soon */ },
+        // Form
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp),
-            shape = MaterialTheme.shapes.medium,
+                .padding(horizontal = 24.dp)
+                .padding(top = 32.dp),
         ) {
-            Text("G", fontWeight = FontWeight.Bold, fontSize = 18.sp, modifier = Modifier.padding(end = 8.dp))
-            Text("Войти через Google")
-        }
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedButton(
-            onClick = { /* Coming soon */ },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text("◆", fontWeight = FontWeight.Bold, fontSize = 16.sp, modifier = Modifier.padding(end = 8.dp))
-            Text("Войти через Apple")
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Нет аккаунта? ")
-            Text("Зарегистрироваться", fontWeight = FontWeight.SemiBold, color = PrimaryGreen)
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        TextButton(onClick = onGuestLogin) {
+            // Email field
             Text(
-                "Продолжить без аккаунта",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = "Email",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextSecondary,
+                modifier = Modifier.padding(bottom = 6.dp),
             )
-        }
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it; onClearError() },
+                placeholder = { Text("your@email.com", color = Color(0xFFBDBDBD)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryGreen,
+                    unfocusedBorderColor = DividerColor,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                ),
+            )
 
-        Spacer(Modifier.height(24.dp))
-    }
-}
+            Spacer(Modifier.height(16.dp))
 
-@Composable
-internal fun HeroSection(subtitle: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        // Concentric circles with house icon
-        Box(contentAlignment = Alignment.Center) {
-            Surface(
-                modifier = Modifier.size(88.dp),
-                shape = CircleShape,
-                color = PrimaryGreen.copy(alpha = 0.12f),
-            ) {}
-            Surface(
-                modifier = Modifier.size(66.dp),
-                shape = CircleShape,
-                color = PrimaryGreen.copy(alpha = 0.18f),
-            ) {}
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = CircleShape,
-                color = PrimaryGreen.copy(alpha = 0.25f),
+            // Password field
+            Text(
+                text = "Пароль",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextSecondary,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+            OutlinedTextField(
+                value = password,
+                onValueChange = { password = it; onClearError() },
+                placeholder = { Text("••••••••", color = Color(0xFFBDBDBD)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                shape = RoundedCornerShape(12.dp),
+                trailingIcon = {
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(
+                            imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                        )
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryGreen,
+                    unfocusedBorderColor = DividerColor,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White,
+                ),
+            )
+            Text(
+                text = "Минимум 8 символов",
+                fontSize = 12.sp,
+                color = TextSecondary,
+                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+            )
+
+            if (uiState is AuthUiState.Error) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = uiState.message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
+
+            Button(
+                onClick = { onLogin(email, password) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp),
+                enabled = uiState !is AuthUiState.Loading,
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("🏠", fontSize = 22.sp)
+                if (uiState is AuthUiState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text("Войти", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
+
+            DividerWithText("или")
+
+            Spacer(Modifier.height(16.dp))
+
+            // Google
+            Surface(
+                onClick = { /* coming soon */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFDADCE0)),
+                shadowElevation = 2.dp,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                    Spacer(Modifier.width(10.dp))
+                    Text("Войти через Google", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // Apple
+            Surface(
+                onClick = { /* coming soon */ },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF1D1D1F),
+                shadowElevation = 3.dp,
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("🍎", fontSize = 18.sp)
+                    Spacer(Modifier.width(10.dp))
+                    Text("Войти через Apple", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            }
+
+            Spacer(Modifier.height(28.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Нет аккаунта? ",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                )
+                TextButton(
+                    onClick = onNavigateToRegister,
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
+                ) {
+                    Text(
+                        text = "Зарегистрироваться",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreen,
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = onGuestLogin,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    text = "Продолжить без аккаунта",
+                    fontSize = 13.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(Modifier.height(24.dp))
         }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            text = "SweetHome",
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-        )
-
-        Spacer(Modifier.height(6.dp))
-
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
@@ -268,13 +358,13 @@ internal fun DividerWithText(text: String) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HorizontalDivider(modifier = Modifier.weight(1f))
+        HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
         Text(
             text = "  $text  ",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = TextSecondary,
         )
-        HorizontalDivider(modifier = Modifier.weight(1f))
+        HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
     }
 }
 
@@ -286,19 +376,24 @@ private fun GuestAuthenticatedContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
+            .background(BackgroundWarm)
+            .windowInsetsPadding(WindowInsets.statusBars)
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text("Вы вошли как гость", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onLinkEmail, modifier = Modifier.fillMaxWidth()) {
+        Button(
+            onClick = onLinkEmail,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+        ) {
             Text("Привязать email и пароль")
         }
         Spacer(Modifier.height(16.dp))
-        OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
-            Text("Выйти")
+        TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
+            Text("Выйти", color = MaterialTheme.colorScheme.error)
         }
     }
 }
