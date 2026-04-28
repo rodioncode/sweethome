@@ -1,12 +1,15 @@
 package com.jetbrains.kmpapp.screens.profile
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,15 +19,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -35,10 +38,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
 import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenDark
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
-import com.jetbrains.kmpapp.ui.SecondaryPeach
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.SurfaceVariantCream
+import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.TextPrimary
 import com.jetbrains.kmpapp.ui.TextSecondary
@@ -57,312 +58,311 @@ fun ProfileContent(
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-    ) {
-        // --- Green header: top bar + avatar ---
+    LazyColumn(modifier = modifier.fillMaxSize()) {
+
+        // --- Green hero header ---
         item {
-            Column(
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(PrimaryGreen),
             ) {
-                // Top bar
-                Row(
+                // Decorative circle
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = SweetHomeSpacing.md),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = "Профиль",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OnPrimaryWhite,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Surface(
-                        onClick = navigateToSettings,
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = Color(0xFF4A6B49),
+                        .size(160.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(top = 0.dp)
+                        .background(Color.White.copy(alpha = 0.06f), CircleShape),
+                )
+
+                Column(modifier = Modifier.fillMaxWidth().padding(20.dp).padding(top = 10.dp)) {
+                    // Top row: title + logout
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("⚙", fontSize = 18.sp, color = OnPrimaryWhite)
+                        Text(
+                            "Профиль",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = OnPrimaryWhite,
+                        )
+                        Surface(
+                            onClick = { viewModel.logout() },
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color.White.copy(alpha = 0.15f),
+                        ) {
+                            Text(
+                                "Выйти",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimaryWhite,
+                            )
                         }
                     }
-                }
 
-                // Avatar section
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = SweetHomeSpacing.md),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    // Avatar with edit badge
-                    Box {
-                        Surface(
-                            modifier = Modifier.size(80.dp),
-                            shape = CircleShape,
-                            color = PrimaryGreenLight,
+                    Spacer(Modifier.height(20.dp))
+
+                    // Avatar row
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(72.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.25f))
+                                .border(3.dp, Color.White.copy(alpha = 0.4f), CircleShape),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                val initial = userId?.firstOrNull()?.uppercase() ?: "?"
+                            val initial = userId?.firstOrNull()?.uppercase() ?: "?"
+                            Text(
+                                initial,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimaryWhite,
+                            )
+                        }
+                        Column {
+                            Text(
+                                if (isGuest) "Гостевой аккаунт" else (userId ?: "Пользователь"),
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimaryWhite,
+                            )
+                            if (!isGuest && userId != null) {
                                 Text(
-                                    text = initial,
-                                    fontSize = 32.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = OnPrimaryWhite,
+                                    userId!!.take(30),
+                                    fontSize = 13.sp,
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    modifier = Modifier.padding(top = 3.dp),
                                 )
                             }
-                        }
-                        // Edit badge
-                        Surface(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .align(Alignment.BottomEnd),
-                            shape = CircleShape,
-                            color = SecondaryPeach,
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("✎", fontSize = 14.sp, color = OnPrimaryWhite)
+                            if (isGuest) {
+                                Surface(
+                                    onClick = navigateToLinkEmail,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.White.copy(alpha = 0.15f),
+                                ) {
+                                    Text(
+                                        "Привязать email",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = OnPrimaryWhite,
+                                    )
+                                }
+                            } else {
+                                Surface(
+                                    onClick = navigateToSettings,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color.White.copy(alpha = 0.15f),
+                                ) {
+                                    Text(
+                                        "Редактировать",
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = OnPrimaryWhite,
+                                    )
+                                }
                             }
                         }
                     }
-
-                    Spacer(Modifier.height(SweetHomeSpacing.xs))
-
-                    Text(
-                        text = if (isGuest) "Гостевой аккаунт" else (userId ?: "Пользователь"),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = OnPrimaryWhite,
-                    )
-                    if (!isGuest && userId != null) {
-                        Text(
-                            text = userId!!.take(30),
-                            fontSize = 13.sp,
-                            color = DividerColor,
-                        )
-                    }
+                    Spacer(Modifier.height(8.dp))
                 }
             }
         }
 
         // --- Stats row ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.sm))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.md),
-                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
-            ) {
-                StatCard(value = "0", label = "Выполнено", modifier = Modifier.weight(1f))
-                StatCard(value = listCount.toString(), label = "Списков", modifier = Modifier.weight(1f))
-                StatCard(value = groupCount.toString(), label = "Участий", modifier = Modifier.weight(1f))
+            Surface(color = SurfaceWhite) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
+                        .border(width = 1.dp, color = DividerColor),
+                ) {
+                    listOf(
+                        "0" to "задач",
+                        listCount.toString() to "списков",
+                        groupCount.toString() to "пространств",
+                    ).forEachIndexed { index, (value, label) ->
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(vertical = 16.dp)
+                                .then(
+                                    if (index < 2) Modifier.border(
+                                        width = 1.dp,
+                                        color = DividerColor,
+                                    ) else Modifier
+                                ),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                            Text(label, fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+                        }
+                    }
+                }
             }
         }
 
-        // --- Мои пространства ---
+        // --- Settings section ---
         item {
             Spacer(Modifier.height(SweetHomeSpacing.lg))
-            Text(
-                text = "Мои пространства",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.md),
-            )
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
+            SectionLabel("НАСТРОЙКИ")
         }
-
-        // Personal space (always shown)
         item {
-            SpaceCard(
-                icon = "🏠",
-                title = "Личное пространство",
-                subtitle = "Только вы",
-                onClick = {},
-            )
-        }
-
-        // Group spaces
-        items(groups, key = { it.id }) { group ->
-            SpaceCard(
-                icon = if (group.type == "family") "👨\u200D👩\u200D👧\u200D👦" else "👥",
-                title = group.name,
-                subtitle = buildString {
-                    val memberCount = group.members?.size
-                    if (memberCount != null) append("$memberCount участника · ")
-                    append(
-                        when (group.role) {
-                            "owner" -> "Владелец"
-                            "admin" -> "Администратор"
-                            else -> "Участник"
-                        }
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.md),
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceWhite,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+            ) {
+                Column {
+                    val settingsItems = listOf(
+                        "🔔" to "Уведомления",
+                        "📅" to "Интеграция с календарём",
+                        "🤖" to "Telegram-бот",
+                        "🌙" to "Тема",
+                        "🌐" to "Язык",
                     )
-                },
-                onClick = {},
-            )
+                    settingsItems.forEachIndexed { index, (icon, label) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { navigateToSettings() }
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Text(icon, fontSize = 18.sp)
+                            Text(label, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f))
+                            Text("›", fontSize = 13.sp, color = TextSecondary)
+                        }
+                        if (index < settingsItems.lastIndex) {
+                            HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                    }
+                }
+            }
         }
 
-        // --- Последняя активность ---
+        // --- My spaces ---
         item {
             Spacer(Modifier.height(SweetHomeSpacing.lg))
-            Text(
-                text = "Последняя активность",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.md),
-            )
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
+            SectionLabel("МОИ ПРОСТРАНСТВА")
         }
         item {
-            ActivityItem(icon = "✅", text = "Нет недавней активности", time = "")
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.md),
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceWhite,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+            ) {
+                Column {
+                    // Personal space
+                    SpaceRow(icon = "👤", title = "Личное", subtitle = "Только вы", onClick = {})
+                    HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+
+                    // Group spaces
+                    groups.forEachIndexed { index, group ->
+                        SpaceRow(
+                            icon = when (group.type) {
+                                "family" -> "👨‍👩‍👧‍👦"
+                                "mentoring" -> "🎓"
+                                else -> "👥"
+                            },
+                            title = group.name,
+                            subtitle = when (group.role) {
+                                "owner" -> "owner"
+                                else -> "member"
+                            },
+                            onClick = {},
+                        )
+                        if (index < groups.lastIndex) {
+                            HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+                        }
+                    }
+                }
+            }
         }
 
-        item { Spacer(Modifier.height(SweetHomeSpacing.lg)) }
+        // --- Activity ---
+        item {
+            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            SectionLabel("АКТИВНОСТЬ")
+        }
+        item {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.md),
+                shape = RoundedCornerShape(16.dp),
+                color = SurfaceWhite,
+                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .clip(CircleShape)
+                            .background(PrimaryGreen.copy(alpha = 0.5f))
+                            .padding(top = 6.dp),
+                    )
+                    Text("Нет недавней активности", fontSize = 13.sp, color = TextSecondary)
+                }
+            }
+        }
+
+        item { Spacer(Modifier.height(80.dp)) }
     }
 }
 
 @Composable
-private fun StatCard(
-    value: String,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier,
-        shape = SweetHomeShapes.Card,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = SweetHomeSpacing.xs, horizontal = SweetHomeSpacing.xs),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                text = value,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = PrimaryGreen,
-            )
-            Text(
-                text = label,
-                fontSize = 11.sp,
-                color = TextSecondary,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
+private fun SectionLabel(text: String) {
+    Text(
+        text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = TextSecondary,
+        letterSpacing = 0.5.sp,
+        modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = 0.dp).padding(bottom = 10.dp),
+    )
 }
 
 @Composable
-private fun SpaceCard(
+private fun SpaceRow(
     icon: String,
     title: String,
     subtitle: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.xxs)
-            .clickable(onClick = onClick),
-        shape = SweetHomeShapes.Card,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = SweetHomeSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = PrimaryGreenLight.copy(alpha = 0.3f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(icon, fontSize = 20.sp)
-                }
-            }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = subtitle,
-                    fontSize = 12.sp,
-                    color = TextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Text(
-                text = "›",
-                fontSize = 20.sp,
-                color = Color(0xFFBDBDBD),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActivityItem(
-    icon: String,
-    text: String,
-    time: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.xxs),
-        shape = SweetHomeShapes.Card,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = SweetHomeSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(icon, fontSize = 18.sp)
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = text,
-                    fontSize = 12.sp,
-                    color = TextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (time.isNotBlank()) {
-                    Text(
-                        text = time,
-                        fontSize = 11.sp,
-                        color = TextSecondary,
-                    )
-                }
-            }
-        }
+        Text(icon, fontSize = 18.sp)
+        Text(title, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text("$subtitle ›", fontSize = 12.sp, color = TextSecondary)
     }
 }

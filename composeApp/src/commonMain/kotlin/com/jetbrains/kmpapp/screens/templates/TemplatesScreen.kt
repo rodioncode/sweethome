@@ -192,47 +192,56 @@ fun TemplatesContent(
             }
 
             items(allCategories) { category ->
-                Card(
+                Surface(
+                    onClick = {},
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .clickable { },
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    color = com.jetbrains.kmpapp.ui.SurfaceWhite,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.jetbrains.kmpapp.ui.DividerColor),
+                    shadowElevation = 1.dp,
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
+                            .padding(14.dp, 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        Surface(
-                            modifier = Modifier.size(40.dp),
-                            shape = CircleShape,
-                            color = PrimaryGreenLight.copy(alpha = 0.3f),
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(com.jetbrains.kmpapp.ui.SurfaceVariantCream, RoundedCornerShape(14.dp)),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(text = category.emoji, fontSize = 18.sp)
-                            }
+                            Text(text = category.emoji, fontSize = 24.sp)
                         }
-                        Spacer(Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = category.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium,
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = com.jetbrains.kmpapp.ui.TextPrimary,
                             )
                             Text(
                                 text = "${category.count} шаблонов",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 12.sp,
+                                color = com.jetbrains.kmpapp.ui.TextSecondary,
                             )
                         }
-                        Text(
-                            text = "›",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = PrimaryGreen,
+                        ) {
+                            Text(
+                                "Открыть",
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = com.jetbrains.kmpapp.ui.OnPrimaryWhite,
+                            )
+                        }
                     }
                 }
             }

@@ -1,32 +1,30 @@
 package com.jetbrains.kmpapp.screens.groups
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.SuggestionChip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,8 +32,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.ui.DividerColor
+import com.jetbrains.kmpapp.ui.OnPrimaryWhite
+import com.jetbrains.kmpapp.ui.PrimaryGreen
+import com.jetbrains.kmpapp.ui.SurfaceVariantCream
+import com.jetbrains.kmpapp.ui.SurfaceWhite
+import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.TextPrimary
+import com.jetbrains.kmpapp.ui.TextSecondary
 
 @Composable
 internal fun GroupsContent(
@@ -45,6 +55,7 @@ internal fun GroupsContent(
     onGroupClick: (Group) -> Unit,
     navigateToLinkEmail: () -> Unit,
     navigateToJoinByCode: () -> Unit,
+    onCreateGroup: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -52,19 +63,62 @@ internal fun GroupsContent(
             .fillMaxSize()
             .padding(contentPadding),
     ) {
-        if (isGuest) {
-            GuestBanner(
-                onLinkEmail = navigateToLinkEmail,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-        } else {
-            TextButton(
-                onClick = navigateToJoinByCode,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-            ) {
-                Text("Вступить по коду")
+        // Action buttons row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (isGuest) {
+                Surface(
+                    onClick = navigateToLinkEmail,
+                    modifier = Modifier.weight(1f).height(36.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = SurfaceVariantCream,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            "Привязать email",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextSecondary,
+                        )
+                    }
+                }
+            } else {
+                Surface(
+                    onClick = navigateToJoinByCode,
+                    modifier = Modifier.height(36.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = SurfaceVariantCream,
+                ) {
+                    Box(
+                        modifier = Modifier.padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "🔗 Войти по коду",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextSecondary,
+                        )
+                    }
+                }
+                Spacer(Modifier.weight(1f))
+                if (onCreateGroup != null) {
+                    Surface(
+                        onClick = onCreateGroup,
+                        modifier = Modifier.size(36.dp),
+                        shape = CircleShape,
+                        color = PrimaryGreen,
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("+", fontSize = 22.sp, color = OnPrimaryWhite, fontWeight = FontWeight.Light)
+                        }
+                    }
+                }
             }
         }
 
@@ -72,58 +126,35 @@ internal fun GroupsContent(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(32.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(text = "Нет групп", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(8.dp))
+                Text("👥", fontSize = 48.sp)
+                Spacer(Modifier.height(12.dp))
                 Text(
-                    text = if (isGuest) "Привяжите email чтобы создавать и вступать в группы"
+                    "Нет групп",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (isGuest) "Привяжите email чтобы создавать и вступать в группы"
                     else "Нажмите + чтобы создать первую группу",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp,
+                    color = TextSecondary,
                 )
             }
         } else {
             LazyColumn(
-                contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(groups, key = { it.id }) { group ->
-                    GroupCard(
-                        group = group,
-                        onClick = { onGroupClick(group) },
-                    )
+                    GroupCard(group = group, onClick = { onGroupClick(group) })
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun GuestBanner(
-    onLinkEmail: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = "Привяжите email чтобы\nвступать в группы",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.weight(1f),
-            )
-            TextButton(onClick = onLinkEmail) {
-                Text("Привязать")
+                item { Spacer(Modifier.height(80.dp)) }
             }
         }
     }
@@ -135,91 +166,151 @@ private fun GroupCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    val wsIcon = when (group.type) {
+        "family" -> "👨‍👩‍👧‍👦"
+        "group" -> "👥"
+        "mentoring" -> "🎓"
+        else -> "👤"
+    }
+    val wsIconBg = when (group.type) {
+        "family" -> Color(0xFFFFF3E0)
+        "group" -> Color(0xFFE3F2FD)
+        "mentoring" -> Color(0xFFF3E5F5)
+        else -> PrimaryGreen.copy(alpha = 0.12f)
+    }
+    val typeLabel = when (group.type) {
+        "family" -> "Семья"
+        "group" -> "Группа"
+        "mentoring" -> "Наставничество"
+        else -> "Личное"
+    }
+
+    Surface(
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = SurfaceWhite,
+        border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+        shadowElevation = 1.dp,
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(wsIconBg, RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(wsIcon, fontSize = 22.sp)
+            }
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = group.name, style = MaterialTheme.typography.titleMedium)
-                val memberCount = group.members?.size
-                if (memberCount != null) {
-                    Text(
-                        text = "$memberCount участников",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Text(
+                    group.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(typeLabel, fontSize = 12.sp, color = TextSecondary)
+                    group.members?.size?.let { memberCount ->
+                        Text("·", fontSize = 12.sp, color = TextSecondary)
+                        Text("$memberCount уч.", fontSize = 12.sp, color = TextSecondary)
+                    }
                 }
             }
-            SuggestionChip(
-                onClick = {},
-                label = {
-                    Text(if (group.role == "owner") "Владелец" else "Участник")
-                },
-            )
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = PrimaryGreen.copy(alpha = 0.12f),
+            ) {
+                Text(
+                    if (group.role == "owner") "Владелец" else "Участник",
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = PrimaryGreen,
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CreateGroupDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, type: String) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
-    var selectedType by remember { mutableStateOf("group") }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var groupName by remember { mutableStateOf("") }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = { Text("Новое пространство") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Название") },
-                    singleLine = true,
+        sheetState = sheetState,
+        containerColor = SurfaceWhite,
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 48.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                "Создать пространство",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary,
+            )
+
+            val workspaceTypes = listOf(
+                Triple("family",    "👨‍👩‍👧‍👦", "Семья" to "Для совместного ведения домашних дел"),
+                Triple("group",     "👥",     "Группа" to "Команда, соседи, друзья"),
+                Triple("mentoring", "🎓",     "Наставничество" to "Учитель и ученики"),
+            )
+
+            workspaceTypes.forEach { (type, icon, labels) ->
+                Surface(
+                    onClick = {
+                        val defaultName = labels.first
+                        onConfirm(groupName.ifBlank { defaultName }, type)
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                listOf("group" to "Группа", "family" to "Семейное пространство").forEach { (type, label) ->
+                    shape = RoundedCornerShape(14.dp),
+                    color = SurfaceVariantCream,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .selectable(
-                                selected = selectedType == type,
-                                onClick = { selectedType = type },
-                            )
-                            .padding(vertical = 4.dp),
+                            .padding(14.dp),
                         verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
-                        RadioButton(
-                            selected = selectedType == type,
-                            onClick = { selectedType = type },
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .background(SurfaceWhite, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(icon, fontSize = 22.sp)
+                        }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(labels.first, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text(labels.second, fontSize = 12.sp, color = TextSecondary)
+                        }
+                        Text("›", fontSize = 18.sp, color = TextSecondary)
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                val defaultName = if (selectedType == "family") "Наш дом" else "Моя группа"
-                onConfirm(name.ifBlank { defaultName }, selectedType)
-            }) {
-                Text("Создать")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
-        },
-    )
+        }
+    }
 }

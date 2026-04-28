@@ -32,15 +32,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.AccentTerracotta
+import com.jetbrains.kmpapp.ui.ListColorAmber
+import com.jetbrains.kmpapp.ui.ListColorCoral
+import com.jetbrains.kmpapp.ui.ListColorMint
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
 import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SecondaryPeach
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.TextPrimary
 import com.jetbrains.kmpapp.ui.TextSecondary
+import com.jetbrains.kmpapp.ui.listColorForType
+import com.jetbrains.kmpapp.ui.listEmojiForType
+import com.jetbrains.kmpapp.ui.toComposeColor
 import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -247,21 +251,20 @@ fun HomeContent(
             }
         } else {
             items(recentLists, key = { it.id }) { list ->
+                val color = list.color?.toComposeColor() ?: listColorForType(list.type)
                 SweetHomeListCard(
                     title = list.title,
                     onClick = { navigateToListDetail(list.id) },
                     modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                    icon = list.icon ?: listEmojiForType(list.type),
+                    listColor = color,
+                    doneCount = list.doneCount,
+                    totalCount = list.totalCount,
                     categoryLabel = when (list.type) {
                         "shopping" -> "Покупки"
                         "home_chores" -> "Дела"
                         else -> "Задачи"
-                    },
-                    progressText = if (list.scope == "personal") "Личное" else "Группа",
-                    dotColor = when (list.type) {
-                        "shopping" -> SecondaryPeach
-                        "home_chores" -> AccentTerracotta
-                        else -> PrimaryGreen
-                    },
+                    }.takeIf { list.totalCount == null },
                 )
             }
         }

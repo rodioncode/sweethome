@@ -32,10 +32,11 @@ class ListsRepository(
         type: String,
         title: String,
         icon: String? = null,
+        color: String? = null,
         scope: String = "personal",
         groupId: String? = null,
     ): Result<TodoList> {
-        val result = listsApi.createList(CreateListRequest(type = type, title = title, icon = icon, scope = scope, groupId = groupId))
+        val result = listsApi.createList(CreateListRequest(type = type, title = title, icon = icon, color = color, scope = scope, groupId = groupId))
         result.onSuccess {
             _lists.value = _lists.value + it
             listsStorage.saveLists(_lists.value)

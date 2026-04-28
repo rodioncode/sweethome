@@ -8,12 +8,15 @@ data class TodoList(
     val type: String, // shopping, home_chores, general_todos
     val title: String,
     val icon: String? = null,
+    val color: String? = null, // hex color, e.g. "#FF7043"
     val scope: String, // personal, group
     val ownerUserId: String? = null,
     val ownerGroupId: String? = null,
     val createdBy: String,
     val createdAt: String,
     val archivedAt: String? = null,
+    val totalCount: Int? = null, // computed by server
+    val doneCount: Int? = null,  // computed by server
 )
 
 @Serializable
@@ -69,6 +72,7 @@ data class CreateListRequest(
     val type: String,
     val title: String,
     val icon: String? = null,
+    val color: String? = null,
     val scope: String,
     val groupId: String? = null,
 )
