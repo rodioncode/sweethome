@@ -28,9 +28,9 @@ class GroupsViewModel(
     val groups: StateFlow<List<Group>> = groupsRepository.groups
     val error: StateFlow<String?> = groupsRepository.error
 
-    // Only group-type workspaces (not family)
+    // Non-personal workspaces (group, family, mentoring)
     val groupSpaces: StateFlow<List<Group>> = groupsRepository.groups
-        .map { it.filter { g -> g.type != "family" } }
+        .map { it.filter { g -> g.type != "family" && g.type != "personal" } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
     val isGuest: StateFlow<Boolean> = authRepository.authState
@@ -50,8 +50,8 @@ class GroupsViewModel(
 
     fun createGroup(name: String, type: String = "group") {
         viewModelScope.launch {
-            groupsRepository.createGroup(name, type).onSuccess { group ->
-                _uiEvent.emit(GroupsUiEvent.NavigateToGroup(group.id, group.name))
+            groupsRepository.createGroup(title = name, type = type).onSuccess { group ->
+                _uiEvent.emit(GroupsUiEvent.NavigateToGroup(group.id, group.title))
             }
         }
     }

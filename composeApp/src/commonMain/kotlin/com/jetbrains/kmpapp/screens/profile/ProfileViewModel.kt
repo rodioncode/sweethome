@@ -6,17 +6,20 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
-import com.jetbrains.kmpapp.data.lists.ListsRepository
+import com.jetbrains.kmpapp.data.profile.ProfileApi
+import com.jetbrains.kmpapp.data.profile.UserProfile
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ProfileViewModel(
     private val authRepository: AuthRepository,
-    private val listsRepository: ListsRepository,
     private val groupsRepository: GroupsRepository,
+    private val profileApi: ProfileApi,
 ) : ViewModel() {
 
     val isGuest: StateFlow<Boolean> = authRepository.authState
@@ -27,16 +30,37 @@ class ProfileViewModel(
         .map { (it as? AuthState.Authenticated)?.userId }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val listCount: StateFlow<Int> = listsRepository.lists
-        .map { it.size }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
-    val groupCount: StateFlow<Int> = groupsRepository.groups
-        .map { it.size }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
-
     val groups: StateFlow<List<Group>> = groupsRepository.groups
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    private val _profile = MutableStateFlow<UserProfile?>(null)
+    val profile: StateFlow<UserProfile?> = _profile
+
+    val listCount: StateFlow<Int> = _profile
+        .map { it?.stats?.totalLists ?: 0 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    val groupCount: StateFlow<Int> = _profile
+        .map { it?.stats?.workspacesCount ?: 0 }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    init {
+        loadProfile()
+    }
+
+    private fun loadProfile() {
+        viewModelScope.launch {
+            profileApi.getProfile().onSuccess { _profile.update { _ -> it } }
+        }
+    }
+
+    fun updateDisplayName(name: String) {
+        viewModelScope.launch {
+            profileApi.updateProfile(
+                com.jetbrains.kmpapp.data.profile.UpdateProfileRequest(displayName = name)
+            ).onSuccess { _profile.update { _ -> it } }
+        }
+    }
 
     fun logout() {
         viewModelScope.launch { authRepository.logout() }

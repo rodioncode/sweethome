@@ -58,6 +58,7 @@ fun AuthScreen(
     onAuthSuccess: () -> Unit,
     onNavigateToRegister: () -> Unit,
     onNavigateToLinkEmail: () -> Unit,
+    onNavigateToPasswordReset: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<AuthViewModel>()
     val authState by viewModel.authState.collectAsStateWithLifecycle()
@@ -79,6 +80,7 @@ fun AuthScreen(
                 onLogin = { email, password -> viewModel.login(email, password) },
                 onNavigateToRegister = onNavigateToRegister,
                 onGuestLogin = { viewModel.loginAsGuest() },
+                onForgotPassword = onNavigateToPasswordReset,
                 uiState = uiState,
                 onClearError = { viewModel.clearError() },
             )
@@ -91,6 +93,7 @@ private fun LoginContent(
     onLogin: (String, String) -> Unit,
     onNavigateToRegister: () -> Unit,
     onGuestLogin: () -> Unit,
+    onForgotPassword: () -> Unit = {},
     uiState: AuthUiState,
     onClearError: () -> Unit,
 ) {
@@ -254,7 +257,16 @@ private fun LoginContent(
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
+
+            TextButton(
+                onClick = onForgotPassword,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text("Забыли пароль?", fontSize = 13.sp, color = TextSecondary)
+            }
+
+            Spacer(Modifier.height(12.dp))
 
             DividerWithText("или")
 

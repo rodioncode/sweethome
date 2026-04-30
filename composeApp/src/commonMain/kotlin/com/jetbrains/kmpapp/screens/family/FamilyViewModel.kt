@@ -49,11 +49,11 @@ class FamilyViewModel(
         loadFamilyListsForGroup(space.id)
     }
 
-    private fun loadFamilyListsForGroup(groupId: String) {
+    private fun loadFamilyListsForGroup(workspaceId: String) {
         viewModelScope.launch {
-            listsRepository.loadLists(scope = "group", groupId = groupId)
+            listsRepository.loadLists(workspaceId = workspaceId)
             _familyLists.value = listsRepository.lists.value.filter {
-                it.scope == "group" && it.ownerGroupId == groupId
+                it.workspaceId == workspaceId
             }
         }
     }
@@ -61,7 +61,7 @@ class FamilyViewModel(
     fun createFamilySpace(name: String) {
         _isCreating.value = true
         viewModelScope.launch {
-            groupsRepository.createGroup(name, type = "family")
+            groupsRepository.createGroup(title = name, type = "family")
                 .onSuccess { createdGroup ->
                     loadFamilyListsForGroup(createdGroup.id)
                 }

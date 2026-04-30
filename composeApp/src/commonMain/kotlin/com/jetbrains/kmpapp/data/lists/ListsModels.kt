@@ -5,18 +5,20 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TodoList(
     val id: String,
-    val type: String, // shopping, home_chores, general_todos
+    val workspaceId: String,
+    val type: String, // shopping, home_chores, general_todos, study, travel, custom, media, wishlist
+    val customTypeLabel: String? = null,
     val title: String,
     val icon: String? = null,
-    val color: String? = null, // hex color, e.g. "#FF7043"
-    val scope: String, // personal, group
-    val ownerUserId: String? = null,
-    val ownerGroupId: String? = null,
+    val color: String? = null,
+    val description: String? = null,
     val createdBy: String,
     val createdAt: String,
     val archivedAt: String? = null,
-    val totalCount: Int? = null, // computed by server
-    val doneCount: Int? = null,  // computed by server
+    val isPublic: Boolean = false,
+    val publicToken: String? = null,
+    val totalCount: Int? = null,
+    val doneCount: Int? = null,
 )
 
 @Serializable
@@ -33,9 +35,13 @@ data class TodoItem(
     val updatedAt: String,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    val media: MediaItemFields? = null,
+    val wishlist: WishlistItemFields? = null,
     val assignedTo: String? = null,
     val dueAt: String? = null,
     val isFavorite: Boolean = false,
+    val priority: String? = null, // "high" | "medium" | "low" | null
+    val reward: String? = null,
     val version: Int = 0,
 )
 
@@ -57,6 +63,23 @@ data class ChoreSchedule(
 )
 
 @Serializable
+data class MediaItemFields(
+    val mediaType: String? = null, // book, movie, series, game, article, podcast, other
+    val status: String? = null,    // want, in_progress, done
+    val url: String? = null,
+    val rating: Int? = null,
+    val author: String? = null,
+)
+
+@Serializable
+data class WishlistItemFields(
+    val url: String? = null,
+    val imageUrl: String? = null,
+    val price: String? = null,
+    val isClaimed: Boolean = false,
+)
+
+@Serializable
 data class ListsWrapper(
     val lists: List<TodoList>,
 )
@@ -69,19 +92,24 @@ data class ListWithItemsWrapper(
 
 @Serializable
 data class CreateListRequest(
+    val workspaceId: String,
     val type: String,
     val title: String,
     val icon: String? = null,
     val color: String? = null,
-    val scope: String,
-    val groupId: String? = null,
+    val description: String? = null,
+    val customTypeLabel: String? = null,
 )
 
 @Serializable
 data class UpdateListRequest(
     val title: String? = null,
     val icon: String? = null,
+    val color: String? = null,
+    val description: String? = null,
+    val customTypeLabel: String? = null,
     val archived: Boolean? = null,
+    val isPublic: Boolean? = null,
 )
 
 @Serializable
@@ -91,9 +119,13 @@ data class CreateItemRequest(
     val sortOrder: Double? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    val media: MediaItemFields? = null,
+    val wishlist: WishlistItemFields? = null,
     val assignedTo: String? = null,
     val dueAt: String? = null,
     val isFavorite: Boolean? = null,
+    val priority: String? = null,
+    val reward: String? = null,
 )
 
 @Serializable
@@ -104,8 +136,12 @@ data class UpdateItemRequest(
     val isDone: Boolean? = null,
     val shopping: ShoppingItemFields? = null,
     val choreSchedule: ChoreSchedule? = null,
+    val media: MediaItemFields? = null,
+    val wishlist: WishlistItemFields? = null,
     // null = не менять; "" (пустая строка) = сбросить в NULL на сервере
     val assignedTo: String? = null,
     val dueAt: String? = null,
     val isFavorite: Boolean? = null,
+    val priority: String? = null,
+    val reward: String? = null,
 )

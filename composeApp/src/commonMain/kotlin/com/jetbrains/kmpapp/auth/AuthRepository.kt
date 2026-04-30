@@ -102,6 +102,12 @@ class AuthRepository(
         _authState.value = AuthState.Unauthenticated
     }
 
+    suspend fun requestPasswordReset(email: String): Result<Unit> =
+        authApi.requestPasswordReset(email)
+
+    suspend fun confirmPasswordReset(token: String, newPassword: String): Result<Unit> =
+        authApi.confirmPasswordReset(token, newPassword)
+
     fun getAccessToken(): String? = tokenStorage.getAccessToken()
     fun getRefreshToken(): String? = tokenStorage.getRefreshToken()
 }

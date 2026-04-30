@@ -32,11 +32,19 @@ data class TodoItemEntity(
     val shoppingJson: String?,
     val choreScheduleJson: String?,
     @ColumnInfo(defaultValue = "NULL")
+    val mediaJson: String?,
+    @ColumnInfo(defaultValue = "NULL")
+    val wishlistJson: String?,
+    @ColumnInfo(defaultValue = "NULL")
     val assignedTo: String?,
     @ColumnInfo(defaultValue = "NULL")
     val dueAt: String?,
     @ColumnInfo(defaultValue = "0")
     val isFavorite: Boolean,
+    @ColumnInfo(defaultValue = "NULL")
+    val priority: String?,
+    @ColumnInfo(defaultValue = "NULL")
+    val reward: String?,
     @ColumnInfo(defaultValue = "0")
     val version: Int,
 )

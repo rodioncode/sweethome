@@ -18,9 +18,9 @@ class ListsRepository(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    suspend fun loadLists(scope: String? = null, groupId: String? = null) {
+    suspend fun loadLists(workspaceId: String? = null) {
         _lists.value = listsStorage.getLists()
-        listsApi.getLists(scope, groupId)
+        listsApi.getLists(workspaceId)
             .onSuccess {
                 _lists.value = it
                 listsStorage.saveLists(it)
@@ -31,12 +31,23 @@ class ListsRepository(
     suspend fun createList(
         type: String,
         title: String,
+        workspaceId: String,
         icon: String? = null,
         color: String? = null,
-        scope: String = "personal",
-        groupId: String? = null,
+        description: String? = null,
+        customTypeLabel: String? = null,
     ): Result<TodoList> {
-        val result = listsApi.createList(CreateListRequest(type = type, title = title, icon = icon, color = color, scope = scope, groupId = groupId))
+        val result = listsApi.createList(
+            CreateListRequest(
+                workspaceId = workspaceId,
+                type = type,
+                title = title,
+                icon = icon,
+                color = color,
+                description = description,
+                customTypeLabel = customTypeLabel,
+            )
+        )
         result.onSuccess {
             _lists.value = _lists.value + it
             listsStorage.saveLists(_lists.value)
@@ -67,8 +78,18 @@ class ListsRepository(
         listsStorage.getListWithItems(listId)?.let { _currentListWithItems.value = it }
     }
 
-    suspend fun updateList(listId: String, title: String? = null): Result<TodoList> {
-        val result = listsApi.updateList(listId, UpdateListRequest(title = title))
+    suspend fun updateList(
+        listId: String,
+        title: String? = null,
+        icon: String? = null,
+        color: String? = null,
+        description: String? = null,
+        isPublic: Boolean? = null,
+    ): Result<TodoList> {
+        val result = listsApi.updateList(
+            listId,
+            UpdateListRequest(title = title, icon = icon, color = color, description = description, isPublic = isPublic)
+        )
         result.onSuccess { updated ->
             _lists.value = _lists.value.map { if (it.id == listId) updated else it }
             _currentListWithItems.value?.let { (list, items) ->
@@ -103,8 +124,12 @@ class ListsRepository(
         assignedTo: String? = null,
         dueAt: String? = null,
         isFavorite: Boolean? = null,
+        priority: String? = null,
+        reward: String? = null,
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
+        media: MediaItemFields? = null,
+        wishlist: WishlistItemFields? = null,
     ): Result<TodoItem> {
         val result = listsApi.createItem(
             listId,
@@ -114,8 +139,12 @@ class ListsRepository(
                 assignedTo = assignedTo,
                 dueAt = dueAt,
                 isFavorite = isFavorite,
+                priority = priority,
+                reward = reward,
                 shopping = shopping,
                 choreSchedule = choreSchedule,
+                media = media,
+                wishlist = wishlist,
             )
         )
         result.onSuccess { newItem ->
@@ -153,8 +182,12 @@ class ListsRepository(
         assignedTo: String? = null,  // null = не менять; "" = сбросить
         dueAt: String? = null,        // null = не менять; "" = сбросить
         isFavorite: Boolean? = null,
+        priority: String? = null,     // null = не менять; "" = сбросить
+        reward: String? = null,       // null = не менять; "" = сбросить
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
+        media: MediaItemFields? = null,
+        wishlist: WishlistItemFields? = null,
     ): Result<TodoItem> {
         val result = listsApi.updateItem(
             itemId,
@@ -164,8 +197,12 @@ class ListsRepository(
                 assignedTo = assignedTo,
                 dueAt = dueAt,
                 isFavorite = isFavorite,
+                priority = priority,
+                reward = reward,
                 shopping = shopping,
                 choreSchedule = choreSchedule,
+                media = media,
+                wishlist = wishlist,
             )
         )
         result.onSuccess { updated ->

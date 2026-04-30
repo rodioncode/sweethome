@@ -2,7 +2,6 @@ package com.jetbrains.kmpapp.data.lists
 
 import com.jetbrains.kmpapp.auth.ApiEnvelope
 import com.jetbrains.kmpapp.auth.EmptyResponse
-import com.jetbrains.kmpapp.auth.getApiBaseUrl
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.delete
@@ -18,12 +17,8 @@ class KtorListsApi(
     private val baseUrl: String,
 ) : ListsApi {
 
-    override suspend fun getLists(scope: String?, groupId: String?): Result<List<TodoList>> = runCatching {
-        val params = buildList {
-            scope?.let { add("scope=$it") }
-            groupId?.let { add("groupId=$it") }
-        }
-        val query = params.takeIf { it.isNotEmpty() }?.joinToString("&")?.let { "?$it" } ?: ""
+    override suspend fun getLists(workspaceId: String?): Result<List<TodoList>> = runCatching {
+        val query = workspaceId?.let { "?workspaceId=$it" } ?: ""
         val envelope: ApiEnvelope<ListsWrapper> = apiClient.get("$baseUrl/lists$query").body()
         require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
         require(envelope.data != null) { "No data in response" }

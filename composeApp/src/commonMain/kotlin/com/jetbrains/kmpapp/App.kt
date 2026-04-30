@@ -96,7 +96,13 @@ data class TemplateDetailDestination(val title: String = "Список поку�
 object NotificationsDestination
 
 @Serializable
-data class ChatDestination(val title: String = "Наша семья", val memberCount: Int = 4)
+data class ChatDestination(val workspaceId: String = "", val title: String = "Чат", val memberCount: Int = 0)
+
+@Serializable
+object PasswordResetRequestDestination
+
+@Serializable
+data class PasswordResetConfirmDestination(val token: String = "")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -168,6 +174,29 @@ fun App() {
                         },
                         onNavigateToRegister = { navController.navigate(RegisterDestination) },
                         onNavigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                        onNavigateToPasswordReset = { navController.navigate(PasswordResetRequestDestination) },
+                    )
+                }
+                composable<PasswordResetRequestDestination> {
+                    com.jetbrains.kmpapp.auth.PasswordResetRequestScreen(
+                        onBack = { navController.popBackStack() },
+                        onSent = {
+                            navController.navigate(PasswordResetConfirmDestination()) {
+                                popUpTo(PasswordResetRequestDestination) { inclusive = true }
+                            }
+                        },
+                    )
+                }
+                composable<PasswordResetConfirmDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<PasswordResetConfirmDestination>()
+                    com.jetbrains.kmpapp.auth.PasswordResetConfirmScreen(
+                        token = dest.token,
+                        onBack = { navController.popBackStack() },
+                        onSuccess = {
+                            navController.navigate(AuthDestination) {
+                                popUpTo(PasswordResetConfirmDestination()) { inclusive = true }
+                            }
+                        },
                     )
                 }
                 composable<RegisterDestination> {
@@ -320,6 +349,7 @@ fun App() {
                 composable<ChatDestination> { backStackEntry ->
                     val dest = backStackEntry.toRoute<ChatDestination>()
                     ChatScreen(
+                        workspaceId = dest.workspaceId,
                         chatTitle = dest.title,
                         memberCount = dest.memberCount,
                         navigateBack = { navController.popBackStack() },

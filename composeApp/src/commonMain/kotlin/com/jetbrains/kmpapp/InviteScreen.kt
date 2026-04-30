@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.InvalidInviteException
+import com.jetbrains.kmpapp.data.groups.InviteExpiredException
 import org.koin.compose.koinInject
 
 @Composable
@@ -32,15 +33,15 @@ fun InviteScreen(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(token) {
-        groupsRepository.acceptInvite(token)
-            .onSuccess { response ->
-                val group = groupsRepository.groups.value.find { it.id == response.groupId }
-                onSuccess(response.groupId, group?.name ?: "Группа")
+        groupsRepository.joinByCode(token)
+            .onSuccess { workspace ->
+                onSuccess(workspace.id, workspace.title)
             }
             .onFailure { err ->
                 when (err) {
                     is EmailRequiredException -> onEmailRequired()
-                    is InvalidInviteException -> errorMessage = "Приглашение недействительно или истекло"
+                    is InvalidInviteException, is InviteExpiredException ->
+                        errorMessage = "Приглашение недействительно или истекло"
                     else -> errorMessage = err.message ?: "Ошибка при принятии приглашения"
                 }
             }

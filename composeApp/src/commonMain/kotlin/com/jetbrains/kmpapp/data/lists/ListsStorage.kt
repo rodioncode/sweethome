@@ -74,30 +74,34 @@ private class RoomListsStorage(
 
     private fun TodoList.toEntity() = TodoListEntity(
         id = id,
+        workspaceId = workspaceId,
         type = type,
         title = title,
         icon = icon,
         color = color,
-        scope = scope,
-        ownerUserId = ownerUserId,
-        ownerGroupId = ownerGroupId,
+        description = description,
+        customTypeLabel = customTypeLabel,
         createdBy = createdBy,
         createdAt = createdAt,
         archivedAt = archivedAt,
+        isPublic = isPublic,
+        publicToken = publicToken,
     )
 
     private fun TodoListEntity.toDomain() = TodoList(
         id = id,
+        workspaceId = workspaceId,
         type = type,
         title = title,
         icon = icon,
         color = color,
-        scope = scope,
-        ownerUserId = ownerUserId,
-        ownerGroupId = ownerGroupId,
+        description = description,
+        customTypeLabel = customTypeLabel,
         createdBy = createdBy,
         createdAt = createdAt,
         archivedAt = archivedAt,
+        isPublic = isPublic,
+        publicToken = publicToken,
     )
 
     private fun TodoItem.toEntity() = TodoItemEntity(
@@ -113,9 +117,13 @@ private class RoomListsStorage(
         updatedAt = updatedAt,
         shoppingJson = shopping?.let { json.encodeToString(it) },
         choreScheduleJson = choreSchedule?.let { json.encodeToString(it) },
+        mediaJson = media?.let { json.encodeToString(it) },
+        wishlistJson = wishlist?.let { json.encodeToString(it) },
         assignedTo = assignedTo,
         dueAt = dueAt,
         isFavorite = isFavorite,
+        priority = priority,
+        reward = reward,
         version = version,
     )
 
@@ -132,9 +140,13 @@ private class RoomListsStorage(
         updatedAt = updatedAt,
         shopping = shoppingJson?.let { json.decodeFromString<ShoppingItemFields>(it) },
         choreSchedule = choreScheduleJson?.let { json.decodeFromString<ChoreSchedule>(it) },
+        media = mediaJson?.let { json.decodeFromString<MediaItemFields>(it) },
+        wishlist = wishlistJson?.let { json.decodeFromString<WishlistItemFields>(it) },
         assignedTo = assignedTo,
         dueAt = dueAt,
         isFavorite = isFavorite,
+        priority = priority,
+        reward = reward,
         version = version,
     )
 }

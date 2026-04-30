@@ -1,11 +1,14 @@
 package com.jetbrains.kmpapp.data.groups
 
 interface GroupsApi {
-    suspend fun getGroups(): Result<List<Group>>
-    suspend fun createGroup(request: CreateGroupRequest): Result<Group>
-    suspend fun createInvite(groupId: String): Result<Invite>
-    suspend fun acceptInvite(token: String): Result<AcceptInviteResponse>
-    suspend fun deleteGroup(groupId: String): Result<Unit>
-    suspend fun removeMember(groupId: String, userId: String): Result<Unit>
-    suspend fun transferOwnership(groupId: String, request: TransferOwnershipRequest): Result<Unit>
+    suspend fun getWorkspaces(): Result<List<Group>>
+    suspend fun createWorkspace(request: CreateWorkspaceRequest): Result<Group>
+    suspend fun getWorkspace(workspaceId: String): Result<Group>
+    suspend fun patchWorkspace(workspaceId: String, request: PatchWorkspaceRequest): Result<Group>
+    suspend fun deleteWorkspace(workspaceId: String): Result<Unit>
+    suspend fun getWorkspaceMembers(workspaceId: String): Result<List<GroupMember>>
+    suspend fun removeMember(workspaceId: String, userId: String): Result<Unit>
+    suspend fun transferOwnership(workspaceId: String, request: TransferOwnershipRequest): Result<Unit>
+    suspend fun createInviteCode(workspaceId: String): Result<Invite>
+    suspend fun joinByCode(token: String): Result<Group>
 }

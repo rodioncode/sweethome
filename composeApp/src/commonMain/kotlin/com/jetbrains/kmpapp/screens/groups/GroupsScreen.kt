@@ -210,7 +210,7 @@ private fun GroupCard(
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    group.name,
+                    group.title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary,
@@ -220,10 +220,6 @@ private fun GroupCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(typeLabel, fontSize = 12.sp, color = TextSecondary)
-                    group.members?.size?.let { memberCount ->
-                        Text("·", fontSize = 12.sp, color = TextSecondary)
-                        Text("$memberCount уч.", fontSize = 12.sp, color = TextSecondary)
-                    }
                 }
             }
             Surface(

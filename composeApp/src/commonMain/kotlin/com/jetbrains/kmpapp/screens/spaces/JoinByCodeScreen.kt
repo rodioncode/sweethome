@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.InvalidInviteException
+import com.jetbrains.kmpapp.data.groups.InviteExpiredException
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import kotlinx.coroutines.launch
@@ -82,16 +83,15 @@ fun JoinByCodeScreen(
         if (trimmed.length < CODE_LENGTH) return
         isLoading = true
         coroutineScope.launch {
-            groupsRepository.acceptInvite(trimmed)
-                .onSuccess { response ->
-                    val group = groupsRepository.groups.value.find { it.id == response.groupId }
-                    onSuccess(response.groupId, group?.name ?: "Группа")
+            groupsRepository.joinByCode(trimmed)
+                .onSuccess { workspace ->
+                    onSuccess(workspace.id, workspace.title)
                 }
                 .onFailure { err ->
                     isLoading = false
                     when (err) {
                         is EmailRequiredException -> onEmailRequired()
-                        is InvalidInviteException ->
+                        is InvalidInviteException, is InviteExpiredException ->
                             snackbarHostState.showSnackbar("Код недействителен или истёк")
                         else ->
                             snackbarHostState.showSnackbar(err.message ?: "Ошибка при вступлении")
