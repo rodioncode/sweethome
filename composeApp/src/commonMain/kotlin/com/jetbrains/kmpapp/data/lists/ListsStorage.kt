@@ -19,8 +19,8 @@ interface ListsStorage {
 fun createListsStorage(platformContext: Any?): ListsStorage {
     val db = getListsDatabaseBuilder(platformContext)
         .setDriver(BundledSQLiteDriver())
-        .setQueryCoroutineContext(Dispatchers.IO)
-        .fallbackToDestructiveMigration()
+        .setQueryCoroutineContext(Dispatchers.Default)
+        .fallbackToDestructiveMigration(dropAllTables = true)
         .build()
     return RoomListsStorage(db)
 }
@@ -33,15 +33,15 @@ private class RoomListsStorage(
     private val itemDao = db.todoItemDao()
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun saveLists(lists: List<TodoList>) = withContext(Dispatchers.IO) {
+    override suspend fun saveLists(lists: List<TodoList>) = withContext(Dispatchers.Default) {
         listDao.insertAll(lists.map { it.toEntity() })
     }
 
-    override suspend fun getLists(): List<TodoList> = withContext(Dispatchers.IO) {
+    override suspend fun getLists(): List<TodoList> = withContext(Dispatchers.Default) {
         listDao.getAllLists().first().map { it.toDomain() }
     }
 
-    override suspend fun saveListWithItems(list: TodoList, items: List<TodoItem>) = withContext(Dispatchers.IO) {
+    override suspend fun saveListWithItems(list: TodoList, items: List<TodoItem>) = withContext(Dispatchers.Default) {
         listDao.insert(list.toEntity())
         itemDao.deleteByListId(list.id)
         if (items.isNotEmpty()) {
@@ -49,18 +49,18 @@ private class RoomListsStorage(
         }
     }
 
-    override suspend fun getListWithItems(listId: String): Pair<TodoList, List<TodoItem>>? = withContext(Dispatchers.IO) {
+    override suspend fun getListWithItems(listId: String): Pair<TodoList, List<TodoItem>>? = withContext(Dispatchers.Default) {
         val listEntity = listDao.getListById(listId) ?: return@withContext null
         val itemEntities = itemDao.getItemsByListIdSync(listId)
         listEntity.toDomain() to itemEntities.map { it.toDomain() }
     }
 
-    override suspend fun clear() = withContext(Dispatchers.IO) {
+    override suspend fun clear() = withContext(Dispatchers.Default) {
         listDao.deleteAll()
         itemDao.deleteAll()
     }
 
-    override suspend fun applySync(updatedItems: List<TodoItem>, deletedIds: List<String>) = withContext(Dispatchers.IO) {
+    override suspend fun applySync(updatedItems: List<TodoItem>, deletedIds: List<String>) = withContext(Dispatchers.Default) {
         for (id in deletedIds) {
             itemDao.deleteById(id)
         }

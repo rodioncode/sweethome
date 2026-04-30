@@ -4,14 +4,14 @@ import ComposeApp
 @main
 struct iOSApp: App {
     init() {
-        KoinKt.doInitKoin()
+        Koin_iosKt.doInitKoin()
     }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .onOpenURL { url in
-                    DeepLinkHandlerKt.handleDeepLink(url: url.absoluteString)
+                    DeepLinkHandler.shared.handleDeepLink(url: url.absoluteString)
                 }
         }
     }

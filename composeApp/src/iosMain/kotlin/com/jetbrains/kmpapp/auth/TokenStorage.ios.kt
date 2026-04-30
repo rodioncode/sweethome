@@ -1,24 +1,24 @@
 package com.jetbrains.kmpapp.auth
 
+import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.MemScope
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
-import kotlinx.cinterop.cstr
+import kotlinx.cinterop.interpretCPointer
+import kotlinx.cinterop.interpretObjCPointerOrNull
 import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.objcPtr
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
-import platform.CoreFoundation.CFBridgingRelease
-import platform.CoreFoundation.CFBridgingRetain
-import platform.CoreFoundation.CFDictionaryCreateMutable
-import platform.CoreFoundation.CFDictionarySetValue
-import platform.CoreFoundation.CFMutableDictionaryRef
-import platform.CoreFoundation.CFRelease
-import platform.CoreFoundation.CFStringCreateWithCString
+import platform.CoreFoundation.CFDictionaryRef
 import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.CFTypeRefVar
 import platform.CoreFoundation.kCFBooleanTrue
-import platform.CoreFoundation.kCFStringEncodingUTF8
 import platform.Foundation.NSData
+import platform.Foundation.NSMutableDictionary
+import platform.Foundation.NSNumber
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
@@ -40,57 +40,75 @@ import platform.Security.kSecValueData
 actual fun createTokenStorage(platformContext: Any?): TokenStorage = IosKeychainTokenStorage()
 
 @OptIn(ExperimentalForeignApi::class)
+@Suppress("UNCHECKED_CAST")
 private class IosKeychainTokenStorage : TokenStorage {
 
-    private fun MemScope.cfStr(s: String): CFStringRef? =
-        CFStringCreateWithCString(null, s.cstr.ptr, kCFStringEncodingUTF8)
+    private fun CFStringRef?.ns(): NSString? =
+        this?.let { interpretObjCPointerOrNull<NSString>(it.rawValue) }
 
-    private fun MemScope.buildQuery(account: String): CFMutableDictionaryRef? {
-        val dict = CFDictionaryCreateMutable(null, 4, null, null) ?: return null
-        CFDictionarySetValue(dict, kSecClass, kSecClassGenericPassword)
-        CFDictionarySetValue(dict, kSecAttrService, cfStr(SERVICE))
-        CFDictionarySetValue(dict, kSecAttrAccount, cfStr(account))
-        return dict
+    // Toll-free bridge via raw ObjC pointer — avoids the unsafe `as CFDictionaryRef` class cast
+    // Type parameter inferred from CFDictionaryRef = CPointer<__CFDictionary>
+    private fun NSMutableDictionary.toCFDict(): CFDictionaryRef? =
+        interpretCPointer(objcPtr())
+
+    private fun buildQuery(account: String): NSMutableDictionary = NSMutableDictionary().apply {
+        setObject(kSecClassGenericPassword.ns()!!, kSecClass.ns()!!)
+        setObject(NSString.create(string = SERVICE)!!, kSecAttrService.ns()!!)
+        setObject(NSString.create(string = account)!!, kSecAttrAccount.ns()!!)
     }
 
-    private fun keychainSave(account: String, value: String) = memScoped {
-        val data = NSString.create(string = value)!!.dataUsingEncoding(NSUTF8StringEncoding)!!
-        val dataRef = CFBridgingRetain(data)
-        val query = buildQuery(account) ?: run { dataRef?.let { CFRelease(it) }; return@memScoped }
-
-        val updateDict = CFDictionaryCreateMutable(null, 1, null, null)!!
-        CFDictionarySetValue(updateDict, kSecValueData, dataRef)
-
-        val status = SecItemUpdate(query, updateDict)
-        if (status == errSecItemNotFound) {
-            CFDictionarySetValue(query, kSecValueData, dataRef)
-            SecItemAdd(query, null)
+    private fun String.toNSData(): NSData {
+        val bytes = encodeToByteArray()
+        return bytes.usePinned { pinned ->
+            NSData.create(bytes = pinned.addressOf(0), length = bytes.size.toULong())
         }
-
-        dataRef?.let { CFRelease(it) }
-        CFRelease(updateDict)
-        CFRelease(query)
     }
 
-    private fun keychainRead(account: String): String? = memScoped {
-        val query = buildQuery(account) ?: return@memScoped null
-        CFDictionarySetValue(query, kSecReturnData, kCFBooleanTrue)
-        CFDictionarySetValue(query, kSecMatchLimit, kSecMatchLimitOne)
+    private fun keychainSave(account: String, value: String) {
+        try {
+            val data: NSData = value.toNSData()
+            val query = buildQuery(account)
+            val updateAttrs = NSMutableDictionary().apply {
+                setObject(data, kSecValueData.ns()!!)
+            }
+            val status = SecItemUpdate(query.toCFDict(), updateAttrs.toCFDict())
+            if (status == errSecItemNotFound) {
+                query.setObject(data, kSecValueData.ns()!!)
+                SecItemAdd(query.toCFDict(), null)
+            }
+        } catch (_: Throwable) {}
+    }
 
-        val result = alloc<CFTypeRefVar>()
-        val status = SecItemCopyMatching(query, result.ptr)
-        CFRelease(query)
+    private fun keychainRead(account: String): String? = try {
+        keychainReadInternal(account)
+    } catch (_: Throwable) {
+        null
+    }
 
+    private fun keychainReadInternal(account: String): String? = memScoped {
+        val boolTrue = interpretObjCPointerOrNull<NSNumber>(kCFBooleanTrue!!.rawValue)
+            ?: return@memScoped null
+        val query = buildQuery(account).apply {
+            setObject(boolTrue, kSecReturnData.ns()!!)
+            setObject(kSecMatchLimitOne.ns()!!, kSecMatchLimit.ns()!!)
+        }
+        val result = alloc<ObjCObjectVar<Any?>>()
+        val status = SecItemCopyMatching(
+            query.toCFDict(),
+            result.ptr as CValuesRef<CFTypeRefVar>
+        )
         if (status != errSecSuccess) return@memScoped null
-        val dataRef = result.value ?: return@memScoped null
-        val nsData = CFBridgingRelease(dataRef) as? NSData ?: return@memScoped null
+        val nsData = result.value as? NSData ?: run {
+            keychainDelete(account)
+            return@memScoped null
+        }
         NSString.create(nsData, NSUTF8StringEncoding)?.toString()
     }
 
-    private fun keychainDelete(account: String) = memScoped {
-        val query = buildQuery(account) ?: return@memScoped
-        SecItemDelete(query)
-        CFRelease(query)
+    private fun keychainDelete(account: String) {
+        try {
+            SecItemDelete(buildQuery(account).toCFDict())
+        } catch (_: Throwable) {}
     }
 
     override fun getAccessToken() = keychainRead(KEY_ACCESS)

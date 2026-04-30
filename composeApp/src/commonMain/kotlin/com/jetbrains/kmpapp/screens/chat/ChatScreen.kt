@@ -40,6 +40,7 @@ import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.TextPrimary
 import com.jetbrains.kmpapp.ui.TextSecondary
+import kotlinx.datetime.Clock
 
 private data class ChatMessage(
     val id: String,
@@ -201,7 +202,7 @@ fun ChatScreen(
                     onClick = {
                         if (canSend) {
                             val newMsg = ChatMessage(
-                                id = "m${System.currentTimeMillis()}",
+                                id = "m${Clock.System.now().toEpochMilliseconds()}",
                                 senderId = MY_SENDER_ID,
                                 senderName = "Я",
                                 senderInitials = "Я",

@@ -1,24 +1,38 @@
 package com.jetbrains.kmpapp.auth
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 
 actual fun createTokenStorage(platformContext: Any?): TokenStorage =
     AndroidTokenStorage(platformContext as Context)
 
-private class AndroidTokenStorage(context: Context) : TokenStorage {
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+private class AndroidTokenStorage(private val context: Context) : TokenStorage {
+    private val prefs: SharedPreferences = openOrRecreate()
 
-    private val prefs = EncryptedSharedPreferences.create(
-        context,
-        "auth_tokens",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private fun openOrRecreate(): SharedPreferences {
+        return try {
+            createEncryptedPrefs()
+        } catch (e: Exception) {
+            // Keystore key was invalidated (e.g. app reinstall) — wipe stale prefs and start fresh
+            context.deleteSharedPreferences(PREFS_NAME)
+            createEncryptedPrefs()
+        }
+    }
+
+    private fun createEncryptedPrefs(): SharedPreferences {
+        val masterKey = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return EncryptedSharedPreferences.create(
+            context,
+            PREFS_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+        )
+    }
 
     override fun getAccessToken(): String? = prefs.getString(KEY_ACCESS, null)
     override fun getRefreshToken(): String? = prefs.getString(KEY_REFRESH, null)
@@ -45,6 +59,7 @@ private class AndroidTokenStorage(context: Context) : TokenStorage {
     }
 
     companion object {
+        private const val PREFS_NAME = "auth_tokens"
         private const val KEY_ACCESS = "access_token"
         private const val KEY_REFRESH = "refresh_token"
         private const val KEY_USER_ID = "user_id"
