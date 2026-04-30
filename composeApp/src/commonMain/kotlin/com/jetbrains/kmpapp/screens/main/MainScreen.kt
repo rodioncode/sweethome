@@ -195,6 +195,7 @@ fun MainScreen(
                 onListClick = navigateToListDetail,
                 navigateToGamification = navigateToGamification,
                 navigateToShop = navigateToShop,
+                navigateToJoinByCode = navigateToJoinByCode,
             )
             MainTab.LISTS -> TodoListsContent(
                 lists = lists,
