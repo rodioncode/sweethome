@@ -8,4 +8,6 @@ interface AuthApi {
     suspend fun logout(refreshToken: String): Result<Unit>
     suspend fun linkEmail(request: LinkEmailRequest): Result<Unit>
     suspend fun registerDevice(request: RegisterDeviceRequest): Result<Unit>
+    suspend fun requestPasswordReset(email: String): Result<Unit>
+    suspend fun confirmPasswordReset(token: String, newPassword: String): Result<Unit>
 }

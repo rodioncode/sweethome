@@ -78,4 +78,22 @@ class KtorAuthApi(
         require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
         Unit
     }
+
+    override suspend fun requestPasswordReset(email: String): Result<Unit> = runCatching {
+        val envelope: ApiEnvelope<EmptyResponse> = authClient.post("$baseUrl/auth/password/reset/request") {
+            contentType(ContentType.Application.Json)
+            setBody(PasswordResetRequestBody(email))
+        }.body()
+        require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
+        Unit
+    }
+
+    override suspend fun confirmPasswordReset(token: String, newPassword: String): Result<Unit> = runCatching {
+        val envelope: ApiEnvelope<EmptyResponse> = authClient.post("$baseUrl/auth/password/reset/confirm") {
+            contentType(ContentType.Application.Json)
+            setBody(PasswordResetConfirmBody(token, newPassword))
+        }.body()
+        require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
+        Unit
+    }
 }

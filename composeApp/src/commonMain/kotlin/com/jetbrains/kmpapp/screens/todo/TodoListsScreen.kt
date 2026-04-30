@@ -131,8 +131,8 @@ fun TodoListsScreen(
             contentPadding = paddingValues,
             showCreateDialog = showCreateDialog,
             onShowCreateDialog = { showCreateDialog = it },
-            onCreateList = { title, type, icon, color, scope, groupId ->
-                viewModel.createList(title, type, icon, color, scope, groupId)
+            onCreateList = { title, type, icon, color, workspaceId ->
+                viewModel.createList(title, type, workspaceId, icon, color)
             },
             onListClick = navigateToListDetail,
         )
@@ -153,7 +153,7 @@ internal fun TodoListsContent(
     contentPadding: PaddingValues,
     showCreateDialog: Boolean,
     onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
+    onCreateList: (title: String, type: String, icon: String?, color: String?, workspaceId: String) -> Unit,
     onListClick: (String) -> Unit,
     isGuest: Boolean = false,
     navigateToLinkEmail: (() -> Unit)? = null,
@@ -254,18 +254,13 @@ internal fun TodoListsContent(
         CreateListDialog(
             groups = groups,
             onDismiss = { onShowCreateDialog(false) },
-            onConfirm = { title, type, icon, color, scope, groupId ->
-                onCreateList(title, type, icon, color, scope, groupId)
+            onConfirm = { title, type, icon, color, workspaceId ->
+                onCreateList(title, type, icon, color, workspaceId)
                 onShowCreateDialog(false)
             },
         )
     }
 }
-
-private val scopeOptions = listOf(
-    "personal" to "Личный",
-    "group" to "Групповой",
-)
 
 // List types with label, emoji and description
 private data class ListTypeOption(val type: String, val emoji: String, val label: String, val desc: String)
@@ -300,7 +295,7 @@ private val listIconOptions = listOf("📋", "🛍", "📦", "🎯", "💡", "�
 internal fun CreateListBottomSheet(
     groups: List<Group> = emptyList(),
     onDismiss: () -> Unit,
-    onConfirm: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
+    onConfirm: (title: String, type: String, icon: String?, color: String?, workspaceId: String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var step by remember { mutableStateOf(1) }
@@ -311,8 +306,9 @@ internal fun CreateListBottomSheet(
     val selectedColorHex = listColorPresets[selectedColorIndex].second
     var selectedIcon by remember { mutableStateOf<String?>(null) }
     var description by remember { mutableStateOf("") }
-    var selectedScope by remember { mutableStateOf("personal") }
-    var selectedGroupId by remember { mutableStateOf<String?>(null) }
+    val personalWorkspace = groups.firstOrNull { it.type == "personal" }
+    val nonPersonalWorkspaces = groups.filter { it.type != "personal" }
+    var selectedWorkspaceId by remember(personalWorkspace) { mutableStateOf(personalWorkspace?.id ?: "") }
     var groupExpanded by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
@@ -475,31 +471,27 @@ internal fun CreateListBottomSheet(
                     )
                 }
 
-                // Scope selector
+                // Workspace selector
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("ПРОСТРАНСТВО", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        listOf("personal" to "Личное", "group" to "Групповое").forEach { (scope, label) ->
-                            FilterChip(
-                                selected = selectedScope == scope,
-                                onClick = {
-                                    selectedScope = scope
-                                    if (scope == "personal") selectedGroupId = null
-                                },
-                                label = { Text(label) },
-                            )
-                        }
+                    val allWorkspaces = buildList {
+                        personalWorkspace?.let { add(it.id to "Личное") }
+                        nonPersonalWorkspaces.forEach { add(it.id to it.title) }
                     }
-                    if (selectedScope == "group" && groups.isNotEmpty()) {
+                    if (allWorkspaces.size <= 1) {
+                        // Single workspace — show as a chip
+                        allWorkspaces.firstOrNull()?.let { (id, label) ->
+                            FilterChip(selected = true, onClick = {}, label = { Text(label) })
+                        }
+                    } else {
                         ExposedDropdownMenuBox(
                             expanded = groupExpanded,
                             onExpandedChange = { groupExpanded = it },
                         ) {
                             OutlinedTextField(
-                                value = groups.find { it.id == selectedGroupId }?.name ?: "Выберите группу",
+                                value = allWorkspaces.find { it.first == selectedWorkspaceId }?.second ?: "Выберите пространство",
                                 onValueChange = {},
                                 readOnly = true,
-                                label = { Text("Группа") },
                                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -507,10 +499,10 @@ internal fun CreateListBottomSheet(
                                 shape = MaterialTheme.shapes.medium,
                             )
                             ExposedDropdownMenu(expanded = groupExpanded, onDismissRequest = { groupExpanded = false }) {
-                                groups.forEach { group ->
+                                allWorkspaces.forEach { (id, label) ->
                                     DropdownMenuItem(
-                                        text = { Text(group.name) },
-                                        onClick = { selectedGroupId = group.id; groupExpanded = false },
+                                        text = { Text(label) },
+                                        onClick = { selectedWorkspaceId = id; groupExpanded = false },
                                     )
                                 }
                             }
@@ -604,18 +596,13 @@ internal fun CreateListBottomSheet(
                 // Create button
                 Surface(
                     onClick = {
-                        if (selectedScope == "personal" || selectedGroupId != null) {
-                            val finalType = when (selectedTypeOption.type) {
-                                "study", "travel", "custom", "wishlist", "media" -> "general_todos"
-                                else -> selectedTypeOption.type
-                            }
+                        if (selectedWorkspaceId.isNotBlank()) {
                             onConfirm(
                                 title.ifBlank { "Мой список" },
-                                finalType,
+                                selectedTypeOption.type,
                                 selectedIcon,
                                 selectedColorHex,
-                                selectedScope,
-                                selectedGroupId,
+                                selectedWorkspaceId,
                             )
                         }
                     },
@@ -643,7 +630,7 @@ internal fun CreateListBottomSheet(
 internal fun CreateListDialog(
     groups: List<Group> = emptyList(),
     onDismiss: () -> Unit,
-    onConfirm: (title: String, type: String, icon: String?, color: String?, scope: String, groupId: String?) -> Unit,
+    onConfirm: (title: String, type: String, icon: String?, color: String?, workspaceId: String) -> Unit,
 ) {
     CreateListBottomSheet(groups = groups, onDismiss = onDismiss, onConfirm = onConfirm)
 }

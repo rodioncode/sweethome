@@ -6,6 +6,7 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.Invite
 import com.jetbrains.kmpapp.data.groups.OwnerCannotLeaveException
@@ -40,6 +41,8 @@ class GroupDetailViewModel(
         groups.find { it.id == id }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    val members: StateFlow<List<GroupMember>> = groupsRepository.members
+
     val groupLists: StateFlow<List<TodoList>> = listsRepository.lists
 
     private val _uiEvent = MutableSharedFlow<GroupDetailUiEvent>()
@@ -51,7 +54,8 @@ class GroupDetailViewModel(
         _groupId.value = groupId
         viewModelScope.launch {
             groupsRepository.loadGroups()
-            listsRepository.loadLists(scope = "group", groupId = groupId)
+            groupsRepository.loadWorkspaceMembers(groupId)
+            listsRepository.loadLists(workspaceId = groupId)
         }
     }
 
@@ -121,8 +125,7 @@ class GroupDetailViewModel(
             listsRepository.createList(
                 type = "general_todos",
                 title = title,
-                scope = "group",
-                groupId = groupId,
+                workspaceId = groupId,
             )
         }
     }

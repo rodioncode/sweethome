@@ -29,6 +29,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val displayName: String,
+    val acceptedTerms: Boolean = true,
 )
 
 @Serializable
@@ -58,4 +59,15 @@ data class LinkEmailRequest(
 data class RegisterDeviceRequest(
     val platform: String,
     val pushToken: String,
+)
+
+@Serializable
+data class PasswordResetRequestBody(
+    val email: String,
+)
+
+@Serializable
+data class PasswordResetConfirmBody(
+    val token: String,
+    val newPassword: String,
 )

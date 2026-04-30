@@ -202,8 +202,8 @@ fun MainScreen(
                 contentPadding = paddingValues,
                 showCreateDialog = showCreateListDialog,
                 onShowCreateDialog = { showCreateListDialog = it },
-                onCreateList = { title, type, icon, color, scope, groupId ->
-                    todoListsViewModel.createList(title, type, icon, color, scope, groupId)
+                onCreateList = { title, type, icon, color, workspaceId ->
+                    todoListsViewModel.createList(title, type, workspaceId, icon, color)
                 },
                 onListClick = navigateToListDetail,
                 isGuest = isGuest,
@@ -216,7 +216,7 @@ fun MainScreen(
                 groups = groupSpaces,
                 isGuest = isGuest,
                 contentPadding = paddingValues,
-                onGroupClick = { group -> navigateToGroupDetail(group.id, group.name) },
+                onGroupClick = { group -> navigateToGroupDetail(group.id, group.title) },
                 navigateToLinkEmail = navigateToLinkEmail,
                 navigateToJoinByCode = navigateToJoinByCode,
                 onCreateGroup = if (!isGuest) ({ showCreateGroupDialog = true }) else null,
@@ -228,8 +228,8 @@ fun MainScreen(
         CreateListDialog(
             groups = allGroups,
             onDismiss = { showCreateListDialog = false },
-            onConfirm = { title, type, icon, color, scope, groupId ->
-                todoListsViewModel.createList(title, type, icon, color, scope, groupId)
+            onConfirm = { title, type, icon, color, workspaceId ->
+                todoListsViewModel.createList(title, type, workspaceId, icon, color)
                 showCreateListDialog = false
             },
         )

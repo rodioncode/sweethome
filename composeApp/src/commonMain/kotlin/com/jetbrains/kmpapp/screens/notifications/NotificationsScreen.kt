@@ -21,16 +21,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.data.notifications.Notification
 import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
@@ -38,36 +36,21 @@ import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.TextPrimary
 import com.jetbrains.kmpapp.ui.TextSecondary
-
-private data class AppNotification(
-    val id: String,
-    val type: String,
-    val text: String,
-    val sub: String?,
-    val timeAgo: String,
-    var isRead: Boolean,
-)
-
-private val sampleNotifications = listOf(
-    AppNotification("n1", "item_done", "Аня выполнила «Купить молоко»", "Список покупок", "5 мин назад", false),
-    AppNotification("n2", "assigned", "Дима назначил тебе задачу «Убрать кухню»", null, "32 мин назад", false),
-    AppNotification("n3", "joined", "Соня присоединилась к вашей группе", "Наша семья", "2 ч назад", true),
-    AppNotification("n4", "due", "Дедлайн через 1 час: «Оплата аренды»", "Задачи", "3 ч назад", true),
-    AppNotification("n5", "item_added", "Гриша добавил 3 задачи в «Список покупок»", null, "Вчера", true),
-)
+import org.koin.compose.viewmodel.koinViewModel
 
 private fun typeIcon(type: String) = when (type) {
-    "item_done" -> "✅"
-    "assigned" -> "👤"
-    "joined" -> "👥"
-    "due" -> "⏰"
-    "item_added" -> "➕"
+    "item_done", "task_completed" -> "✅"
+    "assigned", "task_assigned" -> "👤"
+    "joined", "member_joined" -> "👥"
+    "due", "task_due" -> "⏰"
+    "item_added", "task_created" -> "➕"
     else -> "🔔"
 }
 
 @Composable
 fun NotificationsScreen() {
-    var notifications by remember { mutableStateOf(sampleNotifications) }
+    val viewModel = koinViewModel<NotificationsViewModel>()
+    val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val unreadCount = notifications.count { !it.isRead }
 
     Column(
@@ -75,7 +58,6 @@ fun NotificationsScreen() {
             .fillMaxSize()
             .background(SurfaceVariantCream),
     ) {
-        // Header
         Surface(
             color = SurfaceWhite,
             shadowElevation = 1.dp,
@@ -94,11 +76,7 @@ fun NotificationsScreen() {
                     color = TextPrimary,
                 )
                 if (unreadCount > 0) {
-                    TextButton(
-                        onClick = {
-                            notifications = notifications.map { it.copy(isRead = true) }
-                        }
-                    ) {
+                    TextButton(onClick = { viewModel.markAllRead() }) {
                         Text(
                             "Прочитать все",
                             fontSize = 13.sp,
@@ -142,13 +120,7 @@ fun NotificationsScreen() {
                         )
                     }
                     items(today.size) { i ->
-                        NotifRow(
-                            notif = today[i],
-                            onRead = {
-                                val id = today[i].id
-                                notifications = notifications.map { if (it.id == id) it.copy(isRead = true) else it }
-                            },
-                        )
+                        NotifRow(notif = today[i], onRead = { viewModel.markRead(today[i].id) })
                     }
                 }
                 if (earlier.isNotEmpty()) {
@@ -163,13 +135,7 @@ fun NotificationsScreen() {
                         )
                     }
                     items(earlier.size) { i ->
-                        NotifRow(
-                            notif = earlier[i],
-                            onRead = {
-                                val id = earlier[i].id
-                                notifications = notifications.map { if (it.id == id) it.copy(isRead = true) else it }
-                            },
-                        )
+                        NotifRow(notif = earlier[i], onRead = { viewModel.markRead(earlier[i].id) })
                     }
                 }
             }
@@ -178,7 +144,7 @@ fun NotificationsScreen() {
 }
 
 @Composable
-private fun NotifRow(notif: AppNotification, onRead: () -> Unit) {
+private fun NotifRow(notif: Notification, onRead: () -> Unit) {
     Box(modifier = Modifier.padding(bottom = 8.dp)) {
         Surface(
             onClick = onRead,
@@ -208,22 +174,22 @@ private fun NotifRow(notif: AppNotification, onRead: () -> Unit) {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        notif.text,
+                        notif.title,
                         fontSize = 14.sp,
                         fontWeight = if (notif.isRead) FontWeight.Normal else FontWeight.SemiBold,
                         color = TextPrimary,
                         lineHeight = 20.sp,
                     )
-                    notif.sub?.let { sub ->
+                    if (notif.body.isNotBlank()) {
                         Text(
-                            sub,
+                            notif.body,
                             fontSize = 12.sp,
                             color = TextSecondary,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                     Text(
-                        notif.timeAgo,
+                        notif.createdAt,
                         fontSize = 11.sp,
                         color = TextSecondary.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 4.dp),

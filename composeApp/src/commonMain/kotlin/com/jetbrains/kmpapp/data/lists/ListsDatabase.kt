@@ -7,7 +7,7 @@ import androidx.room.RoomDatabaseConstructor
 
 @Database(
     entities = [TodoListEntity::class, TodoItemEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @ConstructedBy(ListsDatabaseConstructor::class)

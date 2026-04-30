@@ -20,6 +20,14 @@ import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.suggestions.KtorSuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
+import com.jetbrains.kmpapp.data.profile.KtorProfileApi
+import com.jetbrains.kmpapp.data.profile.ProfileApi
+import com.jetbrains.kmpapp.data.notifications.KtorNotificationsApi
+import com.jetbrains.kmpapp.data.notifications.NotificationsApi
+import com.jetbrains.kmpapp.screens.notifications.NotificationsViewModel
+import com.jetbrains.kmpapp.data.chat.ChatApi
+import com.jetbrains.kmpapp.data.chat.KtorChatApi
+import com.jetbrains.kmpapp.screens.chat.ChatViewModel
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
@@ -151,6 +159,10 @@ val dataModule = module {
 
     single<SyncApi> { KtorSyncApi(get(named("apiClient")), getApiBaseUrl()) }
     single { SyncRepository(get(), get(), get(), get()) }
+
+    single<ProfileApi> { KtorProfileApi(get(named("apiClient")), getApiBaseUrl()) }
+    single<NotificationsApi> { KtorNotificationsApi(get(named("apiClient")), getApiBaseUrl()) }
+    single<ChatApi> { KtorChatApi(get(named("apiClient")), getApiBaseUrl()) }
 }
 
 val viewModelModule = module {
@@ -163,6 +175,8 @@ val viewModelModule = module {
     factoryOf(::FamilyViewModel)
     factoryOf(::HomeViewModel)
     factoryOf(::TemplatesViewModel)
+    factoryOf(::NotificationsViewModel)
+    factoryOf(::ChatViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>

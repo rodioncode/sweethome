@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -33,6 +32,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.data.chat.ChatMessage
 import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
@@ -40,35 +41,23 @@ import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.TextPrimary
 import com.jetbrains.kmpapp.ui.TextSecondary
-import kotlinx.datetime.Clock
-
-private data class ChatMessage(
-    val id: String,
-    val senderId: String,
-    val senderName: String,
-    val senderInitials: String,
-    val senderColor: Color,
-    val text: String,
-    val time: String,
-)
-
-private val initialMessages = listOf(
-    ChatMessage("m1", "u2", "Дима", "ДН", Color(0xFF42A5F5), "Привет всем! Кто идёт за покупками сегодня?", "10:30"),
-    ChatMessage("m2", "u1", "Аня", "АН", Color(0xFF5B7C5A), "Я пойду часа через два", "10:31"),
-    ChatMessage("m3", "u3", "Соня", "СН", Color(0xFFAB47BC), "Добавила молоко и хлеб в список 🥛", "10:45"),
-    ChatMessage("m4", "u2", "Дима", "ДН", Color(0xFF42A5F5), "Спасибо! Ещё нужен сыр", "10:46"),
-    ChatMessage("m5", "me", "Я", "Я", Color(0xFF5B7C5A), "Окей, возьму всё с собой", "11:02"),
-)
-
-private const val MY_SENDER_ID = "me"
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ChatScreen(
-    chatTitle: String = "Наша семья",
-    memberCount: Int = 4,
+    workspaceId: String,
+    chatTitle: String = "Чат",
+    memberCount: Int = 0,
     navigateBack: (() -> Unit)? = null,
 ) {
-    var messages by remember { mutableStateOf(initialMessages) }
+    val viewModel = koinViewModel<ChatViewModel>()
+    val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+
+    LaunchedEffect(workspaceId) {
+        viewModel.init(workspaceId)
+    }
+
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
@@ -83,7 +72,6 @@ fun ChatScreen(
             .fillMaxSize()
             .background(SurfaceVariantCream),
     ) {
-        // Header
         Surface(
             color = SurfaceWhite,
             shadowElevation = 1.dp,
@@ -118,17 +106,10 @@ fun ChatScreen(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        chatTitle,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                    )
-                    Text(
-                        "$memberCount участника",
-                        fontSize = 12.sp,
-                        color = TextSecondary,
-                    )
+                    Text(chatTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    if (memberCount > 0) {
+                        Text("$memberCount участника", fontSize = 12.sp, color = TextSecondary)
+                    }
                 }
 
                 Surface(
@@ -144,7 +125,6 @@ fun ChatScreen(
             }
         }
 
-        // Messages list
         LazyColumn(
             state = listState,
             modifier = Modifier.weight(1f),
@@ -155,12 +135,11 @@ fun ChatScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(messages) { msg ->
-                val isMe = msg.senderId == MY_SENDER_ID
+                val isMe = msg.senderId == currentUserId
                 MessageBubble(msg = msg, isMe = isMe)
             }
         }
 
-        // Input bar
         Surface(
             color = SurfaceWhite,
             shadowElevation = 4.dp,
@@ -181,10 +160,7 @@ fun ChatScreen(
                     BasicTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
-                        textStyle = TextStyle(
-                            fontSize = 14.sp,
-                            color = TextPrimary,
-                        ),
+                        textStyle = TextStyle(fontSize = 14.sp, color = TextPrimary),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
@@ -201,16 +177,7 @@ fun ChatScreen(
                 Surface(
                     onClick = {
                         if (canSend) {
-                            val newMsg = ChatMessage(
-                                id = "m${Clock.System.now().toEpochMilliseconds()}",
-                                senderId = MY_SENDER_ID,
-                                senderName = "Я",
-                                senderInitials = "Я",
-                                senderColor = PrimaryGreen,
-                                text = inputText.trim(),
-                                time = "сейчас",
-                            )
-                            messages = messages + newMsg
+                            viewModel.sendMessage(inputText)
                             inputText = ""
                         }
                     },
@@ -229,6 +196,9 @@ fun ChatScreen(
 
 @Composable
 private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
+    val initial = msg.senderName.firstOrNull()?.uppercase() ?: "?"
+    val senderColor = Color(0xFF42A5F5)
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = if (isMe) Arrangement.End else Arrangement.Start,
@@ -238,15 +208,10 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
             Box(
                 modifier = Modifier
                     .size(28.dp)
-                    .background(msg.senderColor, CircleShape),
+                    .background(senderColor, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    msg.senderInitials.take(1),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                )
+                Text(initial, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
             Spacer(Modifier.size(8.dp))
         }
@@ -277,7 +242,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
                 shadowElevation = 1.dp,
             ) {
                 Text(
-                    msg.text,
+                    msg.content,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 15.sp,
                     color = if (isMe) Color.White else TextPrimary,
@@ -286,7 +251,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
             }
 
             Text(
-                msg.time,
+                msg.createdAt,
                 fontSize = 10.sp,
                 color = TextSecondary.copy(alpha = 0.7f),
                 modifier = Modifier.padding(

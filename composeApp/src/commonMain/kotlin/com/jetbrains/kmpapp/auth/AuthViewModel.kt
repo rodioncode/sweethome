@@ -60,6 +60,24 @@ class AuthViewModel(
         }
     }
 
+    fun requestPasswordReset(email: String, onSent: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            authRepository.requestPasswordReset(email)
+                .onSuccess { _uiState.value = AuthUiState.Idle; onSent() }
+                .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Ошибка") }
+        }
+    }
+
+    fun confirmPasswordReset(token: String, newPassword: String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            authRepository.confirmPasswordReset(token, newPassword)
+                .onSuccess { _uiState.value = AuthUiState.Idle; onSuccess() }
+                .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Ошибка") }
+        }
+    }
+
     fun clearError() {
         _uiState.value = AuthUiState.Idle
     }

@@ -126,7 +126,7 @@ fun TodoListDetailScreen(
 
     val list = listWithItems?.first
     val listType = list?.type ?: "general_todos"
-    val isGroupList = list?.scope == "group"
+    val isGroupList = groupMembers.isNotEmpty()
     val listColor = list?.color?.toComposeColor() ?: listColorForType(listType)
     val listIcon = list?.icon ?: listEmojiForType(listType)
     val categoryScope = when (listType) {
@@ -907,7 +907,7 @@ private fun ItemBottomSheet(
                                 onClick = {
                                     assignedTo = if (assignedTo == member.userId) null else member.userId
                                 },
-                                label = { Text(member.displayName) },
+                                label = { Text(member.displayName ?: member.userId) },
                             )
                         }
                     }

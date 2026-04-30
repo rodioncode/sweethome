@@ -5,35 +5,51 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class GroupMember(
     val userId: String,
-    val displayName: String,
+    val displayName: String? = null,
     val role: String, // "owner" | "admin" | "member"
+    val joinedAt: String? = null,
+    val invitedBy: String? = null,
 )
 
 @Serializable
 data class Group(
     val id: String,
-    val name: String,
-    val createdBy: String,
+    val title: String,
+    val icon: String? = null,
+    val ownerId: String? = null,
     val createdAt: String,
+    val updatedAt: String? = null,
+    val archivedAt: String? = null,
     val role: String,                        // "owner" | "member" | "admin" — роль текущего пользователя
-    val type: String = "group",              // "group" | "family"
-    val members: List<GroupMember>? = null,  // опционально — если сервер вернёт
+    val type: String = "group",              // "personal" | "group" | "family" | "mentoring"
 )
 
 @Serializable
-data class GroupsWrapper(
-    val groups: List<Group>,
+data class WorkspacesWrapper(
+    val workspaces: List<Group>,
 )
 
 @Serializable
-data class CreateGroupRequest(
-    val name: String,
-    val type: String = "group",             // "group" | "family"
+data class CreateWorkspaceRequest(
+    val title: String,
+    val type: String = "group",             // "group" | "family" | "mentoring"
+    val icon: String? = null,
+)
+
+@Serializable
+data class PatchWorkspaceRequest(
+    val title: String? = null,
+    val icon: String? = null,
 )
 
 @Serializable
 data class TransferOwnershipRequest(
-    val userId: String,
+    val toUserId: String,
+)
+
+@Serializable
+data class JoinByCodeRequest(
+    val token: String,
 )
 
 @Serializable
@@ -43,10 +59,11 @@ data class Invite(
 )
 
 @Serializable
-data class AcceptInviteResponse(
-    val groupId: String,
+data class WorkspaceMembersWrapper(
+    val members: List<GroupMember>,
 )
 
 class EmailRequiredException : Exception("email_required")
 class OwnerCannotLeaveException : Exception("owner_cannot_leave")
 class InvalidInviteException : Exception("invalid_invite")
+class InviteExpiredException : Exception("invite_expired")

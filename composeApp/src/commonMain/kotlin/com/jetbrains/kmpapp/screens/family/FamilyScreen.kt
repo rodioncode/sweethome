@@ -106,12 +106,12 @@ internal fun FamilyContent(
             )
         } else {
             FamilyHomeContent(
-                spaceName = familySpace!!.name,
-                memberCount = familySpace!!.members?.size ?: 0,
+                spaceName = familySpace!!.title,
+                memberCount = 0,
                 lists = familyLists,
-                onSettingsClick = { onSpaceClick(familySpace!!.id, familySpace!!.name) },
+                onSettingsClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onListClick = onListClick,
-                onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.name) },
+                onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onGamificationClick = navigateToGamification,
                 onShopClick = navigateToShop,
             )

@@ -54,6 +54,7 @@ fun ProfileContent(
     val viewModel = koinViewModel<ProfileViewModel>()
     val isGuest by viewModel.isGuest.collectAsStateWithLifecycle()
     val userId by viewModel.userId.collectAsStateWithLifecycle()
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
     val listCount by viewModel.listCount.collectAsStateWithLifecycle()
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
@@ -119,7 +120,8 @@ fun ProfileContent(
                                 .border(3.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            val initial = userId?.firstOrNull()?.uppercase() ?: "?"
+                            val displayName = profile?.displayName ?: userId ?: ""
+                            val initial = displayName.firstOrNull()?.uppercase() ?: "?"
                             Text(
                                 initial,
                                 fontSize = 28.sp,
@@ -129,14 +131,14 @@ fun ProfileContent(
                         }
                         Column {
                             Text(
-                                if (isGuest) "Гостевой аккаунт" else (userId ?: "Пользователь"),
+                                if (isGuest) "Гостевой аккаунт" else (profile?.displayName ?: userId ?: "Пользователь"),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = OnPrimaryWhite,
                             )
-                            if (!isGuest && userId != null) {
+                            if (!isGuest && profile?.email != null) {
                                 Text(
-                                    userId!!.take(30),
+                                    profile!!.email!!.take(30),
                                     fontSize = 13.sp,
                                     color = Color.White.copy(alpha = 0.7f),
                                     modifier = Modifier.padding(top = 3.dp),
@@ -284,7 +286,7 @@ fun ProfileContent(
                                 "mentoring" -> "🎓"
                                 else -> "👥"
                             },
-                            title = group.name,
+                            title = group.title,
                             subtitle = when (group.role) {
                                 "owner" -> "owner"
                                 else -> "member"

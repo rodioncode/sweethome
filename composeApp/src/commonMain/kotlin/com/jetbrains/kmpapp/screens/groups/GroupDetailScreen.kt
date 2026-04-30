@@ -84,6 +84,7 @@ fun GroupDetailScreen(
     val viewModel = koinViewModel<GroupDetailViewModel>()
     val group by viewModel.group.collectAsStateWithLifecycle()
     val groupLists by viewModel.groupLists.collectAsStateWithLifecycle()
+    val members by viewModel.members.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboardManager = LocalClipboardManager.current
 
@@ -112,7 +113,6 @@ fun GroupDetailScreen(
 
     val isOwner = group?.role == "owner"
     val isAdmin = group?.role == "admin"
-    val members = group?.members ?: emptyList()
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -161,7 +161,7 @@ fun GroupDetailScreen(
                             }
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    group?.name ?: groupName,
+                                    group?.title ?: groupName,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = OnPrimaryWhite,
@@ -221,7 +221,7 @@ fun GroupDetailScreen(
                             ) {
                                 members.take(5).forEachIndexed { index, member ->
                                     MemberAvatar(
-                                        displayName = member.displayName,
+                                        displayName = member.displayName ?: member.userId,
                                         modifier = Modifier.offset(x = (index * (-4)).dp),
                                     )
                                 }
@@ -410,7 +410,7 @@ fun GroupDetailScreen(
 
     // Transfer ownership dialog
     if (showTransferDialog) {
-        val nonOwnerMembers = group?.members?.filter { it.role != "owner" } ?: emptyList()
+        val nonOwnerMembers = members.filter { it.role != "owner" }
         AlertDialog(
             onDismissRequest = { showTransferDialog = false },
             title = { Text("Передать роль владельца") },
@@ -423,7 +423,7 @@ fun GroupDetailScreen(
                             TextButton(
                                 onClick = { viewModel.transferOwnership(member.userId); showTransferDialog = false },
                                 modifier = Modifier.fillMaxWidth(),
-                            ) { Text(member.displayName) }
+                            ) { Text(member.displayName ?: member.userId) }
                         }
                     }
                 }

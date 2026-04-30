@@ -16,6 +16,7 @@ import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -30,22 +31,11 @@ class TodoListDetailViewModel(
         listsRepository.currentListWithItems
     val error: StateFlow<String?> = listsRepository.error
 
-    val memberNames: StateFlow<Map<String, String>> = combine(
-        listsRepository.currentListWithItems,
-        groupsRepository.groups,
-    ) { listData, groups ->
-        val groupId = listData?.first?.ownerGroupId ?: return@combine emptyMap()
-        val members = groups.find { it.id == groupId }?.members ?: return@combine emptyMap()
-        members.associate { it.userId to it.displayName }
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+    val memberNames: StateFlow<Map<String, String>> = groupsRepository.members
+        .map { members -> members.associate { it.userId to (it.displayName ?: it.userId) } }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
 
-    val groupMembers: StateFlow<List<GroupMember>> = combine(
-        listsRepository.currentListWithItems,
-        groupsRepository.groups,
-    ) { listData, groups ->
-        val groupId = listData?.first?.ownerGroupId ?: return@combine emptyList()
-        groups.find { it.id == groupId }?.members ?: emptyList()
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    val groupMembers: StateFlow<List<GroupMember>> = groupsRepository.members
 
     val categories: StateFlow<List<Category>> = categoriesRepository.categories
     val choreTemplates: StateFlow<List<ChoreTemplate>> = suggestionsRepository.choreTemplates

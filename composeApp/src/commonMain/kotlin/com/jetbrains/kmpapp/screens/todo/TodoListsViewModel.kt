@@ -20,32 +20,30 @@ class TodoListsViewModel(
 
     init {
         viewModelScope.launch {
-            listsRepository.loadLists(scope = "personal")
+            listsRepository.loadLists()
         }
     }
 
     fun refresh() {
         viewModelScope.launch {
-            listsRepository.loadLists(scope = "personal")
+            listsRepository.loadLists()
         }
     }
 
     fun createList(
         title: String,
         type: String = "general_todos",
+        workspaceId: String,
         icon: String? = null,
         color: String? = null,
-        scope: String = "personal",
-        groupId: String? = null,
     ) {
         viewModelScope.launch {
             listsRepository.createList(
                 type = type,
                 title = title,
+                workspaceId = workspaceId,
                 icon = icon,
                 color = color,
-                scope = scope,
-                groupId = groupId,
             )
         }
     }
