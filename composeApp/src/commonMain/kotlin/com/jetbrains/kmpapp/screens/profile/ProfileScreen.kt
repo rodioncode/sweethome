@@ -9,18 +9,25 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,25 +37,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
 import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun ProfileContent(
     navigateToLinkEmail: () -> Unit,
     navigateToSettings: () -> Unit = {},
+    navigateBack: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<ProfileViewModel>()
@@ -58,7 +60,11 @@ fun ProfileContent(
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.statusBars),
+    ) {
 
         // --- Green hero header ---
         item {
@@ -77,18 +83,28 @@ fun ProfileContent(
                 )
 
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp).padding(top = 10.dp)) {
-                    // Top row: title + logout
+                    // Top row: back + title + logout
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            "Профиль",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = OnPrimaryWhite,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = navigateBack, modifier = Modifier.size(32.dp)) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Назад",
+                                    tint = OnPrimaryWhite,
+                                )
+                            }
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Профиль",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = OnPrimaryWhite,
+                            )
+                        }
                         Surface(
                             onClick = { viewModel.logout() },
                             shape = RoundedCornerShape(10.dp),
@@ -182,12 +198,12 @@ fun ProfileContent(
 
         // --- Stats row ---
         item {
-            Surface(color = SurfaceWhite) {
+            Surface(color = MaterialTheme.colorScheme.surface) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(IntrinsicSize.Min)
-                        .border(width = 1.dp, color = DividerColor),
+                        .border(width = 1.dp, color = MaterialTheme.colorScheme.outline),
                 ) {
                     listOf(
                         "0" to "задач",
@@ -201,13 +217,18 @@ fun ProfileContent(
                                 .then(
                                     if (index < 2) Modifier.border(
                                         width = 1.dp,
-                                        color = DividerColor,
+                                        color = MaterialTheme.colorScheme.outline,
                                     ) else Modifier
                                 ),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
-                            Text(label, fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+                            Text(
+                                label,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
                         }
                     }
                 }
@@ -225,8 +246,8 @@ fun ProfileContent(
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.md),
                 shape = RoundedCornerShape(16.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column {
                     val settingsItems = listOf(
@@ -246,11 +267,19 @@ fun ProfileContent(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(icon, fontSize = 18.sp)
-                            Text(label, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f))
-                            Text("›", fontSize = 13.sp, color = TextSecondary)
+                            Text(
+                                label,
+                                fontSize = 15.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (index < settingsItems.lastIndex) {
-                            HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
                         }
                     }
                 }
@@ -268,15 +297,16 @@ fun ProfileContent(
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.md),
                 shape = RoundedCornerShape(16.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column {
-                    // Personal space
                     SpaceRow(icon = "👤", title = "Личное", subtitle = "Только вы", onClick = {})
-                    HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
 
-                    // Group spaces
                     groups.forEachIndexed { index, group ->
                         SpaceRow(
                             icon = when (group.type) {
@@ -292,7 +322,10 @@ fun ProfileContent(
                             onClick = {},
                         )
                         if (index < groups.lastIndex) {
-                            HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
+                            HorizontalDivider(
+                                color = MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
                         }
                     }
                 }
@@ -310,8 +343,8 @@ fun ProfileContent(
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.md),
                 shape = RoundedCornerShape(16.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -325,7 +358,11 @@ fun ProfileContent(
                             .background(PrimaryGreen.copy(alpha = 0.5f))
                             .padding(top = 6.dp),
                     )
-                    Text("Нет недавней активности", fontSize = 13.sp, color = TextSecondary)
+                    Text(
+                        "Нет недавней активности",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }
@@ -340,7 +377,7 @@ private fun SectionLabel(text: String) {
         text,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp,
         modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = 0.dp).padding(bottom = 10.dp),
     )
@@ -362,7 +399,14 @@ private fun SpaceRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(icon, fontSize = 18.sp)
-        Text(title, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("$subtitle ›", fontSize = 12.sp, color = TextSecondary)
+        Text(
+            title,
+            fontSize = 15.sp,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text("$subtitle ›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

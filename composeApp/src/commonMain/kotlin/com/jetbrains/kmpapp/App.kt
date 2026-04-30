@@ -1,21 +1,13 @@
 package com.jetbrains.kmpapp
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -28,7 +20,6 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.auth.LinkEmailScreen
 import com.jetbrains.kmpapp.auth.RegisterScreen
-import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.screens.family.FamilyMembersScreen
 import com.jetbrains.kmpapp.screens.family.FamilyShopScreen
 import com.jetbrains.kmpapp.screens.family.GamificationScreen
@@ -98,7 +89,6 @@ object NotificationsDestination
 @Serializable
 data class ChatDestination(val title: String = "Наша семья", val memberCount: Int = 4)
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
     SweetHomeTheme {
@@ -107,6 +97,23 @@ fun App() {
             val authRepository: AuthRepository = koinInject()
             val authViewModel = koinViewModel<AuthViewModel>()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
+
+            // Logout: navigate to auth screen when user is signed out
+            var wasAuthenticated by remember { mutableStateOf(false) }
+            LaunchedEffect(authState) {
+                when (authState) {
+                    is AuthState.Authenticated -> wasAuthenticated = true
+                    is AuthState.Unauthenticated -> {
+                        if (wasAuthenticated) {
+                            wasAuthenticated = false
+                            navController.navigate(AuthDestination) {
+                                popUpTo(0) { inclusive = true }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+            }
 
             // Case 1: deep link arrives when user is already authenticated
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
@@ -208,25 +215,11 @@ fun App() {
                     )
                 }
                 composable<ProfileDestination> {
-                    Scaffold(
-                        topBar = {
-                            TopAppBar(
-                                title = { Text("Профиль") },
-                                navigationIcon = {
-                                    IconButton(onClick = { navController.popBackStack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
-                                    }
-                                }
-                            )
-                        },
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
-                    ) { paddingValues ->
-                        ProfileContent(
-                            navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
-                            navigateToSettings = { navController.navigate(SettingsDestination) },
-                            modifier = Modifier,
-                        )
-                    }
+                    ProfileContent(
+                        navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                        navigateToSettings = { navController.navigate(SettingsDestination) },
+                        navigateBack = { navController.popBackStack() },
+                    )
                 }
                 composable<SettingsDestination> {
                     SettingsScreen(
