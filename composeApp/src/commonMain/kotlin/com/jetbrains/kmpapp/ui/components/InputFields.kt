@@ -3,6 +3,7 @@ package com.jetbrains.kmpapp.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -16,8 +17,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 @Composable
 fun SweetHomeTextField(
@@ -36,7 +35,7 @@ fun SweetHomeTextField(
             text = label,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = SweetHomeSpacing.xxs),
         )
         OutlinedTextField(
@@ -44,7 +43,7 @@ fun SweetHomeTextField(
             onValueChange = onValueChange,
             modifier = Modifier.fillMaxWidth(),
             placeholder = {
-                Text(placeholder, color = TextSecondary.copy(alpha = 0.55f), fontSize = 15.sp)
+                Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f), fontSize = 15.sp)
             },
             isError = isError,
             singleLine = singleLine,
@@ -57,8 +56,8 @@ fun SweetHomeTextField(
                 focusedBorderColor = PrimaryGreen,
                 unfocusedBorderColor = DividerColor,
                 errorBorderColor = ErrorRed,
-                focusedTextColor = TextPrimary,
-                unfocusedTextColor = TextPrimary,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
             ),
         )
         if (isError && errorMessage != null) {

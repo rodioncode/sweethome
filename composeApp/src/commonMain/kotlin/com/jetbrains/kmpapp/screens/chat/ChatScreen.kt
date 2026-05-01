@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,8 +40,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -106,9 +105,9 @@ fun ChatScreen(
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(chatTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text(chatTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     if (memberCount > 0) {
-                        Text("$memberCount участника", fontSize = 12.sp, color = TextSecondary)
+                        Text("$memberCount участника", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
@@ -119,7 +118,7 @@ fun ChatScreen(
                     color = SurfaceVariantCream,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("⋮", fontSize = 18.sp, color = TextSecondary)
+                        Text("⋮", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -160,13 +159,13 @@ fun ChatScreen(
                     BasicTextField(
                         value = inputText,
                         onValueChange = { inputText = it },
-                        textStyle = TextStyle(fontSize = 14.sp, color = TextPrimary),
+                        textStyle = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         decorationBox = { inner ->
                             if (inputText.isEmpty()) {
-                                Text("Написать сообщение...", fontSize = 14.sp, color = TextSecondary)
+                                Text("Написать сообщение...", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             inner()
                         },
@@ -225,7 +224,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
                     msg.senderName,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, bottom = 3.dp),
                 )
             }
@@ -245,7 +244,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
                     msg.content,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 15.sp,
-                    color = if (isMe) Color.White else TextPrimary,
+                    color = if (isMe) Color.White else MaterialTheme.colorScheme.onSurface,
                     lineHeight = 21.sp,
                 )
             }
@@ -253,7 +252,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
             Text(
                 msg.createdAt,
                 fontSize = 10.sp,
-                color = TextSecondary.copy(alpha = 0.7f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 modifier = Modifier.padding(
                     top = 3.dp,
                     start = if (isMe) 0.dp else 4.dp,

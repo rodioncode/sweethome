@@ -222,12 +222,12 @@ fun TemplatesContent(
                                 text = category.title,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = com.jetbrains.kmpapp.ui.TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Text(
                                 text = "${category.count} шаблонов",
                                 fontSize = 12.sp,
-                                color = com.jetbrains.kmpapp.ui.TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         Surface(

@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -54,7 +55,6 @@ import com.jetbrains.kmpapp.ui.BackgroundWarm
 import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -178,7 +178,7 @@ private fun RegisterContent(
                     text = label,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 6.dp),
                 )
                 OutlinedTextField(
@@ -211,7 +211,7 @@ private fun RegisterContent(
                 text = "Пароль",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
             OutlinedTextField(
@@ -292,10 +292,11 @@ private fun RegisterContent(
                         }
                     }
                     Column {
+                        val uriHandler = LocalUriHandler.current
                         Text(
                             text = "Принимаю ",
                             fontSize = 13.sp,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Row {
                             Text(
@@ -303,17 +304,23 @@ private fun RegisterContent(
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://sweethome.app/terms")
+                                },
                             )
                             Text(
                                 text = " и ",
                                 fontSize = 13.sp,
-                                color = TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
                                 text = "политику конфиденциальности",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = PrimaryGreen,
+                                modifier = Modifier.clickable {
+                                    uriHandler.openUri("https://sweethome.app/privacy")
+                                },
                             )
                         }
                     }
@@ -397,7 +404,7 @@ private fun RegisterContent(
                 Text(
                     text = "Уже есть аккаунт? ",
                     fontSize = 14.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(
                     onClick = onNavigateBack,

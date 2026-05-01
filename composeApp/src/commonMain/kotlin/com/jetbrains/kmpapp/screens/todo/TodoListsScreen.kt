@@ -271,9 +271,6 @@ private val listTypeGrid = listOf(
     ListTypeOption("general_todos", "✅", "Задачи",           "Дела с дедлайнами"),
     ListTypeOption("study",         "📚", "Учёба",            "Курсы, книги, обучение"),
     ListTypeOption("travel",        "✈️", "Поездка",          "Вещи, документы, маршрут"),
-    ListTypeOption("wishlist",      "🎁", "Вишлист",          "Список желаний для других"),
-    ListTypeOption("media",         "🎬", "Медиа-трекер",    "Книги, фильмы, игры"),
-    ListTypeOption("custom",        "📋", "Произвольный",     "Своя структура"),
 )
 
 // Colors for the color picker — 7 design presets (color → hex)
@@ -336,13 +333,13 @@ internal fun CreateListBottomSheet(
                 "Новый список",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold,
-                color = com.jetbrains.kmpapp.ui.TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "$step/2",
                     fontSize = 12.sp,
-                    color = com.jetbrains.kmpapp.ui.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.width(8.dp))
                 TextButton(onClick = onDismiss) { Text("✕") }
@@ -377,12 +374,12 @@ internal fun CreateListBottomSheet(
                     "Выберите тип",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = com.jetbrains.kmpapp.ui.TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     "Что будем отслеживать?",
                     fontSize = 14.sp,
-                    color = com.jetbrains.kmpapp.ui.TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 10.dp),
                 )
                 listTypeGrid.forEach { option ->
@@ -418,10 +415,10 @@ internal fun CreateListBottomSheet(
                                 Text(option.emoji, fontSize = 22.sp)
                             }
                             Column(modifier = Modifier.weight(1f)) {
-                                Text(option.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextPrimary)
-                                Text(option.desc, fontSize = 12.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                                Text(option.label, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                                Text(option.desc, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text("›", fontSize = 18.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                            Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -437,21 +434,21 @@ internal fun CreateListBottomSheet(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Column {
-                    Text("Настройте список", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextPrimary)
+                    Text("Настройте список", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Text(
                         "${selectedTypeOption.label} · ${selectedTypeOption.desc}",
                         fontSize = 14.sp,
-                        color = com.jetbrains.kmpapp.ui.TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 // Title field
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("НАЗВАНИЕ *", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Text("НАЗВАНИЕ *", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp)
                     OutlinedTextField(
                         value = title,
                         onValueChange = { title = it },
-                        placeholder = { Text("Например: Продукты на неделю", color = com.jetbrains.kmpapp.ui.TextSecondary) },
+                        placeholder = { Text("Например: Продукты на неделю", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
@@ -460,11 +457,11 @@ internal fun CreateListBottomSheet(
 
                 // Description field
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("ОПИСАНИЕ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Text("ОПИСАНИЕ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp)
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
-                        placeholder = { Text("Для чего этот список...", color = com.jetbrains.kmpapp.ui.TextSecondary) },
+                        placeholder = { Text("Для чего этот список...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         maxLines = 2,
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
@@ -473,7 +470,7 @@ internal fun CreateListBottomSheet(
 
                 // Workspace selector
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("ПРОСТРАНСТВО", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Text("ПРОСТРАНСТВО", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp)
                     val allWorkspaces = buildList {
                         personalWorkspace?.let { add(it.id to "Личное") }
                         nonPersonalWorkspaces.forEach { add(it.id to it.title) }
@@ -512,7 +509,7 @@ internal fun CreateListBottomSheet(
 
                 // Icon picker
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("ИКОНКА", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Text("ИКОНКА", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp)
                     val iconRows = listIconOptions.chunked(6)
                     iconRows.forEach { rowIcons ->
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -537,7 +534,7 @@ internal fun CreateListBottomSheet(
 
                 // Color picker
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("ЦВЕТ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = com.jetbrains.kmpapp.ui.TextSecondary, letterSpacing = 0.3.sp)
+                    Text("ЦВЕТ", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp)
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         listColorPresets.forEachIndexed { index, (color, _) ->
                             val isSelected = selectedColorIndex == index
@@ -546,7 +543,7 @@ internal fun CreateListBottomSheet(
                                     .size(36.dp)
                                     .background(color, CircleShape)
                                     .then(
-                                        if (isSelected) Modifier.border(3.dp, com.jetbrains.kmpapp.ui.TextPrimary, CircleShape)
+                                        if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
                                         else Modifier
                                     )
                                     .clickable { selectedColorIndex = index },
@@ -573,7 +570,7 @@ internal fun CreateListBottomSheet(
                                     title.ifBlank { "Название списка" },
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = com.jetbrains.kmpapp.ui.TextPrimary,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 )
@@ -588,7 +585,7 @@ internal fun CreateListBottomSheet(
                                 Box(modifier = Modifier.fillMaxWidth(0f).fillMaxSize().background(selectedColor, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
                             }
                             Spacer(Modifier.height(4.dp))
-                            Text("0 элементов", fontSize = 11.sp, color = com.jetbrains.kmpapp.ui.TextSecondary)
+                            Text("0 элементов", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }

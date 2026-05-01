@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -52,8 +53,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -154,7 +153,7 @@ private fun EmptyFamilyState(
                     text = "Мой дом",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -198,7 +197,7 @@ private fun EmptyFamilyState(
                 text = "У вас ещё нет\nсемейного дома",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
             )
         }
@@ -209,7 +208,7 @@ private fun EmptyFamilyState(
             Text(
                 text = "Создайте пространство для близких —\nделитесь списками, следите за задачами\nи общайтесь вместе",
                 fontSize = 15.sp,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl),
             )
@@ -316,7 +315,7 @@ private fun FeatureCard(
                 text = label,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
         }
@@ -506,7 +505,7 @@ private fun FamilyHomeContent(
                 "Активность сегодня",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
             )
             Spacer(Modifier.height(SweetHomeSpacing.xs))
@@ -528,7 +527,7 @@ private fun FamilyHomeContent(
                     "Списки семьи",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
                 )
                 Spacer(Modifier.height(SweetHomeSpacing.xs))
@@ -643,13 +642,13 @@ private fun StatColumn(
         Text(
             text = line1,
             fontSize = 10.sp,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
         Text(
             text = line2,
             fontSize = 10.sp,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
     }
@@ -700,7 +699,7 @@ private fun ActivityCard(
             Text(
                 text = text,
                 fontSize = 13.sp,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
@@ -742,7 +741,7 @@ private fun NavCard(
                 text = label,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -793,7 +792,7 @@ private fun FamilyListCard(
                     text = list.title,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -806,7 +805,7 @@ private fun FamilyListCard(
                         }
                     },
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Text(

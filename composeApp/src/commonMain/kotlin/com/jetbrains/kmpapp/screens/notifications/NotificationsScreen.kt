@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,8 +35,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun typeIcon(type: String) = when (type) {
@@ -73,7 +72,7 @@ fun NotificationsScreen() {
                     "Уведомления",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 if (unreadCount > 0) {
                     TextButton(onClick = { viewModel.markAllRead() }) {
@@ -96,9 +95,9 @@ fun NotificationsScreen() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("🔔", fontSize = 56.sp)
                     Spacer(Modifier.height(16.dp))
-                    Text("Тихо и спокойно", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("Тихо и спокойно", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(8.dp))
-                    Text("Здесь появятся обновления", fontSize = 14.sp, color = TextSecondary, textAlign = TextAlign.Center)
+                    Text("Здесь появятся обновления", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
             }
         } else {
@@ -114,7 +113,7 @@ fun NotificationsScreen() {
                             "СЕГОДНЯ",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 0.5.sp,
                             modifier = Modifier.padding(bottom = 10.dp),
                         )
@@ -129,7 +128,7 @@ fun NotificationsScreen() {
                             "РАНЕЕ",
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             letterSpacing = 0.5.sp,
                             modifier = Modifier.padding(top = 16.dp, bottom = 10.dp),
                         )
@@ -177,21 +176,21 @@ private fun NotifRow(notif: Notification, onRead: () -> Unit) {
                         notif.title,
                         fontSize = 14.sp,
                         fontWeight = if (notif.isRead) FontWeight.Normal else FontWeight.SemiBold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         lineHeight = 20.sp,
                     )
                     if (notif.body.isNotBlank()) {
                         Text(
                             notif.body,
                             fontSize = 12.sp,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                     Text(
                         notif.createdAt,
                         fontSize = 11.sp,
-                        color = TextSecondary.copy(alpha = 0.7f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.padding(top = 4.dp),
                     )
                 }

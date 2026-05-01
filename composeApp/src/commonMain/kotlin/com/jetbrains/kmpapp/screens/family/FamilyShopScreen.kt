@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,8 +35,6 @@ import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 private data class ShopItem(
     val id: String,
@@ -155,7 +154,7 @@ fun FamilyShopScreen(
                 Text(
                     "Выполняй задачи — получай баллы — трать их на приятные награды 🎉",
                     fontSize = 13.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 19.sp,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
                 )
@@ -200,7 +199,7 @@ fun FamilyShopScreen(
                             "Как зарабатывать баллы?",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(bottom = 12.dp),
                         )
                         earnRules.forEachIndexed { index, (action, pts) ->
@@ -210,7 +209,7 @@ fun FamilyShopScreen(
                                     .padding(vertical = 8.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
-                                Text(action, fontSize = 13.sp, color = TextPrimary)
+                                Text(action, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
                                 Text(pts, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
                             }
                             if (index < earnRules.lastIndex) {
@@ -251,13 +250,13 @@ private fun ShopItemCard(
                     item.title,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     item.desc,
                     fontSize = 11.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     lineHeight = 15.sp,
                 )
                 Spacer(Modifier.height(12.dp))
@@ -270,7 +269,7 @@ private fun ShopItemCard(
                         "⭐ ${item.points}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (canBuy) PrimaryGreen else TextSecondary,
+                        color = if (canBuy) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Surface(
                         onClick = { if (canBuy) onBuy() },
@@ -289,7 +288,7 @@ private fun ShopItemCard(
                             color = when {
                                 isBought -> PrimaryGreen
                                 canBuy -> Color.White
-                                else -> TextSecondary
+                                else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
                         )
                     }

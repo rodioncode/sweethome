@@ -40,15 +40,15 @@ private val DarkColors = darkColorScheme(
     onSecondaryContainer = SecondaryPeachLight,
     tertiary = AccentTerracotta,
     onTertiary = Color(0xFF1A1A1A),
-    background = Color(0xFF1A1F1A),
-    onBackground = Color(0xFFE8F0E8),
-    surface = Color(0xFF1F261F),
-    onSurface = Color(0xFFE8F0E8),
-    surfaceVariant = Color(0xFF2C352C),
-    onSurfaceVariant = Color(0xFFA8B8A8),
+    background = Color(0xFF161D16),
+    onBackground = Color(0xFFF2F5F2),
+    surface = Color(0xFF1E2A1E),
+    onSurface = Color(0xFFF0F4F0),
+    surfaceVariant = Color(0xFF2A3A2A),
+    onSurfaceVariant = Color(0xFFBACCBA),
     error = Color(0xFFFF6B63),
     onError = OnPrimaryWhite,
-    outline = Color(0xFF4A4A4A),
+    outline = Color(0xFF4A5E4A),
 )
 
 @Composable

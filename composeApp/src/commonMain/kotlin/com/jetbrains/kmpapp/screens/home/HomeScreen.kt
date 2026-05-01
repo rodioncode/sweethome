@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Surface
@@ -40,8 +41,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -63,6 +62,7 @@ fun HomeContent(
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val userId by viewModel.userId.collectAsStateWithLifecycle()
+    val displayName by viewModel.displayName.collectAsStateWithLifecycle()
     val recentLists by viewModel.recentLists.collectAsStateWithLifecycle()
 
     LazyColumn(
@@ -85,14 +85,15 @@ fun HomeContent(
                     Text(
                         text = greeting(),
                         fontSize = 13.sp,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    userId?.let { id ->
+                    val nameToShow = displayName ?: userId?.take(8)
+                    nameToShow?.let {
                         Text(
-                            text = id.take(8),
+                            text = it,
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                 }
@@ -110,7 +111,8 @@ fun HomeContent(
                     color = PrimaryGreen,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val initial = userId?.firstOrNull()?.uppercase() ?: "?"
+                        val initial = displayName?.firstOrNull()?.uppercase()
+                            ?: userId?.firstOrNull()?.uppercase() ?: "?"
                         Text(
                             text = initial,
                             fontSize = 16.sp,
@@ -160,7 +162,7 @@ fun HomeContent(
                     text = "Быстрые действия",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(bottom = SweetHomeSpacing.sm),
                 )
                 Row(
@@ -205,7 +207,7 @@ fun HomeContent(
                     text = "Недавние списки",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     text = "Все \u2192",
@@ -238,13 +240,13 @@ fun HomeContent(
                             text = "Нет списков",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
                         Spacer(Modifier.height(SweetHomeSpacing.xxs))
                         Text(
                             text = "Создайте первый список дел",
                             fontSize = 13.sp,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -302,7 +304,7 @@ private fun QuickActionCard(
                 text = label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
