@@ -25,10 +25,10 @@ class AuthViewModel(
         }
     }
 
-    fun register(email: String, password: String, displayName: String) {
+    fun register(email: String, password: String, displayName: String, acceptedTerms: Boolean) {
         viewModelScope.launch {
             _uiState.value = AuthUiState.Loading
-            authRepository.register(email, password, displayName)
+            authRepository.register(email, password, displayName, acceptedTerms)
                 .onSuccess { _uiState.value = AuthUiState.Success }
                 .onFailure { _uiState.value = AuthUiState.Error(it.message ?: "Ошибка регистрации") }
         }

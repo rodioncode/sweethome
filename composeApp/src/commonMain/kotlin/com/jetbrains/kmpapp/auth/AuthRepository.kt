@@ -34,8 +34,8 @@ class AuthRepository(
     }
 
 
-    suspend fun register(email: String, password: String, displayName: String): Result<Unit> {
-        val result = authApi.register(RegisterRequest(email, password, displayName))
+    suspend fun register(email: String, password: String, displayName: String, acceptedTerms: Boolean): Result<Unit> {
+        val result = authApi.register(RegisterRequest(email, password, displayName, acceptedTerms))
         result.onSuccess { tokens ->
             tokenStorage.saveTokens(tokens, isGuest = false)
             _authState.value = AuthState.Authenticated(userId = tokens.userId, isGuest = false)

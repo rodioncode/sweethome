@@ -42,14 +42,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
 import com.jetbrains.kmpapp.ui.ErrorRed
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SecondaryPeach
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SettingsScreen(
     onNavigateBack: () -> Unit,
 ) {
+    val profileViewModel = koinViewModel<ProfileViewModel>()
     var notifyPush by remember { mutableStateOf(true) }
     var notifyReminders by remember { mutableStateOf(true) }
     var notifyActivity by remember { mutableStateOf(true) }
@@ -136,7 +139,7 @@ fun SettingsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { /* handled by ProfileViewModel.logout() from profile */ }
+                        .clickable { profileViewModel.logout() }
                         .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

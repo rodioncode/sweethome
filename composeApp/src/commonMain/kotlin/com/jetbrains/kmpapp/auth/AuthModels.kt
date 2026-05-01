@@ -29,7 +29,7 @@ data class RegisterRequest(
     val email: String,
     val password: String,
     val displayName: String,
-    val acceptedTerms: Boolean = true,
+    val acceptedTerms: Boolean,
 )
 
 @Serializable

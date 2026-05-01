@@ -70,8 +70,8 @@ fun RegisterScreen(
         LaunchedEffect(Unit) { onRegisterSuccess() }
     } else {
         RegisterContent(
-            onRegister = { email, password, displayName ->
-                viewModel.register(email, password, displayName)
+            onRegister = { email, password, displayName, accepted ->
+                viewModel.register(email, password, displayName, accepted)
             },
             onNavigateBack = onNavigateBack,
             uiState = uiState,
@@ -82,7 +82,7 @@ fun RegisterScreen(
 
 @Composable
 private fun RegisterContent(
-    onRegister: (String, String, String) -> Unit,
+    onRegister: (String, String, String, Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     uiState: AuthUiState,
     onClearError: () -> Unit,
@@ -340,7 +340,7 @@ private fun RegisterContent(
             Spacer(Modifier.height(24.dp))
 
             Button(
-                onClick = { onRegister(email, password, displayName) },
+                onClick = { onRegister(email, password, displayName, termsAccepted) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
