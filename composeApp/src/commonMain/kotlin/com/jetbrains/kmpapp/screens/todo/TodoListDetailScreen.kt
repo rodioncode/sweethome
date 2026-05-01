@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -82,8 +83,6 @@ import com.jetbrains.kmpapp.ui.OnPrimaryWhite
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -171,7 +170,7 @@ fun TodoListDetailScreen(
                         text = list?.title ?: "Список",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -187,7 +186,7 @@ fun TodoListDetailScreen(
                                 Icon(
                                     Icons.Default.MoreVert,
                                     contentDescription = "Меню",
-                                    tint = TextSecondary,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
@@ -223,7 +222,7 @@ fun TodoListDetailScreen(
                 modifier = Modifier.fillMaxSize().padding(paddingValues),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Загрузка...", color = TextSecondary, fontSize = 15.sp)
+                Text("Загрузка...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 15.sp)
             }
             return@Scaffold
         }
@@ -251,7 +250,7 @@ fun TodoListDetailScreen(
                             Text(
                                 text = "$done из $total выполнено",
                                 fontSize = 13.sp,
-                                color = TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
                                 text = "${(progress * 100).toInt()}%",
@@ -299,13 +298,13 @@ fun TodoListDetailScreen(
                                 "Список пуст",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = TextPrimary,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 "Добавьте первый элемент",
                                 fontSize = 14.sp,
-                                color = TextSecondary,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -425,13 +424,13 @@ private fun CompletedSectionHeader(
             text = "Выполнено · $count задач",
             fontSize = 14.sp,
             fontWeight = FontWeight.Bold,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f),
         )
         Icon(
             if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = TextSecondary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp),
         )
     }
@@ -494,7 +493,7 @@ private fun TodoItemRow(
                         text = item.title,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                         textDecoration = if (item.isDone) TextDecoration.LineThrough else TextDecoration.None,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -527,7 +526,7 @@ private fun TodoItemRow(
                         Text(
                             text = metaParts.joinToString(" · "),
                             fontSize = 11.sp,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -711,7 +710,7 @@ private fun ItemBottomSheet(
                 heading,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             IconButton(onClick = { isFavorite = !isFavorite }) {
                 Text(
@@ -776,7 +775,7 @@ private fun ItemBottomSheet(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    placeholder = { Text("Введите название...", color = TextSecondary) },
+                    placeholder = { Text("Введите название...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -872,7 +871,7 @@ private fun ItemBottomSheet(
                 OutlinedTextField(
                     value = note,
                     onValueChange = { note = it },
-                    placeholder = { Text("Дополнительно...", color = TextSecondary) },
+                    placeholder = { Text("Дополнительно...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -978,7 +977,8 @@ private fun ItemBottomSheet(
                             ChoreSchedule(
                                 intervalDays = intervalDays.toIntOrNull(),
                                 daysOfWeek = selectedDays.takeIf { it.isNotEmpty() },
-                                startDate = startDate.takeIf { it.isNotBlank() },
+                                startDate = startDate.takeIf { it.isNotBlank() }
+                                    ?: Clock.System.todayIn(TimeZone.currentSystemDefault()).toString(),
                                 endDate = endDate.takeIf { it.isNotBlank() },
                                 category = selectedZone,
                             )
@@ -1027,7 +1027,7 @@ private fun SheetFieldLabel(text: String) {
         text = text.uppercase(),
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.3.sp,
         modifier = Modifier.padding(bottom = 6.dp),
     )

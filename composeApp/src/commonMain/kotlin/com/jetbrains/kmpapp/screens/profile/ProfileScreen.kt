@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,8 +42,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -209,7 +208,7 @@ fun ProfileContent(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
-                            Text(label, fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(top = 2.dp))
+                            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
                         }
                     }
                 }
@@ -248,8 +247,8 @@ fun ProfileContent(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             Text(icon, fontSize = 18.sp)
-                            Text(label, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f))
-                            Text("›", fontSize = 13.sp, color = TextSecondary)
+                            Text(label, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (index < settingsItems.lastIndex) {
                             HorizontalDivider(color = DividerColor, modifier = Modifier.padding(horizontal = 16.dp))
@@ -327,7 +326,7 @@ fun ProfileContent(
                             .background(PrimaryGreen.copy(alpha = 0.5f))
                             .padding(top = 6.dp),
                     )
-                    Text("Нет недавней активности", fontSize = 13.sp, color = TextSecondary)
+                    Text("Нет недавней активности", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -342,7 +341,7 @@ private fun SectionLabel(text: String) {
         text,
         fontSize = 11.sp,
         fontWeight = FontWeight.Bold,
-        color = TextSecondary,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp,
         modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = 0.dp).padding(bottom = 10.dp),
     )
@@ -364,7 +363,7 @@ private fun SpaceRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(icon, fontSize = 18.sp)
-        Text(title, fontSize = 15.sp, color = TextPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("$subtitle ›", fontSize = 12.sp, color = TextSecondary)
+        Text(title, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text("$subtitle ›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

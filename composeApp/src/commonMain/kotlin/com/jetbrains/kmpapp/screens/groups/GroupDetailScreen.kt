@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -31,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -38,6 +40,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -65,8 +68,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -80,6 +81,7 @@ fun GroupDetailScreen(
     navigateBack: () -> Unit,
     navigateToListDetail: (String) -> Unit,
     navigateToLinkEmail: () -> Unit,
+    navigateToChat: (workspaceId: String, title: String, memberCount: Int) -> Unit = { _, _, _ -> },
 ) {
     val viewModel = koinViewModel<GroupDetailViewModel>()
     val group by viewModel.group.collectAsStateWithLifecycle()
@@ -93,6 +95,7 @@ fun GroupDetailScreen(
     var currentInvite by remember { mutableStateOf<Invite?>(null) }
     var showTransferDialog by remember { mutableStateOf(false) }
     var showAddListDialog by remember { mutableStateOf(false) }
+    var showMembersSheet by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(groupId) { viewModel.load(groupId) }
@@ -292,7 +295,7 @@ fun GroupDetailScreen(
                         "Списки группы",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                     TextButton(onClick = { showAddListDialog = true }) {
                         Text("+ Создать", color = PrimaryGreen, fontWeight = FontWeight.Bold)
@@ -309,7 +312,7 @@ fun GroupDetailScreen(
                             .padding(horizontal = 16.dp, vertical = 24.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Нет списков. Нажмите + чтобы создать.", fontSize = 14.sp, color = TextSecondary)
+                        Text("Нет списков. Нажмите + чтобы создать.", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             } else {
@@ -328,18 +331,21 @@ fun GroupDetailScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Surface(
-                        onClick = {},
+                        onClick = { showMembersSheet = true },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(14.dp),
                         color = SurfaceVariantCream,
                         border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("👥 Участники", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text("👥 Участники", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                         }
                     }
                     Surface(
-                        onClick = {},
+                        onClick = {
+                            val g = group
+                            if (g != null) navigateToChat(g.id, g.title, members.size)
+                        },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(14.dp),
                         color = PrimaryGreen,
@@ -384,14 +390,14 @@ fun GroupDetailScreen(
                         color = SurfaceVariantCream,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(token, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = TextPrimary, letterSpacing = 4.sp)
-                            Text("Действует до: ${currentInvite!!.expiresAt.take(10)}", fontSize = 12.sp, color = TextSecondary)
+                            Text(token, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = 4.sp)
+                            Text("Действует до: ${currentInvite!!.expiresAt.take(10)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     Text(
                         "Поделитесь кодом или ссылкой. Участник вводит код на экране «Вступить по коду».",
                         fontSize = 13.sp,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             },
@@ -456,6 +462,39 @@ fun GroupDetailScreen(
             dismissButton = { TextButton(onClick = { showAddListDialog = false }) { Text("Отмена") } },
         )
     }
+
+    // Members bottom sheet
+    if (showMembersSheet) {
+        val sheetState = rememberModalBottomSheetState()
+        ModalBottomSheet(
+            onDismissRequest = { showMembersSheet = false },
+            sheetState = sheetState,
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                Text(
+                    "Участники",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+                if (members.isEmpty()) {
+                    Text(
+                        "Нет участников",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 24.dp),
+                    )
+                } else {
+                    members.forEach { member ->
+                        MemberRow(member = member)
+                        HorizontalDivider(color = DividerColor)
+                    }
+                }
+                Spacer(Modifier.height(32.dp))
+            }
+        }
+    }
 }
 
 @Composable
@@ -478,6 +517,45 @@ private fun MemberAvatar(displayName: String, modifier: Modifier = Modifier) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
+        )
+    }
+}
+
+@Composable
+private fun MemberRow(member: GroupMember) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        MemberAvatar(displayName = member.displayName ?: member.userId)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                member.displayName ?: member.userId,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            if (member.displayName != null) {
+                Text(
+                    member.userId,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        val roleLabel = when (member.role) {
+            "owner" -> "Владелец"
+            "admin" -> "Админ"
+            else -> "Участник"
+        }
+        Text(
+            roleLabel,
+            fontSize = 12.sp,
+            color = if (member.role == "owner") PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = if (member.role == "owner") FontWeight.Bold else FontWeight.Normal,
         )
     }
 }
@@ -523,7 +601,7 @@ private fun GroupListCard(
                     list.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -544,7 +622,7 @@ private fun GroupListCard(
                     "$doneCount/$totalCount",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }

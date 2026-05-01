@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,8 +35,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 private data class TemplateSection(val category: String, val items: List<String>)
 
@@ -160,13 +159,13 @@ fun TemplateDetailScreen(
                             "Описание",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 6.dp),
                         )
                         Text(
                             "Готовый шаблон с разбивкой по категориям. Подходит для еженедельного планирования.",
                             fontSize = 14.sp,
-                            color = TextPrimary,
+                            color = MaterialTheme.colorScheme.onSurface,
                             lineHeight = 21.sp,
                         )
                     }
@@ -205,7 +204,7 @@ fun TemplateDetailScreen(
                     "Задачи в шаблоне",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp).padding(bottom = 12.dp),
                 )
             }
@@ -218,7 +217,7 @@ fun TemplateDetailScreen(
                         section.category,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                     section.items.forEach { item ->
@@ -261,7 +260,7 @@ fun TemplateDetailScreen(
                                         )
                                     }
                                 }
-                                Text(item, fontSize = 14.sp, color = TextPrimary)
+                                Text(item, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                     }

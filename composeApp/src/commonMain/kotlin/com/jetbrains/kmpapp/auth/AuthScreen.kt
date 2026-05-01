@@ -50,7 +50,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.ui.BackgroundWarm
 import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.TextSecondary
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -165,7 +164,7 @@ private fun LoginContent(
                 text = "Email",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
             OutlinedTextField(
@@ -191,7 +190,7 @@ private fun LoginContent(
                 text = "Пароль",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
             OutlinedTextField(
@@ -221,7 +220,7 @@ private fun LoginContent(
             Text(
                 text = "Минимум 8 символов",
                 fontSize = 12.sp,
-                color = TextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, start = 4.dp),
             )
 
@@ -263,7 +262,7 @@ private fun LoginContent(
                 onClick = onForgotPassword,
                 modifier = Modifier.align(Alignment.End),
             ) {
-                Text("Забыли пароль?", fontSize = 13.sp, color = TextSecondary)
+                Text("Забыли пароль?", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
             Spacer(Modifier.height(12.dp))
@@ -327,7 +326,7 @@ private fun LoginContent(
                 Text(
                     text = "Нет аккаунта? ",
                     fontSize = 14.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(
                     onClick = onNavigateToRegister,
@@ -349,7 +348,7 @@ private fun LoginContent(
                 Text(
                     text = "Продолжить без аккаунта",
                     fontSize = 13.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
             }
@@ -369,7 +368,7 @@ internal fun DividerWithText(text: String) {
         Text(
             text = "  $text  ",
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
     }

@@ -3,15 +3,8 @@ package com.jetbrains.kmpapp
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -113,6 +106,15 @@ fun App() {
             val authRepository: AuthRepository = koinInject()
             val authViewModel = koinViewModel<AuthViewModel>()
             val authState by authRepository.authState.collectAsState(initial = AuthState.Initial)
+
+            // Navigate to auth when logged out
+            LaunchedEffect(authState) {
+                if (authState is AuthState.Unauthenticated) {
+                    navController.navigate(AuthDestination) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            }
 
             // Case 1: deep link arrives when user is already authenticated
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
@@ -234,28 +236,17 @@ fun App() {
                         navigateToProfile = { navController.navigate(ProfileDestination) },
                         navigateToGamification = { navController.navigate(GamificationDestination) },
                         navigateToShop = { navController.navigate(FamilyShopDestination) },
+                        navigateToChat = { workspaceId, title, memberCount ->
+                            navController.navigate(ChatDestination(workspaceId, title, memberCount))
+                        },
                     )
                 }
                 composable<ProfileDestination> {
-                    Scaffold(
-                        topBar = {
-                            TopAppBar(
-                                title = { Text("Профиль") },
-                                navigationIcon = {
-                                    IconButton(onClick = { navController.popBackStack() }) {
-                                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
-                                    }
-                                }
-                            )
-                        },
+                    ProfileContent(
+                        navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                        navigateToSettings = { navController.navigate(SettingsDestination) },
                         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
-                    ) { paddingValues ->
-                        ProfileContent(
-                            navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
-                            navigateToSettings = { navController.navigate(SettingsDestination) },
-                            modifier = Modifier,
-                        )
-                    }
+                    )
                 }
                 composable<SettingsDestination> {
                     SettingsScreen(
@@ -278,6 +269,9 @@ fun App() {
                             navController.navigate(TodoListDetailDestination(listId))
                         },
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
+                        navigateToChat = { workspaceId, title, memberCount ->
+                            navController.navigate(ChatDestination(workspaceId, title, memberCount))
+                        },
                     )
                 }
                 composable<JoinByCodeDestination> { backStackEntry ->

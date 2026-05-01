@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
@@ -17,7 +18,6 @@ import com.jetbrains.kmpapp.ui.ErrorRed
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 @Composable
 fun SweetHomePrimaryButton(
@@ -35,7 +35,7 @@ fun SweetHomePrimaryButton(
             containerColor = PrimaryGreen,
             contentColor = OnPrimaryWhite,
             disabledContainerColor = DividerColor,
-            disabledContentColor = TextSecondary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
         Text(text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -57,7 +57,7 @@ fun SweetHomeSecondaryButton(
         border = BorderStroke(1.5.dp, if (enabled) PrimaryGreen else DividerColor),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = PrimaryGreen,
-            disabledContentColor = TextSecondary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
         Text(text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -98,7 +98,7 @@ fun SweetHomeDangerButton(
             containerColor = ErrorRed,
             contentColor = OnPrimaryWhite,
             disabledContainerColor = DividerColor,
-            disabledContentColor = TextSecondary,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
         Text(text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)

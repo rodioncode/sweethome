@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -37,8 +38,6 @@ import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 private data class FamilyMember(
     val id: String,
@@ -98,7 +97,7 @@ fun FamilyMembersScreen(
                     "Участники",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                 )
                 TextButton(onClick = { showInviteSheet = true }) {
@@ -239,12 +238,12 @@ private fun MemberCard(member: FamilyMember) {
                     member.name,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
                     "${member.tasks} задач",
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 2.dp),
                 )
             }
@@ -289,7 +288,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
             "Код приглашения",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = TextPrimary,
+            color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(bottom = 20.dp),
         )
 
@@ -310,13 +309,13 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
                     "FAMILY42",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                     letterSpacing = 8.sp,
                 )
                 Text(
                     "Действителен 7 дней",
                     fontSize = 12.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp),
                 )
             }
@@ -337,7 +336,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
                         .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Скопировать", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                    Text("Скопировать", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
             }
             Surface(

@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
@@ -44,8 +45,6 @@ import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
-import com.jetbrains.kmpapp.ui.TextPrimary
-import com.jetbrains.kmpapp.ui.TextSecondary
 
 @Composable
 internal fun GroupsContent(
@@ -83,7 +82,7 @@ internal fun GroupsContent(
                             "Привязать email",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -102,7 +101,7 @@ internal fun GroupsContent(
                             "🔗 Войти по коду",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = TextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -136,14 +135,14 @@ internal fun GroupsContent(
                     "Нет групп",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     if (isGuest) "Привяжите email чтобы создавать и вступать в группы"
                     else "Нажмите + чтобы создать первую группу",
                     fontSize = 14.sp,
-                    color = TextSecondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -213,13 +212,13 @@ private fun GroupCard(
                     group.title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextPrimary,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(typeLabel, fontSize = 12.sp, color = TextSecondary)
+                    Text(typeLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Surface(
@@ -264,7 +263,7 @@ internal fun CreateGroupDialog(
                 "Создать пространство",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary,
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             val workspaceTypes = listOf(
@@ -300,10 +299,10 @@ internal fun CreateGroupDialog(
                             Text(icon, fontSize = 22.sp)
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(labels.first, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                            Text(labels.second, fontSize = 12.sp, color = TextSecondary)
+                            Text(labels.first, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            Text(labels.second, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Text("›", fontSize = 18.sp, color = TextSecondary)
+                        Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }

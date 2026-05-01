@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,13 +18,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -61,7 +60,6 @@ fun LinkEmailScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LinkEmailContent(
     onLink: (String, String, String) -> Unit,
@@ -74,16 +72,6 @@ private fun LinkEmailContent(
     var displayName by remember { mutableStateOf("") }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Привязать аккаунт") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
-                    }
-                }
-            )
-        },
         modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
     ) { paddingValues ->
         Column(
@@ -95,6 +83,11 @@ private fun LinkEmailContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                IconButton(onClick = onNavigateBack) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                }
+            }
             Text(
                 "Привяжите email и пароль к гостевому аккаунту",
                 style = androidx.compose.material3.MaterialTheme.typography.bodyLarge
