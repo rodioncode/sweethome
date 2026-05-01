@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -52,10 +53,11 @@ fun NotificationsScreen() {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val unreadCount = notifications.count { !it.isRead }
 
+    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SurfaceVariantCream),
+            .padding(paddingValues),
     ) {
         Surface(
             color = SurfaceWhite,
@@ -139,6 +141,7 @@ fun NotificationsScreen() {
                 }
             }
         }
+    }
     }
 }
 

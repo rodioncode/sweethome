@@ -14,9 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -31,6 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -99,11 +97,12 @@ private fun RegisterContent(
         && termsAccepted
         && uiState !is AuthUiState.Loading
 
+    Scaffold(containerColor = BackgroundWarm) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundWarm)
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(paddingValues),
     ) {
         // Green hero header
         Box(
@@ -113,7 +112,6 @@ private fun RegisterContent(
                     color = PrimaryGreen,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
-                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = 24.dp, vertical = 40.dp),
         ) {
             // Decorative circles
@@ -421,5 +419,6 @@ private fun RegisterContent(
 
             Spacer(Modifier.height(24.dp))
         }
+    }
     }
 }

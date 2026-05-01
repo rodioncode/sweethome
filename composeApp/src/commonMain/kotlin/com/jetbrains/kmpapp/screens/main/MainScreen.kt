@@ -1,6 +1,7 @@
 package com.jetbrains.kmpapp.screens.main
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -32,9 +33,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.jetbrains.kmpapp.data.sync.SyncRepository
@@ -181,7 +184,9 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            if (selectedTab == MainTab.LISTS) {
+            val listsBackStack by listsNavController.currentBackStackEntryAsState()
+            val isInListDetail = listsBackStack?.destination?.hasRoute(ListsDetail::class) == true
+            if (selectedTab == MainTab.LISTS && !isInListDetail) {
                 FloatingActionButton(onClick = { showCreateListDialog = true }) {
                     Icon(Icons.Default.Add, "Добавить список")
                 }
@@ -274,7 +279,7 @@ private fun ListsTabNavHost(
     groups: List<com.jetbrains.kmpapp.data.groups.Group>,
     showCreateDialog: Boolean,
     onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (String, String, String, String, String?) -> Unit,
+    onCreateList: (String, String, String?, String?, String) -> Unit,
     isGuest: Boolean,
     navigateToLinkEmail: () -> Unit,
 ) {
@@ -301,6 +306,7 @@ private fun ListsTabNavHost(
             TodoListDetailScreen(
                 listId = dest.listId,
                 navigateBack = { navController.popBackStack() },
+                contentWindowInsets = WindowInsets(bottom = paddingValues.calculateBottomPadding()),
             )
         }
     }

@@ -13,13 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -75,6 +73,7 @@ fun SplashScreen(
         label = "splash_offset",
     )
 
+    Scaffold(containerColor = PrimaryGreen) { paddingValues ->
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -163,7 +162,7 @@ fun SplashScreen(
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .windowInsetsPadding(WindowInsets.systemBars)
+                .padding(paddingValues)
                 .padding(horizontal = 24.dp)
                 .padding(bottom = 32.dp)
                 .alpha(alpha)
@@ -227,5 +226,6 @@ fun SplashScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 8.dp),
         )
+    }
     }
 }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,10 +75,11 @@ fun GamificationScreen(
     navigateBack: () -> Unit,
     navigateToShop: () -> Unit,
 ) {
+    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(SurfaceVariantCream),
+            .padding(paddingValues),
     ) {
         // TopBar
         Surface(
@@ -227,6 +229,7 @@ fun GamificationScreen(
                 }
             }
         }
+    }
     }
 }
 

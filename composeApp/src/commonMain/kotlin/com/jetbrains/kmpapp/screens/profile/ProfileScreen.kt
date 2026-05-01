@@ -20,8 +20,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +49,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProfileContent(
     navigateToLinkEmail: () -> Unit,
     navigateToSettings: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<ProfileViewModel>()
     val isGuest by viewModel.isGuest.collectAsStateWithLifecycle()
@@ -58,7 +58,8 @@ fun ProfileContent(
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
 
-    LazyColumn(modifier = modifier.fillMaxSize()) {
+    Scaffold { paddingValues ->
+    LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
 
         // --- Green hero header ---
         item {
@@ -332,6 +333,7 @@ fun ProfileContent(
         }
 
         item { Spacer(Modifier.height(80.dp)) }
+    }
     }
 }
 

@@ -1,15 +1,11 @@
 package com.jetbrains.kmpapp
 
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -141,7 +137,6 @@ fun App() {
             NavHost(
                 navController = navController,
                 startDestination = SplashDestination,
-                modifier = Modifier,
             ) {
                 composable<SplashDestination> {
                     SplashScreen(
@@ -245,7 +240,6 @@ fun App() {
                     ProfileContent(
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
                         navigateToSettings = { navController.navigate(SettingsDestination) },
-                        modifier = Modifier.windowInsetsPadding(WindowInsets.systemBars),
                     )
                 }
                 composable<SettingsDestination> {

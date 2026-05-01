@@ -57,7 +57,7 @@ import org.koin.dsl.module
 
 val dataModule = module {
     single(named("authClient")) {
-        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
         HttpClient {
             install(Logging) {
                 logger = createHttpLogger()
@@ -70,7 +70,7 @@ val dataModule = module {
     }
 
     single(named("apiClient")) {
-        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+        val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
         val tokenStorage = get<TokenStorage>()
         val refreshMutex = Mutex()
         val client = HttpClient {
