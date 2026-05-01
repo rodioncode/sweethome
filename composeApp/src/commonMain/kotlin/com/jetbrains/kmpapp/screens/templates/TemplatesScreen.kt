@@ -1,7 +1,6 @@
 package com.jetbrains.kmpapp.screens.templates
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,8 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import org.koin.compose.viewmodel.koinViewModel
 
 // Popular template card data for the 2-col grid (static, matching Figma)
@@ -99,7 +96,7 @@ fun TemplatesContent(
     ) {
         if (isLoading && templates.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = PrimaryGreen)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
             return@Column
         }
@@ -134,7 +131,7 @@ fun TemplatesContent(
                             onClick = { selectedChip = if (selectedChip == index) null else index },
                             label = { Text(filterChips[index]) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = PrimaryGreen,
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = Color.White,
                             ),
                         )
@@ -198,8 +195,8 @@ fun TemplatesContent(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(14.dp),
-                    color = com.jetbrains.kmpapp.ui.SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, com.jetbrains.kmpapp.ui.DividerColor),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     shadowElevation = 1.dp,
                 ) {
                     Row(
@@ -212,7 +209,7 @@ fun TemplatesContent(
                         Box(
                             modifier = Modifier
                                 .size(48.dp)
-                                .background(com.jetbrains.kmpapp.ui.SurfaceVariantCream, RoundedCornerShape(14.dp)),
+                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(text = category.emoji, fontSize = 24.sp)
@@ -232,14 +229,14 @@ fun TemplatesContent(
                         }
                         Surface(
                             shape = RoundedCornerShape(10.dp),
-                            color = PrimaryGreen,
+                            color = MaterialTheme.colorScheme.primary,
                         ) {
                             Text(
                                 "Открыть",
                                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = com.jetbrains.kmpapp.ui.OnPrimaryWhite,
+                                color = MaterialTheme.colorScheme.onPrimary,
                             )
                         }
                     }

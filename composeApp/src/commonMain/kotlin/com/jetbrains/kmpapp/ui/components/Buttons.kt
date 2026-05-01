@@ -13,10 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.ErrorRed
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 
 @Composable
@@ -32,9 +30,9 @@ fun SweetHomePrimaryButton(
         enabled = enabled,
         shape = SweetHomeShapes.Medium,
         colors = ButtonDefaults.buttonColors(
-            containerColor = PrimaryGreen,
-            contentColor = OnPrimaryWhite,
-            disabledContainerColor = DividerColor,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            disabledContainerColor = MaterialTheme.colorScheme.outline,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
@@ -54,9 +52,9 @@ fun SweetHomeSecondaryButton(
         modifier = modifier.height(48.dp),
         enabled = enabled,
         shape = SweetHomeShapes.Medium,
-        border = BorderStroke(1.5.dp, if (enabled) PrimaryGreen else DividerColor),
+        border = BorderStroke(1.5.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
         colors = ButtonDefaults.outlinedButtonColors(
-            contentColor = PrimaryGreen,
+            contentColor = MaterialTheme.colorScheme.primary,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {
@@ -75,7 +73,7 @@ fun SweetHomeTextButton(
         modifier = modifier.height(48.dp),
         shape = SweetHomeShapes.Medium,
         colors = ButtonDefaults.textButtonColors(
-            contentColor = PrimaryGreen,
+            contentColor = MaterialTheme.colorScheme.primary,
         ),
     ) {
         Text(text, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
@@ -95,9 +93,9 @@ fun SweetHomeDangerButton(
         enabled = enabled,
         shape = SweetHomeShapes.Medium,
         colors = ButtonDefaults.buttonColors(
-            containerColor = ErrorRed,
-            contentColor = OnPrimaryWhite,
-            disabledContainerColor = DividerColor,
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
+            disabledContainerColor = MaterialTheme.colorScheme.outline,
             disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
         ),
     ) {

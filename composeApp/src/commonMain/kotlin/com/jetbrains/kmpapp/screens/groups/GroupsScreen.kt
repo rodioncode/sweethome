@@ -1,8 +1,6 @@
 package com.jetbrains.kmpapp.screens.groups
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,17 +12,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,18 +29,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 
 @Composable
 internal fun GroupsContent(
@@ -75,7 +64,7 @@ internal fun GroupsContent(
                     onClick = navigateToLinkEmail,
                     modifier = Modifier.weight(1f).height(36.dp),
                     shape = RoundedCornerShape(10.dp),
-                    color = SurfaceVariantCream,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
@@ -91,7 +80,7 @@ internal fun GroupsContent(
                     onClick = navigateToJoinByCode,
                     modifier = Modifier.height(36.dp),
                     shape = RoundedCornerShape(10.dp),
-                    color = SurfaceVariantCream,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(
                         modifier = Modifier.padding(horizontal = 12.dp),
@@ -111,10 +100,10 @@ internal fun GroupsContent(
                         onClick = onCreateGroup,
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("+", fontSize = 22.sp, color = OnPrimaryWhite, fontWeight = FontWeight.Light)
+                            Text("+", fontSize = 22.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Light)
                         }
                     }
                 }
@@ -175,7 +164,7 @@ private fun GroupCard(
         "family" -> Color(0xFFFFF3E0)
         "group" -> Color(0xFFE3F2FD)
         "mentoring" -> Color(0xFFF3E5F5)
-        else -> PrimaryGreen.copy(alpha = 0.12f)
+        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
     }
     val typeLabel = when (group.type) {
         "family" -> "Семья"
@@ -188,8 +177,8 @@ private fun GroupCard(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = SurfaceWhite,
-        border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -223,14 +212,14 @@ private fun GroupCard(
             }
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = PrimaryGreen.copy(alpha = 0.12f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             ) {
                 Text(
                     if (group.role == "owner") "Владелец" else "Участник",
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -249,7 +238,7 @@ internal fun CreateGroupDialog(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceWhite,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         Column(
@@ -280,8 +269,8 @@ internal fun CreateGroupDialog(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = SurfaceVariantCream,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Row(
                         modifier = Modifier
@@ -293,7 +282,7 @@ internal fun CreateGroupDialog(
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
-                                .background(SurfaceWhite, RoundedCornerShape(12.dp)),
+                                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(icon, fontSize = 22.sp)

@@ -5,24 +5,21 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -32,8 +29,6 @@ import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -42,15 +37,12 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -64,7 +56,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,13 +67,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.lists.TodoList
-import com.jetbrains.kmpapp.ui.PrimaryGreen
+import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
-import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
-import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.lazy.grid.items as gridItems
 
 @Composable
 fun TodoListsScreen(
@@ -226,7 +216,7 @@ internal fun TodoListsContent(
                         }
                     }
                     gridItems(filteredLists, key = { it.id }) { list ->
-                        val listColor = list.color?.toComposeColor() ?: listColorForType(list.type)
+                        val listColor = list.color?.toComposeColor() ?: listColorForType(list.type, isSystemInDarkTheme())
                         SweetHomeListCard(
                             title = list.title,
                             onClick = { onListClick(list.id) },
@@ -309,7 +299,7 @@ internal fun CreateListBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = com.jetbrains.kmpapp.ui.SurfaceWhite,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         // Header row
@@ -322,7 +312,7 @@ internal fun CreateListBottomSheet(
         ) {
             if (step == 2) {
                 TextButton(onClick = { step = 1 }) {
-                    Text("‹ Назад", color = PrimaryGreen, fontWeight = FontWeight.SemiBold)
+                    Text("‹ Назад", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                 }
             } else {
                 Spacer(Modifier.width(72.dp))
@@ -349,13 +339,13 @@ internal fun CreateListBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(3.dp)
-                .background(com.jetbrains.kmpapp.ui.DividerColor),
+                .background(MaterialTheme.colorScheme.outline),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(fraction = step * 0.5f)
                     .fillMaxSize()
-                    .background(PrimaryGreen),
+                    .background(MaterialTheme.colorScheme.primary),
             )
         }
 
@@ -389,11 +379,11 @@ internal fun CreateListBottomSheet(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                        color = com.jetbrains.kmpapp.ui.SurfaceWhite,
+                        color = MaterialTheme.colorScheme.surface,
                         border = androidx.compose.foundation.BorderStroke(
                             1.5.dp,
-                            if (selectedTypeOption.type == option.type) PrimaryGreen
-                            else com.jetbrains.kmpapp.ui.DividerColor
+                            if (selectedTypeOption.type == option.type) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline
                         ),
                         shadowElevation = 0.dp,
                     ) {
@@ -407,7 +397,7 @@ internal fun CreateListBottomSheet(
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
-                                    .background(com.jetbrains.kmpapp.ui.SurfaceVariantCream, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, androidx.compose.foundation.shape.RoundedCornerShape(12.dp)),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Text(option.emoji, fontSize = 22.sp)
@@ -517,9 +507,9 @@ internal fun CreateListBottomSheet(
                                     onClick = { selectedIcon = if (isSelected) null else emoji },
                                     modifier = Modifier.size(40.dp),
                                     shape = androidx.compose.foundation.shape.RoundedCornerShape(10.dp),
-                                    color = if (isSelected) PrimaryGreen.copy(alpha = 0.15f)
-                                    else com.jetbrains.kmpapp.ui.SurfaceVariantCream,
-                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryGreen) else null,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                    else MaterialTheme.colorScheme.surfaceVariant,
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary) else null,
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(emoji, fontSize = 18.sp)
@@ -554,8 +544,8 @@ internal fun CreateListBottomSheet(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
-                    color = com.jetbrains.kmpapp.ui.SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, com.jetbrains.kmpapp.ui.DividerColor),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
@@ -578,7 +568,7 @@ internal fun CreateListBottomSheet(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(4.dp)
-                                    .background(com.jetbrains.kmpapp.ui.DividerColor, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
+                                    .background(MaterialTheme.colorScheme.outline, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)),
                             ) {
                                 Box(modifier = Modifier.fillMaxWidth(0f).fillMaxSize().background(selectedColor, androidx.compose.foundation.shape.RoundedCornerShape(2.dp)))
                             }
@@ -603,14 +593,14 @@ internal fun CreateListBottomSheet(
                     },
                     modifier = Modifier.fillMaxWidth().height(54.dp),
                     shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    color = if (title.isNotBlank()) selectedColor else com.jetbrains.kmpapp.ui.DividerColor,
+                    color = if (title.isNotBlank()) selectedColor else MaterialTheme.colorScheme.outline,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             "Создать список",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = com.jetbrains.kmpapp.ui.OnPrimaryWhite,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }

@@ -30,10 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 
 private data class LeaderboardEntry(
     val name: String,
@@ -75,7 +71,7 @@ fun GamificationScreen(
     navigateBack: () -> Unit,
     navigateToShop: () -> Unit,
 ) {
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -83,7 +79,7 @@ fun GamificationScreen(
     ) {
         // TopBar
         Surface(
-            color = SurfaceWhite,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp,
         ) {
             Row(
@@ -97,10 +93,10 @@ fun GamificationScreen(
                     onClick = navigateBack,
                     modifier = Modifier.size(36.dp),
                     shape = CircleShape,
-                    color = SurfaceVariantCream,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 Text(
@@ -140,10 +136,10 @@ fun GamificationScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     shape = RoundedCornerShape(14.dp),
-                    color = if (isFirst) Color(0xFFFFFDE7) else SurfaceWhite,
+                    color = if (isFirst) Color(0xFFFFFDE7) else MaterialTheme.colorScheme.surface,
                     border = androidx.compose.foundation.BorderStroke(
                         1.dp,
-                        if (isFirst) Color(0xFFFFD700) else DividerColor,
+                        if (isFirst) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline,
                     ),
                 ) {
                     Row(
@@ -173,7 +169,7 @@ fun GamificationScreen(
                                 "${entry.points}",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                             Text("очков", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -354,10 +350,10 @@ private fun AchievementCard(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = if (achievement.unlocked) SurfaceWhite else SurfaceVariantCream,
+        color = if (achievement.unlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (achievement.unlocked) PrimaryGreen else DividerColor,
+            if (achievement.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
         ),
     ) {
         Column(
@@ -389,7 +385,7 @@ private fun AchievementCard(
                     "✓ Получено",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }

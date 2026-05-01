@@ -14,8 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
+import androidx.compose.material3.MaterialTheme
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 
@@ -28,8 +27,8 @@ fun SweetHomeFab(
         onClick = onClick,
         modifier = modifier.size(56.dp),
         shape = CircleShape,
-        containerColor = PrimaryGreen,
-        contentColor = OnPrimaryWhite,
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         elevation = FloatingActionButtonDefaults.elevation(
             defaultElevation = 6.dp,
         ),
@@ -48,8 +47,8 @@ fun SweetHomeExtendedFab(
         onClick = onClick,
         modifier = modifier,
         shape = SweetHomeShapes.Chip,
-        containerColor = PrimaryGreen,
-        contentColor = OnPrimaryWhite,
+        containerColor = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary,
         elevation = FloatingActionButtonDefaults.elevation(
             defaultElevation = 6.dp,
         ),

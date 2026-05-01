@@ -3,6 +3,7 @@ package com.jetbrains.kmpapp.screens.todo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,10 +13,12 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -24,13 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -43,13 +44,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -80,10 +82,6 @@ import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
@@ -93,9 +91,8 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.daysUntil
-import kotlinx.datetime.todayIn
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,7 +126,7 @@ fun TodoListDetailScreen(
     val list = listWithItems?.first
     val listType = list?.type ?: "general_todos"
     val isGroupList = groupMembers.isNotEmpty()
-    val listColor = list?.color?.toComposeColor() ?: listColorForType(listType)
+    val listColor = list?.color?.toComposeColor() ?: listColorForType(listType, isSystemInDarkTheme())
     val listIcon = list?.icon ?: listEmojiForType(listType)
     val categoryScope = when (listType) {
         "shopping" -> "shopping"
@@ -143,12 +140,13 @@ fun TodoListDetailScreen(
         topBar = {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                color = SurfaceWhite,
+                color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 2.dp,
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .windowInsetsPadding(WindowInsets.systemBars.only(androidx.compose.foundation.layout.WindowInsetsSides.Top))
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -158,7 +156,7 @@ fun TodoListDetailScreen(
                         onClick = navigateBack,
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = SurfaceVariantCream,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
@@ -184,7 +182,7 @@ fun TodoListDetailScreen(
                             onClick = { showMenu = true },
                             modifier = Modifier.size(36.dp),
                             shape = CircleShape,
-                            color = SurfaceVariantCream,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
@@ -210,7 +208,7 @@ fun TodoListDetailScreen(
             FloatingActionButton(
                 onClick = { showAddSheet = true },
                 containerColor = listColor,
-                contentColor = OnPrimaryWhite,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
                 modifier = Modifier.shadow(8.dp, CircleShape),
             ) {
@@ -218,7 +216,7 @@ fun TodoListDetailScreen(
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = SurfaceVariantCream,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         val items = listWithItems?.second
         if (items == null) {
@@ -240,7 +238,7 @@ fun TodoListDetailScreen(
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             // Progress section — fixed below TopBar
             if (total > 0) {
-                Surface(color = SurfaceWhite) {
+                Surface(color = MaterialTheme.colorScheme.surface) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -271,7 +269,7 @@ fun TodoListDetailScreen(
                                 .height(6.dp)
                                 .clip(RoundedCornerShape(3.dp)),
                             color = listColor,
-                            trackColor = DividerColor,
+                            trackColor = MaterialTheme.colorScheme.outlineVariant,
                             strokeCap = StrokeCap.Round,
                         )
                     }
@@ -329,7 +327,7 @@ fun TodoListDetailScreen(
                 // Completed section
                 if (completedItems.isNotEmpty()) {
                     item(key = "completed_divider") {
-                        HorizontalDivider(color = DividerColor)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                     }
                     item(key = "completed_header") {
                         CompletedSectionHeader(
@@ -421,7 +419,7 @@ private fun CompletedSectionHeader(
                 .background(listColor, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Text("✓", color = OnPrimaryWhite, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("✓", color = MaterialTheme.colorScheme.onPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         }
         Spacer(Modifier.width(8.dp))
         Text(
@@ -457,13 +455,13 @@ private fun TodoItemRow(
             .fillMaxWidth()
             .alpha(if (item.isDone) 0.55f else 1f),
         shape = RoundedCornerShape(14.dp),
-        color = SurfaceWhite,
+        color = MaterialTheme.colorScheme.surface,
         shadowElevation = if (item.isDone) 0.dp else 1.dp,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, DividerColor, RoundedCornerShape(14.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp)),
         ) {
             Row(
                 modifier = Modifier
@@ -483,7 +481,7 @@ private fun TodoItemRow(
                     contentAlignment = Alignment.Center,
                 ) {
                     if (item.isDone) {
-                        Text("✓", color = OnPrimaryWhite, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("✓", color = MaterialTheme.colorScheme.onPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
@@ -699,7 +697,7 @@ private fun ItemBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = SurfaceWhite,
+        containerColor = MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
     ) {
         // Handle bar already rendered by ModalBottomSheet
@@ -1015,7 +1013,7 @@ private fun ItemBottomSheet(
                             if (item == null) "Добавить" else "Сохранить",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = OnPrimaryWhite,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }

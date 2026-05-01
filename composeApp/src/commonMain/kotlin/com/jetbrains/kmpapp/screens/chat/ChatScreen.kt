@@ -36,11 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.chat.ChatMessage
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -67,14 +62,14 @@ fun ChatScreen(
         }
     }
 
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
     ) {
         Surface(
-            color = SurfaceWhite,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 1.dp,
         ) {
             Row(
@@ -89,10 +84,10 @@ fun ChatScreen(
                         onClick = navigateBack,
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = SurfaceVariantCream,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                            Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
@@ -100,7 +95,7 @@ fun ChatScreen(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(PrimaryGreenLight, CircleShape),
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text("💬", fontSize = 18.sp)
@@ -117,7 +112,7 @@ fun ChatScreen(
                     onClick = {},
                     modifier = Modifier.size(36.dp),
                     shape = CircleShape,
-                    color = SurfaceVariantCream,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text("⋮", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -142,7 +137,7 @@ fun ChatScreen(
         }
 
         Surface(
-            color = SurfaceWhite,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 4.dp,
         ) {
             Row(
@@ -155,8 +150,8 @@ fun ChatScreen(
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(22.dp),
-                    color = SurfaceVariantCream,
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, DividerColor),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     BasicTextField(
                         value = inputText,
@@ -184,7 +179,7 @@ fun ChatScreen(
                     },
                     modifier = Modifier.size(44.dp),
                     shape = CircleShape,
-                    color = if (canSend) PrimaryGreen else DividerColor,
+                    color = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text("↑", fontSize = 18.sp, color = Color.White)
@@ -239,15 +234,15 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
                     bottomStart = if (isMe) 18.dp else 4.dp,
                     bottomEnd = if (isMe) 4.dp else 18.dp,
                 ),
-                color = if (isMe) PrimaryGreen else SurfaceWhite,
-                border = if (!isMe) androidx.compose.foundation.BorderStroke(1.dp, DividerColor) else null,
+                color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                border = if (!isMe) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
                 shadowElevation = 1.dp,
             ) {
                 Text(
                     msg.content,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     fontSize = 15.sp,
-                    color = if (isMe) Color.White else MaterialTheme.colorScheme.onSurface,
+                    color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
                     lineHeight = 21.sp,
                 )
             }

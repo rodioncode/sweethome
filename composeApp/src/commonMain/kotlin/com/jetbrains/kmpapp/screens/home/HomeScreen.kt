@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.screens.home
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,12 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.ListColorAmber
-import com.jetbrains.kmpapp.ui.ListColorCoral
-import com.jetbrains.kmpapp.ui.ListColorMint
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
@@ -108,7 +103,7 @@ fun HomeContent(
                             spotColor = Color.Black.copy(alpha = 0.12f),
                         ),
                     shape = CircleShape,
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         val initial = displayName?.firstOrNull()?.uppercase()
@@ -117,7 +112,7 @@ fun HomeContent(
                             text = initial,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = OnPrimaryWhite,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }
@@ -137,7 +132,7 @@ fun HomeContent(
                         spotColor = Color.Black.copy(alpha = 0.08f),
                     ),
                 shape = RoundedCornerShape(10.dp),
-                color = PrimaryGreen,
+                color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(
                     modifier = Modifier
@@ -149,7 +144,7 @@ fun HomeContent(
                     Text(
                         text = "\uD83C\uDFE0 Семья Ивановых: 3 новых задачи",
                         fontSize = 13.sp,
-                        color = OnPrimaryWhite,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
@@ -172,21 +167,24 @@ fun HomeContent(
                     QuickActionCard(
                         emoji = "\uD83D\uDCDD",
                         label = "Новый список",
-                        backgroundColor = SurfaceVariantCream,
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = onCreateList,
                         modifier = Modifier.weight(1f),
                     )
                     QuickActionCard(
                         emoji = "\uD83C\uDFE0",
                         label = "Мой дом",
-                        backgroundColor = Color(0xFFE8F3E8),
+                        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                         onClick = onNavigateToHome,
                         modifier = Modifier.weight(1f),
                     )
                     QuickActionCard(
                         emoji = "\uD83D\uDC65",
                         label = "Группа",
-                        backgroundColor = Color(0xFFFFF0E6),
+                        backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         onClick = onNavigateToGroups,
                         modifier = Modifier.weight(1f),
                     )
@@ -213,7 +211,7 @@ fun HomeContent(
                     text = "Все \u2192",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.clickable { /* TODO: navigate to all lists */ },
                 )
             }
@@ -227,7 +225,7 @@ fun HomeContent(
                         .fillMaxWidth()
                         .padding(horizontal = SweetHomeSpacing.lg),
                     shape = SweetHomeShapes.Card,
-                    colors = CardDefaults.cardColors(containerColor = SurfaceVariantCream),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(
@@ -253,7 +251,8 @@ fun HomeContent(
             }
         } else {
             items(recentLists, key = { it.id }) { list ->
-                val color = list.color?.toComposeColor() ?: listColorForType(list.type)
+                val isDark = isSystemInDarkTheme()
+                val color = list.color?.toComposeColor() ?: listColorForType(list.type, isDark)
                 SweetHomeListCard(
                     title = list.title,
                     onClick = { navigateToListDetail(list.id) },
@@ -282,6 +281,7 @@ private fun QuickActionCard(
     backgroundColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Card(
         modifier = modifier
@@ -304,7 +304,7 @@ private fun QuickActionCard(
                 text = label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = contentColor,
             )
         }
     }

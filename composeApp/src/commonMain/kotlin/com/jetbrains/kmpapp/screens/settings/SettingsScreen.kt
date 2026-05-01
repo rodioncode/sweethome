@@ -42,8 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
-import com.jetbrains.kmpapp.ui.ErrorRed
-import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SecondaryPeach
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -79,7 +77,7 @@ fun SettingsScreen(
             SettingsSection(title = "Уведомления") {
                 SettingsToggleRow(
                     emoji = "🔔",
-                    emojiBgColor = ErrorRed.copy(alpha = 0.15f),
+                    emojiBgColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                     title = "Push-уведомления",
                     subtitle = "Напоминания о задачах",
                     checked = notifyPush,
@@ -97,7 +95,7 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
                 SettingsToggleRow(
                     emoji = "👥",
-                    emojiBgColor = PrimaryGreen.copy(alpha = 0.15f),
+                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                     title = "Активность в пространстве",
                     subtitle = "Новые задачи от участников",
                     checked = notifyActivity,
@@ -129,7 +127,7 @@ fun SettingsScreen(
             SettingsSection(title = "Аккаунт") {
                 SettingsNavRow(
                     emoji = "✏️",
-                    emojiBgColor = PrimaryGreen.copy(alpha = 0.15f),
+                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                     title = "Редактировать профиль",
                     onClick = { },
                 )
@@ -144,13 +142,13 @@ fun SettingsScreen(
                     Surface(
                         modifier = Modifier.size(36.dp),
                         shape = CircleShape,
-                        color = ErrorRed.copy(alpha = 0.15f),
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ExitToApp,
                                 contentDescription = null,
-                                tint = ErrorRed,
+                                tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp),
                             )
                         }
@@ -159,7 +157,7 @@ fun SettingsScreen(
                     Text(
                         text = "Выйти из аккаунта",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = ErrorRed,
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
@@ -246,7 +244,7 @@ private fun SettingsToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedTrackColor = PrimaryGreen),
+            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
         )
     }
 }

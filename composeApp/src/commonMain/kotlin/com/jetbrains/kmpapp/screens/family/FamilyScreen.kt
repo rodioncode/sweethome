@@ -18,12 +18,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -46,11 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.lists.TodoList
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import org.koin.compose.viewmodel.koinViewModel
@@ -96,7 +90,7 @@ internal fun FamilyContent(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
-                CircularProgressIndicator(color = PrimaryGreen)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
             }
         } else if (familySpace == null) {
             EmptyFamilyState(
@@ -169,19 +163,19 @@ private fun EmptyFamilyState(
                 Surface(
                     modifier = Modifier.size(220.dp),
                     shape = CircleShape,
-                    color = PrimaryGreenLight.copy(alpha = 0.15f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
                 ) {}
                 // Middle circle
                 Surface(
                     modifier = Modifier.size(160.dp),
                     shape = CircleShape,
-                    color = PrimaryGreenLight.copy(alpha = 0.25f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
                 ) {}
                 // Center
                 Surface(
                     modifier = Modifier.size(80.dp),
                     shape = CircleShape,
-                    color = PrimaryGreenLight.copy(alpha = 0.4f),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text("🏠", fontSize = 36.sp)
@@ -239,7 +233,7 @@ private fun EmptyFamilyState(
                     .padding(horizontal = SweetHomeSpacing.md)
                     .height(54.dp),
                 shape = RoundedCornerShape(16.dp),
-                color = PrimaryGreen,
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 6.dp,
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -247,14 +241,14 @@ private fun EmptyFamilyState(
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp,
-                            color = OnPrimaryWhite,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     } else {
                         Text(
                             text = "Создать семейный дом",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = OnPrimaryWhite,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }
@@ -283,7 +277,7 @@ private fun EmptyFamilyState(
                         text = "Вступить по коду приглашения",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -342,7 +336,7 @@ private fun FamilyHomeContent(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(PrimaryGreen),
+                    .background(MaterialTheme.colorScheme.primary),
             ) {
                 // Decorative circle
                 Box(
@@ -366,13 +360,13 @@ private fun FamilyHomeContent(
                             Text(
                                 "Семейное пространство",
                                 fontSize = 12.sp,
-                                color = OnPrimaryWhite.copy(alpha = 0.65f),
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),
                             )
                             Text(
                                 spaceName,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = OnPrimaryWhite,
+                                color = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
@@ -401,8 +395,8 @@ private fun FamilyHomeContent(
                                     modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                 ) {
-                                    Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
-                                    Text(label, fontSize = 10.sp, color = OnPrimaryWhite.copy(alpha = 0.7f), modifier = Modifier.padding(top = 1.dp))
+                                    Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                                    Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), modifier = Modifier.padding(top = 1.dp))
                                 }
                             }
                         }
@@ -454,11 +448,11 @@ private fun FamilyHomeContent(
                         color = Color.White.copy(alpha = 0.15f),
                     )
                     Column {
-                        Text("Семейный рейтинг", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                        Text("Семейный рейтинг", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         Text(
                             "Посмотреть результаты →",
                             fontSize = 13.sp,
-                            color = OnPrimaryWhite.copy(alpha = 0.8f),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -486,11 +480,11 @@ private fun FamilyHomeContent(
                         color = Color.White.copy(alpha = 0.15f),
                     )
                     Column {
-                        Text("Семейный магазин", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                        Text("Семейный магазин", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         Text(
                             "Трать баллы на награды!",
                             fontSize = 13.sp,
-                            color = OnPrimaryWhite.copy(alpha = 0.85f),
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
                             modifier = Modifier.padding(top = 4.dp),
                         )
                     }
@@ -547,7 +541,7 @@ private fun FamilyHomeContent(
                     .padding(horizontal = SweetHomeSpacing.lg)
                     .height(50.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = PrimaryGreen,
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 4.dp,
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -555,7 +549,7 @@ private fun FamilyHomeContent(
                         "💬  Открыть чат семьи",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = OnPrimaryWhite,
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
@@ -637,7 +631,7 @@ private fun StatColumn(
             text = value,
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
-            color = PrimaryGreen,
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = line1,
@@ -660,7 +654,7 @@ private fun VerticalDivider(modifier: Modifier = Modifier) {
         modifier = modifier
             .width(1.dp)
             .height(40.dp)
-            .background(DividerColor),
+            .background(MaterialTheme.colorScheme.outline),
     )
 }
 
@@ -689,7 +683,7 @@ private fun ActivityCard(
             Surface(
                 modifier = Modifier.size(36.dp),
                 shape = RoundedCornerShape(18.dp),
-                color = SurfaceVariantCream,
+                color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(emoji, fontSize = 18.sp)
@@ -777,7 +771,7 @@ private fun FamilyListCard(
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = PrimaryGreenLight.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(

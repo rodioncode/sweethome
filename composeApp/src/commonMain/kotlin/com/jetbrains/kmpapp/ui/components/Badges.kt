@@ -14,9 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.MaterialTheme
 import com.jetbrains.kmpapp.ui.ErrorRed
 import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.PrimaryGreenDark
 import com.jetbrains.kmpapp.ui.SecondaryPeach
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
@@ -29,14 +29,14 @@ fun SweetHomeNotificationBadge(
     Surface(
         modifier = modifier.defaultMinSize(minWidth = 24.dp, minHeight = 24.dp),
         shape = SweetHomeShapes.Chip,
-        color = PrimaryGreen,
+        color = MaterialTheme.colorScheme.primary,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
             Text(
                 text = count.toString(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = OnPrimaryWhite,
+                color = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }

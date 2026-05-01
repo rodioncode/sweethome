@@ -55,8 +55,6 @@ import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.InvalidInviteException
 import com.jetbrains.kmpapp.data.groups.InviteExpiredException
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -121,7 +119,7 @@ fun JoinByCodeScreen(
             Surface(
                 modifier = Modifier.size(72.dp),
                 shape = CircleShape,
-                color = PrimaryGreenLight.copy(alpha = 0.3f),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(text = "🔗", fontSize = 32.sp)
@@ -170,7 +168,7 @@ fun JoinByCodeScreen(
 
             // Paste from clipboard
             TextButton(onClick = { /* TODO: clipboard paste */ }) {
-                Text("📋 Вставить из буфера", color = PrimaryGreen)
+                Text("📋 Вставить из буфера", color = MaterialTheme.colorScheme.primary)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -208,7 +206,7 @@ fun JoinByCodeScreen(
                 onClick = { submit() },
                 enabled = !isLoading && code.length == CODE_LENGTH,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                 shape = RoundedCornerShape(12.dp),
             ) {
                 if (isLoading) {
@@ -271,7 +269,7 @@ private fun CodeInput(
                         .size(48.dp)
                         .border(
                             width = if (isFocused) 2.dp else 1.dp,
-                            color = if (isFocused) PrimaryGreen
+                            color = if (isFocused) MaterialTheme.colorScheme.primary
                             else if (char.isNotEmpty()) MaterialTheme.colorScheme.outline
                             else MaterialTheme.colorScheme.outlineVariant,
                             shape = RoundedCornerShape(8.dp),

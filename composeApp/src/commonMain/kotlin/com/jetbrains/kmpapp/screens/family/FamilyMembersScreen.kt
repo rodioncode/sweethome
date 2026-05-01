@@ -35,10 +35,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 
 private data class FamilyMember(
     val id: String,
@@ -67,7 +63,7 @@ fun FamilyMembersScreen(
     var showInviteSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,7 +71,7 @@ fun FamilyMembersScreen(
     ) {
         // TopBar
         Surface(
-            color = SurfaceWhite,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp,
         ) {
             Row(
@@ -89,10 +85,10 @@ fun FamilyMembersScreen(
                     onClick = navigateBack,
                     modifier = Modifier.size(36.dp),
                     shape = CircleShape,
-                    color = SurfaceVariantCream,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 Text(
@@ -107,7 +103,7 @@ fun FamilyMembersScreen(
                         "+ Добавить",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -124,7 +120,7 @@ fun FamilyMembersScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     color = Color(0xFFE8F5E8),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 ) {
                     Row(
                         modifier = Modifier
@@ -143,7 +139,7 @@ fun FamilyMembersScreen(
                             "Поделиться",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = PrimaryGreen,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -162,7 +158,7 @@ fun FamilyMembersScreen(
                     onClick = { showInviteSheet = true },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                     shadowElevation = 3.dp,
                 ) {
                     Box(
@@ -199,8 +195,8 @@ private fun MemberCard(member: FamilyMember) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        color = SurfaceWhite,
-        border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -222,14 +218,14 @@ private fun MemberCard(member: FamilyMember) {
                     Box(
                         modifier = Modifier
                             .size(12.dp)
-                            .background(PrimaryGreen, CircleShape)
+                            .background(MaterialTheme.colorScheme.primary, CircleShape)
                             .background(Color.White, shape = CircleShape)
                             .align(Alignment.BottomEnd),
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(10.dp)
-                                .background(PrimaryGreen, CircleShape)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape)
                                 .align(Alignment.Center),
                         )
                     }
@@ -264,7 +260,7 @@ private fun MemberCard(member: FamilyMember) {
                 )
             }
 
-            Text("›", fontSize = 20.sp, color = DividerColor)
+            Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
@@ -282,7 +278,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
             modifier = Modifier
                 .width(36.dp)
                 .height(4.dp)
-                .background(DividerColor, RoundedCornerShape(2.dp))
+                .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(2.dp))
                 .align(Alignment.CenterHorizontally)
                 .padding(bottom = 20.dp),
         )
@@ -299,8 +295,8 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(16.dp),
-            color = SurfaceVariantCream,
-            border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
             Column(
                 modifier = Modifier
@@ -331,7 +327,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(14.dp),
-                color = SurfaceVariantCream,
+                color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 Box(
                     modifier = Modifier
@@ -346,7 +342,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(14.dp),
-                color = PrimaryGreen,
+                color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(
                     modifier = Modifier

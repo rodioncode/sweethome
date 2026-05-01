@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,11 +30,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 
 private data class TemplateSection(val category: String, val items: List<String>)
 
@@ -57,7 +51,7 @@ fun TemplateDetailScreen(
 ) {
     var used by remember { mutableStateOf(false) }
 
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,7 +61,7 @@ fun TemplateDetailScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(PrimaryGreen),
+                .background(MaterialTheme.colorScheme.primary),
         ) {
             // Decorative circle
             Box(
@@ -153,8 +147,8 @@ fun TemplateDetailScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     shape = RoundedCornerShape(14.dp),
-                    color = SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
                         Text(
@@ -186,14 +180,14 @@ fun TemplateDetailScreen(
                     templateTags.forEach { tag ->
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = PrimaryGreenLight,
+                            color = MaterialTheme.colorScheme.primaryContainer,
                         ) {
                             Text(
                                 tag,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -228,8 +222,8 @@ fun TemplateDetailScreen(
                                 .fillMaxWidth()
                                 .padding(bottom = 6.dp),
                             shape = RoundedCornerShape(10.dp),
-                            color = SurfaceWhite,
-                            border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                            color = MaterialTheme.colorScheme.surface,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         ) {
                             Row(
                                 modifier = Modifier
@@ -241,7 +235,7 @@ fun TemplateDetailScreen(
                                 Box(
                                     modifier = Modifier
                                         .size(22.dp)
-                                        .background(SurfaceVariantCream, CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                                         .then(
                                             Modifier.background(
                                                 Color.Transparent,
@@ -258,7 +252,7 @@ fun TemplateDetailScreen(
                                         Box(
                                             modifier = Modifier
                                                 .size(20.dp)
-                                                .background(SurfaceVariantCream, CircleShape),
+                                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
                                         )
                                     }
                                 }
@@ -282,7 +276,7 @@ fun TemplateDetailScreen(
                         .padding(horizontal = 16.dp)
                         .padding(bottom = 24.dp),
                     shape = RoundedCornerShape(16.dp),
-                    color = if (used) PrimaryGreenLight else PrimaryGreen,
+                    color = if (used) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.primary,
                     shadowElevation = if (used) 0.dp else 4.dp,
                 ) {
                     Box(

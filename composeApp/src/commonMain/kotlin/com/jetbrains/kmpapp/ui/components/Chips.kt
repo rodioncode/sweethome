@@ -21,10 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 
@@ -40,8 +36,8 @@ fun SweetHomeChip(
         onClick = onClick,
         modifier = modifier.height(36.dp),
         shape = SweetHomeShapes.Chip,
-        color = if (selected) PrimaryGreen else SurfaceWhite,
-        border = if (selected) null else BorderStroke(1.dp, DividerColor),
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
+        border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = SweetHomeSpacing.md),
@@ -60,7 +56,7 @@ fun SweetHomeChip(
                 text = label,
                 fontSize = 13.sp,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (selected) OnPrimaryWhite else MaterialTheme.colorScheme.onSurface,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
             )
         }
     }

@@ -32,10 +32,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 
 private data class ShopItem(
     val id: String,
@@ -70,7 +66,7 @@ fun FamilyShopScreen(
     val myPoints = 142
     var bought by remember { mutableStateOf(emptySet<String>()) }
 
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -193,8 +189,8 @@ fun FamilyShopScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(16.dp),
-                    color = SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
@@ -212,10 +208,10 @@ fun FamilyShopScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(action, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                                Text(pts, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = PrimaryGreen)
+                                Text(pts, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                             }
                             if (index < earnRules.lastIndex) {
-                                HorizontalDivider(color = DividerColor)
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                             }
                         }
                     }
@@ -239,10 +235,10 @@ private fun ShopItemCard(
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(16.dp),
-        color = SurfaceWhite,
+        color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isBought) PrimaryGreen else DividerColor,
+            if (isBought) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
         ),
     ) {
         Box {
@@ -272,15 +268,15 @@ private fun ShopItemCard(
                         "⭐ ${item.points}",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (canBuy) PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (canBuy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Surface(
                         onClick = { if (canBuy) onBuy() },
                         shape = RoundedCornerShape(10.dp),
                         color = when {
-                            isBought -> PrimaryGreen.copy(alpha = 0.12f)
-                            canBuy -> PrimaryGreen
-                            else -> DividerColor
+                            isBought -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                            canBuy -> MaterialTheme.colorScheme.primary
+                            else -> MaterialTheme.colorScheme.outline
                         },
                     ) {
                         Text(
@@ -289,7 +285,7 @@ private fun ShopItemCard(
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = when {
-                                isBought -> PrimaryGreen
+                                isBought -> MaterialTheme.colorScheme.primary
                                 canBuy -> Color.White
                                 else -> MaterialTheme.colorScheme.onSurfaceVariant
                             },
@@ -304,7 +300,7 @@ private fun ShopItemCard(
                         .align(Alignment.TopEnd)
                         .padding(8.dp),
                     shape = RoundedCornerShape(20.dp),
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                 ) {
                     Text(
                         "✓ Куплено",

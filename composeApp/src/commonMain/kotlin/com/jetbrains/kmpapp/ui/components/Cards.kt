@@ -33,10 +33,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
 import com.jetbrains.kmpapp.ui.PrimaryGreen
 import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 
@@ -56,8 +54,8 @@ fun SweetHomeListCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        color = SurfaceWhite,
-        border = BorderStroke(1.dp, DividerColor),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
     ) {
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
@@ -117,7 +115,7 @@ fun SweetHomeListCard(
                             .height(4.dp)
                             .clip(RoundedCornerShape(2.dp)),
                         color = listColor,
-                        trackColor = DividerColor,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant,
                         strokeCap = StrokeCap.Round,
                     )
                     Spacer(Modifier.height(4.dp))
@@ -150,8 +148,8 @@ fun SweetHomeTaskItem(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = SweetHomeShapes.Card,
-        color = SurfaceWhite,
-        border = BorderStroke(1.dp, DividerColor),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = if (isChecked) 0.dp else 1.dp,
     ) {
         Row(
@@ -162,9 +160,9 @@ fun SweetHomeTaskItem(
                 checked = isChecked,
                 onCheckedChange = onCheckedChange,
                 colors = CheckboxDefaults.colors(
-                    checkedColor = PrimaryGreen,
-                    uncheckedColor = PrimaryGreen,
-                    checkmarkColor = SurfaceWhite,
+                    checkedColor = MaterialTheme.colorScheme.primary,
+                    uncheckedColor = MaterialTheme.colorScheme.primary,
+                    checkmarkColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             )
             Spacer(Modifier.width(SweetHomeSpacing.xs))

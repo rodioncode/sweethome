@@ -31,11 +31,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.notifications.Notification
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenLight
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import org.koin.compose.viewmodel.koinViewModel
 
 private fun typeIcon(type: String) = when (type) {
@@ -53,14 +48,14 @@ fun NotificationsScreen() {
     val notifications by viewModel.notifications.collectAsStateWithLifecycle()
     val unreadCount = notifications.count { !it.isRead }
 
-    Scaffold(containerColor = SurfaceVariantCream) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues),
     ) {
         Surface(
-            color = SurfaceWhite,
+            color = MaterialTheme.colorScheme.surface,
             shadowElevation = 1.dp,
         ) {
             Row(
@@ -82,7 +77,7 @@ fun NotificationsScreen() {
                             "Прочитать все",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
-                            color = PrimaryGreen,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
@@ -152,8 +147,8 @@ private fun NotifRow(notif: Notification, onRead: () -> Unit) {
             onClick = onRead,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
-            color = SurfaceWhite,
-            border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+            color = MaterialTheme.colorScheme.surface,
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
             Row(
                 modifier = Modifier
@@ -166,7 +161,7 @@ private fun NotifRow(notif: Notification, onRead: () -> Unit) {
                     modifier = Modifier
                         .size(40.dp)
                         .background(
-                            if (notif.isRead) SurfaceVariantCream else PrimaryGreenLight,
+                            if (notif.isRead) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.primaryContainer,
                             CircleShape,
                         ),
                     contentAlignment = Alignment.Center,
@@ -204,7 +199,7 @@ private fun NotifRow(notif: Notification, onRead: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(8.dp)
-                    .background(PrimaryGreen, CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape)
                     .align(Alignment.TopStart)
                     .offset(x = (-4).dp, y = 14.dp),
             )

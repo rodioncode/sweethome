@@ -2,7 +2,7 @@ package com.jetbrains.kmpapp.screens.groups
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,19 +19,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -62,12 +56,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.Invite
 import com.jetbrains.kmpapp.data.lists.TodoList
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SurfaceWhite
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -119,7 +107,7 @@ fun GroupDetailScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        containerColor = SurfaceVariantCream,
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -131,7 +119,7 @@ fun GroupDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(PrimaryGreen),
+                        .background(MaterialTheme.colorScheme.primary),
                 ) {
                     Box(
                         modifier = Modifier
@@ -159,7 +147,7 @@ fun GroupDetailScreen(
                                 color = Color.White.copy(alpha = 0.15f),
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
-                                    Text("‹", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                                    Text("‹", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                                 }
                             }
                             Column(modifier = Modifier.weight(1f)) {
@@ -167,13 +155,13 @@ fun GroupDetailScreen(
                                     group?.title ?: groupName,
                                     fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = OnPrimaryWhite,
+                                    color = MaterialTheme.colorScheme.onPrimary,
                                 )
                                 if (members.isNotEmpty()) {
                                     Text(
                                         "${members.size} участника",
                                         fontSize = 12.sp,
-                                        color = OnPrimaryWhite.copy(alpha = 0.7f),
+                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                                     )
                                 }
                             }
@@ -238,7 +226,7 @@ fun GroupDetailScreen(
                                         border = androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.4f)),
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
-                                            Text("+", fontSize = 20.sp, color = OnPrimaryWhite, fontWeight = FontWeight.Light)
+                                            Text("+", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Light)
                                         }
                                     }
                                 }
@@ -256,8 +244,8 @@ fun GroupDetailScreen(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(12.dp),
-                        color = PrimaryGreen.copy(alpha = 0.1f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreen),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     ) {
                         Row(
                             modifier = Modifier
@@ -269,13 +257,13 @@ fun GroupDetailScreen(
                                 "🔗 Код: ${currentInvite!!.token}",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.weight(1f),
                             )
                             TextButton(onClick = {
                                 clipboardManager.setText(AnnotatedString(currentInvite!!.token))
                             }) {
-                                Text("Поделиться →", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                                Text("Поделиться →", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -298,7 +286,7 @@ fun GroupDetailScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     TextButton(onClick = { showAddListDialog = true }) {
-                        Text("+ Создать", color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                        Text("+ Создать", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -334,8 +322,8 @@ fun GroupDetailScreen(
                         onClick = { showMembersSheet = true },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(14.dp),
-                        color = SurfaceVariantCream,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text("👥 Участники", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
@@ -348,10 +336,10 @@ fun GroupDetailScreen(
                         },
                         modifier = Modifier.weight(1f).height(48.dp),
                         shape = RoundedCornerShape(14.dp),
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Text("💬 Чат", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = OnPrimaryWhite)
+                            Text("💬 Чат", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -387,7 +375,7 @@ fun GroupDetailScreen(
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        color = SurfaceVariantCream,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(token, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = 4.sp)
@@ -488,7 +476,7 @@ fun GroupDetailScreen(
                 } else {
                     members.forEach { member ->
                         MemberRow(member = member)
-                        HorizontalDivider(color = DividerColor)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
                     }
                 }
                 Spacer(Modifier.height(32.dp))
@@ -554,7 +542,7 @@ private fun MemberRow(member: GroupMember) {
         Text(
             roleLabel,
             fontSize = 12.sp,
-            color = if (member.role == "owner") PrimaryGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (member.role == "owner") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = if (member.role == "owner") FontWeight.Bold else FontWeight.Normal,
         )
     }
@@ -566,7 +554,7 @@ private fun GroupListCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val listColor = list.color?.toComposeColor() ?: listColorForType(list.type)
+    val listColor = list.color?.toComposeColor() ?: listColorForType(list.type, isSystemInDarkTheme())
     val listIcon = list.icon ?: listEmojiForType(list.type)
     val doneCount = list.doneCount
     val totalCount = list.totalCount
@@ -577,8 +565,8 @@ private fun GroupListCard(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 5.dp),
         shape = RoundedCornerShape(14.dp),
-        color = SurfaceWhite,
-        border = androidx.compose.foundation.BorderStroke(1.dp, DividerColor),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
     ) {
         Row(
@@ -612,7 +600,7 @@ private fun GroupListCard(
                         progress = { progress },
                         modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
                         color = listColor,
-                        trackColor = DividerColor,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant,
                         strokeCap = StrokeCap.Round,
                     )
                 }

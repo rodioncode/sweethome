@@ -11,10 +11,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.ErrorRed
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceWhite
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 
@@ -50,12 +46,12 @@ fun SweetHomeTextField(
             enabled = enabled,
             shape = SweetHomeShapes.Medium,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = SurfaceWhite,
-                unfocusedContainerColor = SurfaceWhite,
-                errorContainerColor = SurfaceWhite,
-                focusedBorderColor = PrimaryGreen,
-                unfocusedBorderColor = DividerColor,
-                errorBorderColor = ErrorRed,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                errorContainerColor = MaterialTheme.colorScheme.surface,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                errorBorderColor = MaterialTheme.colorScheme.error,
                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
             ),
@@ -64,7 +60,7 @@ fun SweetHomeTextField(
             Text(
                 text = errorMessage,
                 fontSize = 11.sp,
-                color = ErrorRed,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.padding(top = SweetHomeSpacing.xxs),
             )
         }
