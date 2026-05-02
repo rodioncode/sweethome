@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,9 +51,10 @@ fun SettingsScreen(
     onNavigateBack: () -> Unit,
 ) {
     val profileViewModel = koinViewModel<ProfileViewModel>()
-    var notifyPush by remember { mutableStateOf(true) }
-    var notifyReminders by remember { mutableStateOf(true) }
-    var notifyActivity by remember { mutableStateOf(true) }
+    val notifVm = koinViewModel<NotificationPrefsViewModel>()
+    val prefs by notifVm.prefs.collectAsStateWithLifecycle()
+    val notifyPush = prefs.firstOrNull { it.channel == "push" }?.enabled ?: true
+    val notifyEmail = prefs.firstOrNull { it.channel == "email" }?.enabled ?: true
     var darkTheme by remember { mutableStateOf(false) }
 
     Scaffold { paddingValues ->
@@ -79,27 +81,18 @@ fun SettingsScreen(
                     emoji = "🔔",
                     emojiBgColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
                     title = "Push-уведомления",
-                    subtitle = "Напоминания о задачах",
+                    subtitle = "Напоминания и активность",
                     checked = notifyPush,
-                    onCheckedChange = { notifyPush = it },
+                    onCheckedChange = { notifVm.toggle("push", it) },
                 )
                 HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
                 SettingsToggleRow(
-                    emoji = "📅",
+                    emoji = "✉️",
                     emojiBgColor = SecondaryPeach.copy(alpha = 0.2f),
-                    title = "Напоминания",
-                    subtitle = "За 30 минут до дедлайна",
-                    checked = notifyReminders,
-                    onCheckedChange = { notifyReminders = it },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-                SettingsToggleRow(
-                    emoji = "👥",
-                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    title = "Активность в пространстве",
-                    subtitle = "Новые задачи от участников",
-                    checked = notifyActivity,
-                    onCheckedChange = { notifyActivity = it },
+                    title = "Email-уведомления",
+                    subtitle = "Сводки и важные события",
+                    checked = notifyEmail,
+                    onCheckedChange = { notifVm.toggle("email", it) },
                 )
             }
 

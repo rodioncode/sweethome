@@ -24,6 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -48,6 +49,8 @@ fun ProfileContent(
     val listCount by viewModel.listCount.collectAsStateWithLifecycle()
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
+    val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
+    var showDeleteDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Scaffold { paddingValues ->
     LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -323,9 +326,94 @@ fun ProfileContent(
             }
         }
 
+        item {
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            DangerZone(
+                onDelete = { showDeleteDialog = true },
+            )
+        }
+
         item { Spacer(Modifier.height(80.dp)) }
     }
     }
+
+    if (showDeleteDialog) {
+        ConfirmDeleteAccountDialog(
+            onDismiss = { showDeleteDialog = false },
+            onConfirm = {
+                showDeleteDialog = false
+                viewModel.deleteAccount()
+            },
+        )
+    }
+    when (val s = deleteState) {
+        is ProfileViewModel.DeleteState.Error -> {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { viewModel.resetDeleteState() },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { viewModel.resetDeleteState() }) { Text("OK") } },
+                title = { Text("Не удалось") },
+                text = { Text(s.message) },
+            )
+        }
+        else -> Unit
+    }
+}
+
+@Composable
+private fun DangerZone(onDelete: () -> Unit) {
+    Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.md)) {
+        SectionLabel("ОПАСНАЯ ЗОНА")
+        Surface(
+            onClick = onDelete,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
+            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("⚠️", fontSize = 18.sp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Удалить аккаунт", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
+                    Text("Все данные будут удалены без возможности восстановления", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConfirmDeleteAccountDialog(
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+) {
+    var input by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
+    val canConfirm = input.trim().equals("УДАЛИТЬ", ignoreCase = false)
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Удалить аккаунт?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Это действие необратимо. Все списки, задачи, история и баланс будут стёрты.")
+                Text("Чтобы подтвердить, введите УДАЛИТЬ:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                androidx.compose.material3.OutlinedTextField(
+                    value = input,
+                    onValueChange = { input = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = onConfirm, enabled = canConfirm) {
+                Text("Удалить", color = if (canConfirm) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
+            }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
 }
 
 @Composable

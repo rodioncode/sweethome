@@ -10,6 +10,7 @@ import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.Invite
 import com.jetbrains.kmpapp.data.groups.OwnerCannotLeaveException
+import com.jetbrains.kmpapp.data.groups.PatchWorkspaceRequest
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.lists.TodoList
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -127,6 +128,16 @@ class GroupDetailViewModel(
                 title = title,
                 workspaceId = groupId,
             )
+        }
+    }
+
+    fun updateWorkHours(start: String?, end: String?, days: List<String>?) {
+        val groupId = _groupId.value ?: return
+        viewModelScope.launch {
+            groupsRepository.updateWorkspace(
+                groupId,
+                PatchWorkspaceRequest(workHoursStart = start, workHoursEnd = end, workDays = days),
+            ).onFailure { _uiEvent.emit(GroupDetailUiEvent.ShowError(it.message ?: "Ошибка")) }
         }
     }
 

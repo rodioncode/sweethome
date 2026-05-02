@@ -56,7 +56,15 @@ fun SyncItem.toTodoItem() = TodoItem(
 )
 
 @Serializable
+data class MemberBalance(
+    val workspaceId: String,
+    val balance: Int,
+    val totalEarned: Int,
+)
+
+@Serializable
 data class SyncWrapper(
     val items: List<SyncItem>,
     val timestamp: String,
+    val memberBalances: List<MemberBalance> = emptyList(),
 )

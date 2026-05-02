@@ -59,7 +59,7 @@ class KtorGroupsApi(
 
     override suspend fun getWorkspaceMembers(workspaceId: String): Result<List<GroupMember>> = runCatching {
         val envelope: ApiEnvelope<WorkspaceMembersWrapper> =
-            apiClient.get("$baseUrl/workspaces/$workspaceId/members-info").body()
+            apiClient.get("$baseUrl/workspaces/$workspaceId/members").body()
         require(envelope.error == null) { envelope.error?.message ?: "Unknown error" }
         require(envelope.data != null) { "No data in response" }
         envelope.data.members
@@ -101,7 +101,7 @@ class KtorGroupsApi(
                 setBody(JoinByCodeRequest(token))
             }.body()
         when (envelope.error?.code) {
-            "email_required" -> throw EmailRequiredException()
+            "email_required", "no_email" -> throw EmailRequiredException()
             "invalid_token" -> throw InvalidInviteException()
             "invite_expired" -> throw InviteExpiredException()
             "invite_used" -> throw InvalidInviteException()

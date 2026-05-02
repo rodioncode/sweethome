@@ -2,11 +2,26 @@ package com.jetbrains.kmpapp.data.groups
 
 import kotlinx.serialization.Serializable
 
+object WorkspaceType {
+    const val PERSONAL = "personal"
+    const val FAMILY = "family"
+    const val GROUP = "group"
+    const val WORK = "work"
+    const val MENTORING = "mentoring"
+}
+
+object WorkspaceRole {
+    const val OWNER = "owner"
+    const val ADMIN = "admin"
+    const val MEMBER = "member"
+    const val MENTOR = "mentor"
+}
+
 @Serializable
 data class GroupMember(
     val userId: String,
     val displayName: String? = null,
-    val role: String, // "owner" | "admin" | "member"
+    val role: String, // см. WorkspaceRole
     val joinedAt: String? = null,
     val invitedBy: String? = null,
 )
@@ -20,8 +35,11 @@ data class Group(
     val createdAt: String,
     val updatedAt: String? = null,
     val archivedAt: String? = null,
-    val role: String,                        // "owner" | "member" | "admin" — роль текущего пользователя
-    val type: String = "group",              // "personal" | "group" | "family" | "mentoring"
+    val role: String,                        // см. WorkspaceRole — роль текущего пользователя
+    val type: String = WorkspaceType.GROUP,  // см. WorkspaceType
+    val workHoursStart: String? = null,      // "HH:MM", актуально для type=work
+    val workHoursEnd: String? = null,
+    val workDays: List<String>? = null,      // подмножество mon..sun
 )
 
 @Serializable
@@ -32,7 +50,7 @@ data class WorkspacesWrapper(
 @Serializable
 data class CreateWorkspaceRequest(
     val title: String,
-    val type: String = "group",             // "group" | "family" | "mentoring"
+    val type: String = WorkspaceType.GROUP,  // personal создаётся бэком автоматически
     val icon: String? = null,
 )
 
@@ -40,6 +58,9 @@ data class CreateWorkspaceRequest(
 data class PatchWorkspaceRequest(
     val title: String? = null,
     val icon: String? = null,
+    val workHoursStart: String? = null,
+    val workHoursEnd: String? = null,
+    val workDays: List<String>? = null,
 )
 
 @Serializable

@@ -157,18 +157,21 @@ private fun GroupCard(
     val wsIcon = when (group.type) {
         "family" -> "👨‍👩‍👧‍👦"
         "group" -> "👥"
+        "work" -> "💼"
         "mentoring" -> "🎓"
         else -> "👤"
     }
     val wsIconBg = when (group.type) {
         "family" -> Color(0xFFFFF3E0)
         "group" -> Color(0xFFE3F2FD)
+        "work" -> Color(0xFFE8F5E9)
         "mentoring" -> Color(0xFFF3E5F5)
         else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
     }
     val typeLabel = when (group.type) {
         "family" -> "Семья"
         "group" -> "Группа"
+        "work" -> "Работа"
         "mentoring" -> "Наставничество"
         else -> "Личное"
     }
@@ -258,6 +261,7 @@ internal fun CreateGroupDialog(
             val workspaceTypes = listOf(
                 Triple("family",    "👨‍👩‍👧‍👦", "Семья" to "Для совместного ведения домашних дел"),
                 Triple("group",     "👥",     "Группа" to "Команда, соседи, друзья"),
+                Triple("work",      "💼",     "Работа" to "Рабочие задачи и расписание"),
                 Triple("mentoring", "🎓",     "Наставничество" to "Учитель и ученики"),
             )
 

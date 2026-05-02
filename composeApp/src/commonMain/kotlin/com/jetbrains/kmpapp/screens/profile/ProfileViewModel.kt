@@ -7,6 +7,7 @@ import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.profile.ProfileApi
+import com.jetbrains.kmpapp.data.profile.TooManyRequestsException
 import com.jetbrains.kmpapp.data.profile.UserProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -65,4 +66,34 @@ class ProfileViewModel(
     fun logout() {
         viewModelScope.launch { authRepository.logout() }
     }
+
+    sealed class DeleteState {
+        data object Idle : DeleteState()
+        data object InProgress : DeleteState()
+        data object Done : DeleteState()
+        data class Error(val message: String) : DeleteState()
+    }
+
+    private val _deleteState = MutableStateFlow<DeleteState>(DeleteState.Idle)
+    val deleteState: StateFlow<DeleteState> = _deleteState
+
+    fun deleteAccount() {
+        if (_deleteState.value is DeleteState.InProgress) return
+        _deleteState.value = DeleteState.InProgress
+        viewModelScope.launch {
+            profileApi.deleteAccount()
+                .onSuccess {
+                    _deleteState.value = DeleteState.Done
+                    authRepository.logout()
+                }
+                .onFailure {
+                    _deleteState.value = DeleteState.Error(
+                        if (it is TooManyRequestsException) "Слишком много попыток. Попробуйте завтра."
+                        else it.message ?: "Не удалось удалить аккаунт"
+                    )
+                }
+        }
+    }
+
+    fun resetDeleteState() { _deleteState.value = DeleteState.Idle }
 }

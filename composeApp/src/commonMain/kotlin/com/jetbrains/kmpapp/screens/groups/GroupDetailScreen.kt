@@ -84,6 +84,7 @@ fun GroupDetailScreen(
     var showTransferDialog by remember { mutableStateOf(false) }
     var showAddListDialog by remember { mutableStateOf(false) }
     var showMembersSheet by remember { mutableStateOf(false) }
+    var showWorkHoursDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(groupId) { viewModel.load(groupId) }
@@ -309,6 +310,30 @@ fun GroupDetailScreen(
                 }
             }
 
+            // Work hours (только для type=work)
+            if (group?.type == "work") {
+                item {
+                    Spacer(Modifier.height(16.dp))
+                    Surface(
+                        onClick = { if (isOwner) showWorkHoursDialog = true },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Рабочее время", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                            val g = group
+                            val hours = if (g?.workHoursStart != null && g.workHoursEnd != null) "${g.workHoursStart} – ${g.workHoursEnd}" else "Не задано"
+                            val days = g?.workDays?.takeIf { it.isNotEmpty() }?.joinToString(", ") { dayLabel(it) } ?: "—"
+                            Text(hours, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Дни: $days", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (isOwner) Text("Нажмите, чтобы изменить", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
             // Action buttons
             item {
                 Spacer(Modifier.height(16.dp))
@@ -451,6 +476,21 @@ fun GroupDetailScreen(
         )
     }
 
+    // Work hours editor
+    if (showWorkHoursDialog) {
+        val g = group
+        WorkHoursDialog(
+            initialStart = g?.workHoursStart ?: "09:00",
+            initialEnd = g?.workHoursEnd ?: "18:00",
+            initialDays = g?.workDays ?: listOf("mon", "tue", "wed", "thu", "fri"),
+            onDismiss = { showWorkHoursDialog = false },
+            onConfirm = { s, e, d ->
+                viewModel.updateWorkHours(s, e, d)
+                showWorkHoursDialog = false
+            },
+        )
+    }
+
     // Members bottom sheet
     if (showMembersSheet) {
         val sheetState = rememberModalBottomSheetState()
@@ -537,6 +577,7 @@ private fun MemberRow(member: GroupMember) {
         val roleLabel = when (member.role) {
             "owner" -> "Владелец"
             "admin" -> "Админ"
+            "mentor" -> "Наставник"
             else -> "Участник"
         }
         Text(
@@ -615,4 +656,78 @@ private fun GroupListCard(
             }
         }
     }
+}
+
+private fun dayLabel(code: String): String = when (code) {
+    "mon" -> "Пн"; "tue" -> "Вт"; "wed" -> "Ср"; "thu" -> "Чт"
+    "fri" -> "Пт"; "sat" -> "Сб"; "sun" -> "Вс"; else -> code
+}
+
+@Composable
+private fun WorkHoursDialog(
+    initialStart: String,
+    initialEnd: String,
+    initialDays: List<String>,
+    onDismiss: () -> Unit,
+    onConfirm: (start: String?, end: String?, days: List<String>?) -> Unit,
+) {
+    var start by remember { mutableStateOf(initialStart) }
+    var end by remember { mutableStateOf(initialEnd) }
+    val days = remember { mutableStateOf(initialDays.toSet()) }
+    val allDays = listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Рабочее время") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = start,
+                        onValueChange = { start = it },
+                        label = { Text("Начало") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = end,
+                        onValueChange = { end = it },
+                        label = { Text("Конец") },
+                        singleLine = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Text("Формат HH:MM. Дни:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    allDays.forEach { d ->
+                        val selected = d in days.value
+                        Surface(
+                            onClick = {
+                                days.value = if (selected) days.value - d else days.value + d
+                            },
+                            shape = CircleShape,
+                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(36.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(
+                                    dayLabel(d),
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val orderedDays = allDays.filter { it in days.value }
+                onConfirm(start.takeIf { it.isNotBlank() }, end.takeIf { it.isNotBlank() }, orderedDays.takeIf { it.isNotEmpty() })
+            }) { Text("Сохранить") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
 }
