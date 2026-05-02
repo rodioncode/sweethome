@@ -12,6 +12,9 @@ interface ListsStorage {
     suspend fun getLists(): List<TodoList>
     suspend fun saveListWithItems(list: TodoList, items: List<TodoItem>)
     suspend fun getListWithItems(listId: String): Pair<TodoList, List<TodoItem>>?
+    suspend fun getAllItems(): List<TodoItem>
+    fun observeAllItems(): kotlinx.coroutines.flow.Flow<List<TodoItem>>
+    suspend fun upsertItem(item: TodoItem)
     suspend fun clear()
     suspend fun applySync(updatedItems: List<TodoItem>, deletedIds: List<String>)
 }
@@ -53,6 +56,20 @@ private class RoomListsStorage(
         val listEntity = listDao.getListById(listId) ?: return@withContext null
         val itemEntities = itemDao.getItemsByListIdSync(listId)
         listEntity.toDomain() to itemEntities.map { it.toDomain() }
+    }
+
+    override suspend fun getAllItems(): List<TodoItem> = withContext(Dispatchers.Default) {
+        itemDao.getAllItems().first().map { it.toDomain() }
+    }
+
+    override fun observeAllItems() = itemDao.getAllItems().let { src ->
+        kotlinx.coroutines.flow.flow {
+            src.collect { entities -> emit(entities.map { it.toDomain() }) }
+        }
+    }
+
+    override suspend fun upsertItem(item: TodoItem) = withContext(Dispatchers.Default) {
+        itemDao.insert(item.toEntity())
     }
 
     override suspend fun clear() = withContext(Dispatchers.Default) {

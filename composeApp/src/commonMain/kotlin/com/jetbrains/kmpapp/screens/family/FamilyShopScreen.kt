@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,14 +12,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -32,30 +37,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-private data class ShopItem(
-    val id: String,
-    val icon: String,
-    val title: String,
-    val desc: String,
-    val points: Int,
-)
-
-private val shopItems = listOf(
-    ShopItem("s1", "🍦", "Мороженое", "Мама купит любое мороженое", 30),
-    ShopItem("s2", "🎮", "Час игры", "Дополнительный час на приставке", 50),
-    ShopItem("s3", "🍕", "Пицца на ужин", "Выбираешь начинку ты!", 80),
-    ShopItem("s4", "🎬", "Поход в кино", "Фильм на твой выбор", 120),
-    ShopItem("s5", "🛒", "Выходной от уборки", "Один день без домашних дел", 60),
-    ShopItem("s6", "🎁", "Подарок", "До 500 ₽ на любой подарок", 200),
-)
-
-private val earnRules = listOf(
-    "Выполнить задачу" to "+5 ⭐",
-    "Выполнить дело по дому" to "+10 ⭐",
-    "Стрик 3 дня" to "+15 ⭐",
-    "Выполнить всё за день" to "+25 ⭐",
-)
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.data.gamification.Prize
+import org.koin.compose.viewmodel.koinViewModel
 
 private val shopGradient = Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(0xFFD4956B)))
 
@@ -63,254 +47,239 @@ private val shopGradient = Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(
 fun FamilyShopScreen(
     navigateBack: () -> Unit,
 ) {
-    val myPoints = 142
-    var bought by remember { mutableStateOf(emptySet<String>()) }
+    val vm = koinViewModel<GamificationViewModel>()
+    val isOwnerOrAdmin by vm.isOwnerOrAdmin.collectAsStateWithLifecycle()
+    val currency by vm.currency.collectAsStateWithLifecycle()
+    val leaderboard by vm.leaderboard.collectAsStateWithLifecycle()
+    val prizes by vm.prizes.collectAsStateWithLifecycle()
+    val currentUserId by vm.currentUserId.collectAsStateWithLifecycle()
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-        // Orange gradient header
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(shopGradient),
-        ) {
-            // Decorative emoji
-            Text(
-                "🛍",
-                fontSize = 80.sp,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 0.dp, end = 0.dp),
-                color = Color.White.copy(alpha = 0.15f),
-            )
+    val snackbar = remember { SnackbarHostState() }
+    var creating by remember { mutableStateOf(false) }
+    var editing by remember { mutableStateOf<Prize?>(null) }
+    var deleting by remember { mutableStateOf<Prize?>(null) }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 14.dp, bottom = 20.dp),
-            ) {
-                // Back + title row
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    modifier = Modifier.padding(bottom = 14.dp),
-                ) {
-                    Surface(
-                        onClick = navigateBack,
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.2f),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                    Text(
-                        "Семейный магазин",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                    )
-                }
+    val myBalance = leaderboard.firstOrNull { it.userId == currentUserId }?.balance ?: 0
+    val currencyIcon = currency?.icon ?: "💎"
 
-                // Points + bought count
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column {
-                        Text("Мои баллы", fontSize = 12.sp, color = Color.White.copy(alpha = 0.8f))
-                        Text("⭐ $myPoints", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = Color.White.copy(alpha = 0.2f),
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text("Куплено", fontSize = 11.sp, color = Color.White.copy(alpha = 0.8f))
-                            Text("${bought.size}", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        }
-                    }
-                }
+    LaunchedEffect(Unit) {
+        vm.events.collect { ev ->
+            when (ev) {
+                is GamificationViewModel.Event.Toast -> snackbar.showSnackbar(ev.message)
             }
         }
+    }
 
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 32.dp),
-        ) {
-            // Description
-            item {
+    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            // Header with gradient
+            Box(modifier = Modifier.fillMaxWidth().background(shopGradient)) {
                 Text(
-                    "Выполняй задачи — получай баллы — трать их на приятные награды 🎉",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 19.sp,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
+                    "🛍",
+                    fontSize = 80.sp,
+                    modifier = Modifier.align(Alignment.TopEnd),
+                    color = Color.White.copy(alpha = 0.15f),
                 )
-            }
-
-            // Shop grid (2 columns)
-            item {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    shopItems.chunked(2).forEach { row ->
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            row.forEach { item ->
-                                ShopItemCard(
-                                    item = item,
-                                    myPoints = myPoints,
-                                    isBought = item.id in bought,
-                                    onBuy = { bought = bought + item.id },
-                                    modifier = Modifier.weight(1f),
-                                )
+                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp, bottom = 20.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.padding(bottom = 14.dp),
+                    ) {
+                        Surface(onClick = navigateBack, modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.White.copy(alpha = 0.2f)) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
                             }
-                            if (row.size == 1) Spacer(Modifier.weight(1f))
                         }
+                        Text(
+                            "Магазин призов",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (isOwnerOrAdmin) {
+                            Surface(onClick = { creating = true }, modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.White.copy(alpha = 0.25f)) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("+", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                }
+                            }
+                        }
+                    }
+                    Text("Твой баланс", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text("$myBalance", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        Spacer(Modifier.size(6.dp))
+                        Text(currencyIcon, fontSize = 22.sp, modifier = Modifier.padding(bottom = 4.dp))
                     }
                 }
             }
 
-            // How to earn
-            item {
-                Spacer(Modifier.height(20.dp))
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+            if (prizes.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("🎁", fontSize = 40.sp)
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            "Как зарабатывать баллы?",
+                            if (isOwnerOrAdmin) "Призов пока нет — добавьте первый" else "Призов пока нет",
                             fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.padding(bottom = 12.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        earnRules.forEachIndexed { index, (action, pts) ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(action, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface)
-                                Text(pts, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            }
-                            if (index < earnRules.lastIndex) {
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline)
-                            }
-                        }
                     }
+                }
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+                    items(prizes, key = { it.id }) { prize ->
+                        PrizeCard(
+                            prize = prize,
+                            currencyIcon = currencyIcon,
+                            myBalance = myBalance,
+                            canEdit = isOwnerOrAdmin,
+                            onRedeem = { vm.redeemPrize(prize.id) },
+                            onEdit = { editing = prize },
+                            onDelete = { deleting = prize },
+                        )
+                    }
+                    item { Spacer(Modifier.height(40.dp)) }
                 }
             }
         }
     }
+
+    if (creating) {
+        EditPrizeDialog(
+            initial = null,
+            onDismiss = { creating = false },
+            onConfirm = { title, desc, price ->
+                vm.createPrize(title, desc, price)
+                creating = false
+            },
+        )
+    }
+    editing?.let { prize ->
+        EditPrizeDialog(
+            initial = prize,
+            onDismiss = { editing = null },
+            onConfirm = { title, desc, price ->
+                vm.updatePrize(prize.id, title, desc, price)
+                editing = null
+            },
+        )
+    }
+    deleting?.let { prize ->
+        AlertDialog(
+            onDismissRequest = { deleting = null },
+            title = { Text("Удалить приз?") },
+            text = { Text("«${prize.title}» будет удалён без возможности восстановления.") },
+            confirmButton = {
+                TextButton(onClick = { vm.deletePrize(prize.id); deleting = null }) {
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Отмена") } },
+        )
     }
 }
 
 @Composable
-private fun ShopItemCard(
-    item: ShopItem,
-    myPoints: Int,
-    isBought: Boolean,
-    onBuy: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun PrizeCard(
+    prize: Prize,
+    currencyIcon: String,
+    myBalance: Int,
+    canEdit: Boolean,
+    onRedeem: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
 ) {
-    val canBuy = myPoints >= item.points && !isBought
-
+    val canAfford = myBalance >= prize.price
     Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            if (isBought) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-        ),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
-        Box {
-            Column(modifier = Modifier.padding(horizontal = 14.dp, vertical = 16.dp)) {
-                Text(item.icon, fontSize = 32.sp)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    item.title,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    item.desc,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 15.sp,
-                )
-                Spacer(Modifier.height(12.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "⭐ ${item.points}",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (canBuy) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Surface(
-                        onClick = { if (canBuy) onBuy() },
-                        shape = RoundedCornerShape(10.dp),
-                        color = when {
-                            isBought -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                            canBuy -> MaterialTheme.colorScheme.primary
-                            else -> MaterialTheme.colorScheme.outline
-                        },
-                    ) {
-                        Text(
-                            if (isBought) "Готово" else "Купить",
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = when {
-                                isBought -> MaterialTheme.colorScheme.primary
-                                canBuy -> Color.White
-                                else -> MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                        )
+        Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) { Text("🎁", fontSize = 22.sp) }
+                Spacer(Modifier.size(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(prize.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    prize.description?.takeIf { it.isNotBlank() }?.let {
+                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                if (canEdit) {
+                    Surface(onClick = onEdit, modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Box(contentAlignment = Alignment.Center) { Text("✎", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface) }
+                    }
+                    Spacer(Modifier.size(4.dp))
+                    Surface(onClick = onDelete, modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.errorContainer) {
+                        Box(contentAlignment = Alignment.Center) { Text("✕", fontSize = 14.sp, color = MaterialTheme.colorScheme.error) }
                     }
                 }
             }
-
-            if (isBought) {
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${prize.price}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.size(4.dp))
+                Text(currencyIcon, fontSize = 14.sp)
+                Spacer(Modifier.weight(1f))
                 Surface(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.primary,
+                    onClick = if (canAfford) onRedeem else ({}),
+                    shape = RoundedCornerShape(50),
+                    color = if (canAfford) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Text(
-                        "✓ Куплено",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-                        fontSize = 9.sp,
+                        if (canAfford) "Купить" else "Не хватает",
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White,
+                        color = if (canAfford) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun EditPrizeDialog(
+    initial: Prize?,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, description: String?, price: Int) -> Unit,
+) {
+    var title by remember { mutableStateOf(initial?.title.orEmpty()) }
+    var description by remember { mutableStateOf(initial?.description.orEmpty()) }
+    var priceText by remember { mutableStateOf(initial?.price?.toString() ?: "") }
+    val priceInt = priceText.toIntOrNull()
+    val canConfirm = title.isNotBlank() && priceInt != null && priceInt in 1..999_999
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initial == null) "Новый приз" else "Изменить приз") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(value = title, onValueChange = { title = it }, label = { Text("Название") }, singleLine = true)
+                OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Описание (опц.)") })
+                OutlinedTextField(
+                    value = priceText,
+                    onValueChange = { v -> priceText = v.filter { it.isDigit() }.take(6) },
+                    label = { Text("Цена") },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(title.trim(), description.trim().ifBlank { null }, priceInt ?: 0) },
+                enabled = canConfirm,
+            ) { Text("Сохранить") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
 }

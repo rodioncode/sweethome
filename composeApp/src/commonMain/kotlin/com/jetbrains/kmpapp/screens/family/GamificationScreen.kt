@@ -15,13 +15,24 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,311 +41,334 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.data.achievements.Achievement
+import com.jetbrains.kmpapp.data.gamification.LeaderboardEntry
+import com.jetbrains.kmpapp.data.gamification.Transaction
+import org.koin.compose.viewmodel.koinViewModel
 
-private data class LeaderboardEntry(
-    val name: String,
-    val initials: String,
-    val color: Color,
-    val points: Int,
-    val done: Int,
-    val streak: Int,
-    val rank: Int,
+private val rankEmoji = listOf("🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣")
+private val avatarPalette = listOf(
+    Color(0xFF5B7C5A), Color(0xFF42A5F5), Color(0xFFFF7043),
+    Color(0xFFAB47BC), Color(0xFFFFA726), Color(0xFF26A69A),
 )
 
-private data class Achievement(
-    val icon: String,
-    val title: String,
-    val desc: String,
-    val unlocked: Boolean,
-)
-
-private val leaderboard = listOf(
-    LeaderboardEntry("Аня Смирнова", "АС", Color(0xFF5B7C5A), 142, 28, 7, 1),
-    LeaderboardEntry("Дима Смирнов", "ДС", Color(0xFF42A5F5), 98, 18, 3, 2),
-    LeaderboardEntry("Соня Смирнова", "СС", Color(0xFFFF7043), 74, 14, 2, 3),
-    LeaderboardEntry("Бабушка", "БА", Color(0xFFAB47BC), 51, 10, 1, 4),
-)
-
-private val achievements = listOf(
-    Achievement("🔥", "Стрик 7 дней", "Выполняла задачи 7 дней подряд", true),
-    Achievement("⚡", "Суперскорость", "5 задач за день", true),
-    Achievement("🌟", "Первые 100 очков", "Набери 100 баллов", true),
-    Achievement("👑", "Месяц в лидерах", "30 дней на первом месте", false),
-    Achievement("🤝", "Командный игрок", "Помоги 10 задачам других", false),
-    Achievement("🏠", "Хозяйка дома", "50 домашних дел выполнено", false),
-)
-
-private val rankEmoji = listOf("🥇", "🥈", "🥉", "4️⃣")
+private fun colorFor(seed: String): Color = avatarPalette[(seed.hashCode().and(0x7FFFFFFF)) % avatarPalette.size]
+private fun initialsOf(name: String?, fallback: String): String =
+    (name ?: fallback).split(" ", limit = 2).map { it.firstOrNull()?.toString().orEmpty() }.joinToString("").uppercase().take(2).ifBlank { "?" }
 
 @Composable
 fun GamificationScreen(
     navigateBack: () -> Unit,
     navigateToShop: () -> Unit,
 ) {
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-        // TopBar
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Surface(
-                    onClick = navigateBack,
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                Text(
-                    "🏆 Семейный рейтинг",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
+    val vm = koinViewModel<GamificationViewModel>()
+    val workspace by vm.familyWorkspace.collectAsStateWithLifecycle()
+    val isOwnerOrAdmin by vm.isOwnerOrAdmin.collectAsStateWithLifecycle()
+    val currency by vm.currency.collectAsStateWithLifecycle()
+    val leaderboard by vm.leaderboard.collectAsStateWithLifecycle()
+    val transactions by vm.transactions.collectAsStateWithLifecycle()
+    val achievementsCatalog by vm.achievementsCatalog.collectAsStateWithLifecycle()
+    val achievementsMine by vm.achievementsMine.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+
+    var showCurrencyDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        vm.events.collect { ev ->
+            when (ev) {
+                is GamificationViewModel.Event.Toast -> snackbar.showSnackbar(ev.message)
             }
         }
+    }
 
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 32.dp),
-        ) {
-            // Podium
-            item {
-                Podium(modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp))
-            }
-
-            // Full leaderboard
-            item {
-                Text(
-                    "Таблица лидеров",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            items(leaderboard.size) { i ->
-                val entry = leaderboard[i]
-                val isFirst = i == 0
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (isFirst) Color(0xFFFFFDE7) else MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isFirst) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline,
-                    ),
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
+        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp, 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Text(rankEmoji[i], fontSize = 20.sp, modifier = Modifier.width(28.dp))
-                        MemberCircle(displayName = entry.initials, color = entry.color, size = 40, fontSize = 14)
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                entry.name,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                "🔥 стрик ${entry.streak} дн · ${entry.done} задач",
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                    Surface(onClick = navigateBack, modifier = Modifier.size(36.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                         }
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(
-                                "${entry.points}",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                            Text("очков", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Text(
+                        "${currency?.icon ?: "🏆"} ${currency?.name?.replaceFirstChar { it.uppercaseChar() } ?: "Семейный рейтинг"}",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (isOwnerOrAdmin) {
+                        Surface(onClick = { showCurrencyDialog = true }, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(36.dp)) {
+                            Box(contentAlignment = Alignment.Center) { Text("✎", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface) }
                         }
                     }
                 }
             }
 
-            // Achievements
-            item {
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    "Достижения",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-                AchievementsGrid(
-                    achievements = achievements,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
+            if (workspace == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Создайте семейное пространство, чтобы видеть рейтинг", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(24.dp))
+                }
+                return@Scaffold
             }
 
-            // Shop button
-            item {
-                Spacer(Modifier.height(20.dp))
-                Surface(
-                    onClick = navigateToShop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = Color.Transparent,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(0xFFD4956B))),
-                                RoundedCornerShape(14.dp),
-                            )
-                            .padding(vertical = 14.dp),
-                        contentAlignment = Alignment.Center,
+            LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
+                if (leaderboard.size >= 3) {
+                    item { Podium(leaderboard.take(3), modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp)) }
+                }
+
+                item {
+                    Text("Таблица лидеров", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                    Spacer(Modifier.height(8.dp))
+                }
+
+                if (leaderboard.isEmpty()) {
+                    item {
+                        Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            Text("Пока никто не заработал баллы", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                } else {
+                    items(leaderboard.size) { i ->
+                        LeaderboardRow(entry = leaderboard[i], rank = i + 1, currencyIcon = currency?.icon ?: "💎")
+                    }
+                }
+
+                item {
+                    Spacer(Modifier.height(20.dp))
+                    Surface(
+                        onClick = navigateToShop,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        color = Color.Transparent,
                     ) {
-                        Text(
-                            "🛍 Потратить баллы в магазине",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(0xFFD4956B))),
+                                    RoundedCornerShape(14.dp),
+                                )
+                                .padding(vertical = 14.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("🛍 Потратить баллы в магазине", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+
+                if (achievementsCatalog.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(24.dp))
+                        Text("Достижения", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                        Spacer(Modifier.height(8.dp))
+                        AchievementsGrid(catalog = achievementsCatalog, earned = achievementsMine.map { it.id }.toSet())
+                    }
+                }
+
+                if (transactions.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(24.dp))
+                        Text("История", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp))
+                        Spacer(Modifier.height(8.dp))
+                    }
+                    items(transactions.take(20), key = { it.id }) { tx ->
+                        TransactionRow(tx = tx, currencyIcon = currency?.icon ?: "💎", displayNameOf = { uid -> leaderboard.firstOrNull { it.userId == uid }?.displayName })
                     }
                 }
             }
         }
     }
+
+    if (showCurrencyDialog) {
+        EditCurrencyDialog(
+            initialName = currency?.name ?: "монетки",
+            initialIcon = currency?.icon ?: "🪙",
+            onDismiss = { showCurrencyDialog = false },
+            onConfirm = { n, i ->
+                vm.updateCurrency(n, i)
+                showCurrencyDialog = false
+            },
+        )
     }
 }
 
 @Composable
-private fun Podium(modifier: Modifier = Modifier) {
+private fun Podium(top: List<LeaderboardEntry>, modifier: Modifier = Modifier) {
+    val first = top[0]
+    val second = top[1]
+    val third = top[2]
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 2nd place
-        PodiumSlot(
-            entry = leaderboard[1],
-            podiumHeight = 60.dp.value.toInt(),
-            podiumColor = Color(0xFFE8E8E8),
-            avatarSize = 56,
-            avatarBorderColor = Color(0xFFC0C0C0),
-            modifier = Modifier.weight(1f),
-        )
-        // 1st place
-        PodiumSlot(
-            entry = leaderboard[0],
-            podiumHeight = 80.dp.value.toInt(),
-            podiumColor = null, // gold gradient
-            avatarSize = 68,
-            avatarBorderColor = Color(0xFFFFD700),
-            glowColor = Color(0xFFFFD700),
-            modifier = Modifier.weight(1f),
-        )
-        // 3rd place
-        PodiumSlot(
-            entry = leaderboard[2],
-            podiumHeight = 44.dp.value.toInt(),
-            podiumColor = Color(0xFFCD7F32),
-            avatarSize = 56,
-            avatarBorderColor = Color(0xFFCD7F32),
-            modifier = Modifier.weight(1f),
-        )
+        PodiumSlot(second, 2, podiumHeight = 60, podiumColor = Color(0xFFE8E8E8), avatarSize = 56, avatarBorderColor = Color(0xFFC0C0C0), modifier = Modifier.weight(1f))
+        PodiumSlot(first, 1, podiumHeight = 80, podiumColor = null, avatarSize = 68, avatarBorderColor = Color(0xFFFFD700), modifier = Modifier.weight(1f))
+        PodiumSlot(third, 3, podiumHeight = 44, podiumColor = Color(0xFFCD7F32), avatarSize = 56, avatarBorderColor = Color(0xFFCD7F32), modifier = Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun PodiumSlot(
     entry: LeaderboardEntry,
+    rank: Int,
     podiumHeight: Int,
     podiumColor: Color?,
     avatarSize: Int,
     avatarBorderColor: Color,
-    glowColor: Color? = null,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         MemberCircle(
-            displayName = entry.initials,
-            color = entry.color,
+            displayName = initialsOf(entry.displayName, entry.userId),
+            color = colorFor(entry.userId),
             size = avatarSize,
             fontSize = if (avatarSize >= 68) 22 else 18,
             borderColor = avatarBorderColor,
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            entry.name.split(" ").firstOrNull() ?: entry.name,
+            entry.displayName?.split(" ")?.firstOrNull() ?: entry.userId.take(6),
             fontSize = 12.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
         )
-        Text(
-            "${entry.points} ⭐",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text("${entry.balance} ⭐", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(8.dp))
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(podiumHeight.dp)
                 .then(
-                    if (podiumColor != null) {
-                        Modifier.background(podiumColor, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
-                    } else {
-                        Modifier.background(
-                            Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFA000))),
-                            RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
-                        )
-                    }
+                    if (podiumColor != null) Modifier.background(podiumColor, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
+                    else Modifier.background(
+                        Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFA000))),
+                        RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+                    ),
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Text(rankEmoji[entry.rank - 1], fontSize = if (entry.rank == 1) 24.sp else 20.sp)
+            Text(rankEmoji[rank - 1], fontSize = if (rank == 1) 24.sp else 20.sp)
         }
     }
 }
 
 @Composable
-private fun AchievementsGrid(
-    achievements: List<Achievement>,
-    modifier: Modifier = Modifier,
+private fun LeaderboardRow(entry: LeaderboardEntry, rank: Int, currencyIcon: String) {
+    val isFirst = rank == 1
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(14.dp),
+        color = if (isFirst) Color(0xFFFFFDE7) else MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isFirst) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(rankEmoji.getOrElse(rank - 1) { "$rank" }, fontSize = 20.sp, modifier = Modifier.width(28.dp))
+            MemberCircle(
+                displayName = initialsOf(entry.displayName, entry.userId),
+                color = colorFor(entry.userId),
+                size = 40, fontSize = 14,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(entry.displayName ?: entry.userId.take(8), fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+                Text("Всего заработано: ${entry.totalEarned}", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${entry.balance}", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(Modifier.width(2.dp))
+                    Text(currencyIcon, fontSize = 13.sp)
+                }
+                Text("баланс", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TransactionRow(tx: Transaction, currencyIcon: String, displayNameOf: (String) -> String?) {
+    val positive = tx.amount > 0
+    Surface(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(if (positive) "✓" else "🛍", fontSize = 16.sp)
+            Column(modifier = Modifier.weight(1f)) {
+                val label = when (tx.sourceType) {
+                    "item" -> "Задача выполнена"
+                    "prize_redeem" -> "Покупка приза"
+                    else -> tx.sourceType
+                }
+                Text(label, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    "${displayNameOf(tx.userId) ?: tx.userId.take(8)} · ${tx.createdAt.take(10)}",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (positive) "+${tx.amount}" else "${tx.amount}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (positive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                )
+                Spacer(Modifier.width(2.dp))
+                Text(currencyIcon, fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EditCurrencyDialog(
+    initialName: String,
+    initialIcon: String,
+    onDismiss: () -> Unit,
+    onConfirm: (name: String, icon: String) -> Unit,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        achievements.chunked(2).forEach { row ->
+    var name by remember { mutableStateOf(initialName) }
+    var icon by remember { mutableStateOf(initialIcon) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Валюта семьи") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it.take(30) }, label = { Text("Название") }, singleLine = true)
+                OutlinedTextField(value = icon, onValueChange = { icon = it.take(4) }, label = { Text("Иконка") }, singleLine = true)
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name.trim().ifBlank { initialName }, icon.trim().ifBlank { initialIcon }) }) { Text("Сохранить") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+    )
+}
+
+@Composable
+private fun AchievementsGrid(catalog: List<Achievement>, earned: Set<String>) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        catalog.chunked(2).forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { achievement ->
-                    AchievementCard(
-                        achievement = achievement,
-                        modifier = Modifier.weight(1f),
-                    )
+                row.forEach { ach ->
+                    AchievementCard(ach = ach, unlocked = ach.id in earned, modifier = Modifier.weight(1f))
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
             }
@@ -343,50 +377,27 @@ private fun AchievementsGrid(
 }
 
 @Composable
-private fun AchievementCard(
-    achievement: Achievement,
-    modifier: Modifier = Modifier,
-) {
+private fun AchievementCard(ach: Achievement, unlocked: Boolean, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
-        color = if (achievement.unlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
+        color = if (unlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (achievement.unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+            if (unlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
         ),
     ) {
-        Column(
-            modifier = Modifier
-                .padding(14.dp)
-                .then(if (!achievement.unlocked) Modifier else Modifier),
-        ) {
-            Text(
-                if (achievement.unlocked) achievement.icon else "🔒",
-                fontSize = 28.sp,
-            )
+        Column(modifier = Modifier.padding(14.dp)) {
+            Text(if (unlocked) (ach.icon ?: "🏆") else "🔒", fontSize = 28.sp)
             Spacer(Modifier.height(6.dp))
-            Text(
-                achievement.title,
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Spacer(Modifier.height(2.dp))
-            Text(
-                achievement.desc,
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 15.sp,
-            )
-            if (achievement.unlocked) {
+            Text(ach.title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+            ach.description?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(2.dp))
+                Text(it, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 15.sp)
+            }
+            if (unlocked) {
                 Spacer(Modifier.height(6.dp))
-                Text(
-                    "✓ Получено",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                )
+                Text("✓ Получено", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -406,17 +417,9 @@ internal fun MemberCircle(
             .size(size.dp)
             .clip(CircleShape)
             .background(color)
-            .then(
-                if (borderColor != null) Modifier.border(3.dp, borderColor, CircleShape)
-                else Modifier
-            ),
+            .then(if (borderColor != null) Modifier.border(3.dp, borderColor, CircleShape) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            displayName,
-            fontSize = fontSize.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-        )
+        Text(displayName, fontSize = fontSize.sp, fontWeight = FontWeight.Bold, color = Color.White)
     }
 }
