@@ -8,10 +8,10 @@ import androidx.compose.material.icons.Icons
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -48,7 +48,6 @@ import com.jetbrains.kmpapp.screens.groups.GroupsContent
 import com.jetbrains.kmpapp.screens.groups.GroupsUiEvent
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.home.HomeContent
-import com.jetbrains.kmpapp.screens.templates.TemplatesContent
 import com.jetbrains.kmpapp.screens.todo.CreateListDialog
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListsContent
@@ -58,7 +57,7 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { DASHBOARD, HOME, LISTS, TEMPLATES, GROUPS }
+enum class MainTab { DASHBOARD, HOME, LISTS, CALENDAR, GROUPS }
 
 @Serializable private object ListsRoot
 @Serializable private data class ListsDetail(val listId: String)
@@ -77,6 +76,7 @@ fun MainScreen(
     navigateToProfile: () -> Unit,
     navigateToGamification: () -> Unit = {},
     navigateToShop: () -> Unit = {},
+    navigateToGoals: () -> Unit = {},
     navigateToChat: (workspaceId: String, title: String, memberCount: Int) -> Unit = { _, _, _ -> },
     pendingInviteToken: String? = null,
 ) {
@@ -170,10 +170,10 @@ fun MainScreen(
                     label = { Text("Списки") },
                 )
                 NavigationBarItem(
-                    selected = selectedTab == MainTab.TEMPLATES,
-                    onClick = { selectedTab = MainTab.TEMPLATES },
-                    icon = { Icon(Icons.Default.Star, contentDescription = null) },
-                    label = { Text("Шаблоны") },
+                    selected = selectedTab == MainTab.CALENDAR,
+                    onClick = { selectedTab = MainTab.CALENDAR },
+                    icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                    label = { Text("Календарь") },
                 )
                 NavigationBarItem(
                     selected = selectedTab == MainTab.GROUPS,
@@ -215,6 +215,7 @@ fun MainScreen(
                 },
                 navigateToGamification = navigateToGamification,
                 navigateToShop = navigateToShop,
+                navigateToGoals = navigateToGoals,
             )
             MainTab.LISTS -> ListsTabNavHost(
                 navController = listsNavController,
@@ -229,8 +230,12 @@ fun MainScreen(
                 isGuest = isGuest,
                 navigateToLinkEmail = navigateToLinkEmail,
             )
-            MainTab.TEMPLATES -> TemplatesContent(
+            MainTab.CALENDAR -> com.jetbrains.kmpapp.screens.calendar.CalendarContent(
                 contentPadding = paddingValues,
+                onItemOpen = { listId, _ ->
+                    selectedTab = MainTab.LISTS
+                    listsNavController.navigate(ListsDetail(listId)) { launchSingleTop = true }
+                },
             )
             MainTab.GROUPS -> GroupsTabNavHost(
                 navController = groupsNavController,

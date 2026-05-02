@@ -18,6 +18,10 @@ class ListsRepository(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    val allItems: kotlinx.coroutines.flow.Flow<List<TodoItem>> = listsStorage.observeAllItems()
+
+    suspend fun loadAllItemsOnce(): List<TodoItem> = listsStorage.getAllItems()
+
     suspend fun loadLists(workspaceId: String? = null) {
         _lists.value = listsStorage.getLists()
         listsApi.getLists(workspaceId)
@@ -206,10 +210,10 @@ class ListsRepository(
             )
         )
         result.onSuccess { updated ->
+            listsStorage.upsertItem(updated)
             _currentListWithItems.value?.let { (list, items) ->
                 val newItems = items.map { if (it.id == itemId) updated else it }
                 _currentListWithItems.value = list to newItems
-                listsStorage.saveListWithItems(list, newItems)
             }
         }
         result.onFailure { _error.value = it.message }

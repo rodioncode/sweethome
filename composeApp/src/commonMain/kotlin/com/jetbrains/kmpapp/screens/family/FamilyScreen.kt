@@ -56,6 +56,7 @@ internal fun FamilyContent(
     onListClick: (String) -> Unit,
     navigateToGamification: () -> Unit = {},
     navigateToShop: () -> Unit = {},
+    navigateToGoals: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<FamilyViewModel>()
@@ -109,6 +110,7 @@ internal fun FamilyContent(
                 onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onGamificationClick = navigateToGamification,
                 onShopClick = navigateToShop,
+                onGoalsClick = navigateToGoals,
             )
         }
     }
@@ -331,6 +333,7 @@ private fun FamilyHomeContent(
     onSpaceClick: () -> Unit,
     onGamificationClick: () -> Unit = {},
     onShopClick: () -> Unit = {},
+    onGoalsClick: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(modifier = modifier.fillMaxSize()) {
@@ -375,6 +378,7 @@ private fun FamilyHomeContent(
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             com.jetbrains.kmpapp.ui.components.BalancePill(balance = balance)
+                            HeaderIconButton("🎯", onClick = onGoalsClick)
                             HeaderIconButton("🏆", onClick = onGamificationClick)
                             HeaderIconButton("⚙️", onClick = onSettingsClick)
                         }

@@ -1,5 +1,7 @@
 package com.jetbrains.kmpapp.media
 
+import androidx.compose.runtime.Composable
+
 data class PickedImage(
     val bytes: ByteArray,
     val mimeType: String,
@@ -9,4 +11,6 @@ interface ImagePicker {
     suspend fun pick(): PickedImage?
 }
 
-expect fun createImagePicker(platformContext: Any?): ImagePicker
+/** Возвращает picker, привязанный к текущему Composable scope. На Android регистрирует ActivityResult-launcher. */
+@Composable
+expect fun rememberImagePicker(): ImagePicker

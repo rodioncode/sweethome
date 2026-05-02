@@ -79,6 +79,15 @@ object FamilyShopDestination
 object FamilyMembersDestination
 
 @Serializable
+object GoalsDestination
+
+@Serializable
+data class GoalDetailDestination(val goalId: String = "")
+
+@Serializable
+data class PublicWishlistDestination(val token: String = "")
+
+@Serializable
 data class TemplateDetailDestination(val title: String = "Список покупок", val icon: String = "🛒")
 
 @Serializable
@@ -116,21 +125,29 @@ fun App() {
             val pendingLink by DeepLinkHandler.pendingDeepLink.collectAsState()
             LaunchedEffect(pendingLink) {
                 val url = pendingLink ?: return@LaunchedEffect
-                if (authState !is AuthState.Authenticated) return@LaunchedEffect
-                DeepLinkHandler.pendingDeepLink.value = null
-                val token = url.removePrefix("familytodo://invite/")
-                if (token.isNotEmpty() && token != url) {
-                    navController.navigate(InviteDestination(token))
+                val parsed = parseDeepLink(url)
+                when (parsed) {
+                    is ParsedDeepLink.Wishlist -> {
+                        DeepLinkHandler.pendingDeepLink.value = null
+                        navController.navigate(PublicWishlistDestination(parsed.token))
+                    }
+                    is ParsedDeepLink.Invite -> {
+                        if (authState is AuthState.Authenticated) {
+                            DeepLinkHandler.pendingDeepLink.value = null
+                            navController.navigate(InviteDestination(parsed.token))
+                        }
+                    }
+                    null -> Unit
                 }
             }
 
             // Case 2: deep link was pending while user was logging in
             fun navigatePendingInvite() {
                 val url = DeepLinkHandler.pendingDeepLink.value ?: return
-                DeepLinkHandler.pendingDeepLink.value = null
-                val token = url.removePrefix("familytodo://invite/")
-                if (token.isNotEmpty() && token != url) {
-                    navController.navigate(InviteDestination(token))
+                val parsed = parseDeepLink(url) ?: return
+                if (parsed is ParsedDeepLink.Invite) {
+                    DeepLinkHandler.pendingDeepLink.value = null
+                    navController.navigate(InviteDestination(parsed.token))
                 }
             }
 
@@ -231,6 +248,7 @@ fun App() {
                         navigateToProfile = { navController.navigate(ProfileDestination) },
                         navigateToGamification = { navController.navigate(GamificationDestination) },
                         navigateToShop = { navController.navigate(FamilyShopDestination) },
+                        navigateToGoals = { navController.navigate(GoalsDestination) },
                         navigateToChat = { workspaceId, title, memberCount ->
                             navController.navigate(ChatDestination(workspaceId, title, memberCount))
                         },
@@ -316,6 +334,26 @@ fun App() {
                 composable<FamilyMembersDestination> {
                     FamilyMembersScreen(
                         navigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable<GoalsDestination> {
+                    com.jetbrains.kmpapp.screens.goals.GoalsScreen(
+                        navigateBack = { navController.popBackStack() },
+                        navigateToGoal = { goalId -> navController.navigate(GoalDetailDestination(goalId)) },
+                    )
+                }
+                composable<GoalDetailDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<GoalDetailDestination>()
+                    com.jetbrains.kmpapp.screens.goals.GoalDetailScreen(
+                        goalId = dest.goalId,
+                        navigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable<PublicWishlistDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<PublicWishlistDestination>()
+                    com.jetbrains.kmpapp.screens.wishlist.PublicWishlistScreen(
+                        token = dest.token,
+                        onBack = { navController.popBackStack() },
                     )
                 }
                 composable<TemplateDetailDestination> { backStackEntry ->

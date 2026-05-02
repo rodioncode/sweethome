@@ -125,6 +125,21 @@ class TodoListDetailViewModel(
         }
     }
 
+    /**
+     * Включает публичный доступ к wishlist (если ещё не включён) и возвращает share-URL.
+     * Если уже public — возвращает существующий URL без обращения к API.
+     */
+    suspend fun ensurePublicShareUrl(): String? {
+        val list = listsRepository.currentListWithItems.value?.first ?: return null
+        val token = if (list.isPublic && list.publicToken != null) {
+            list.publicToken
+        } else {
+            val updated = listsRepository.updateList(list.id, isPublic = true).getOrNull() ?: return null
+            updated.publicToken ?: return null
+        }
+        return "https://app.sweethome.app/wish/$token"
+    }
+
     fun clearError() {
         listsRepository.clearError()
     }

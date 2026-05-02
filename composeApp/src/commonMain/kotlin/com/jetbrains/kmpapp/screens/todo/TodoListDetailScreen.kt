@@ -25,6 +25,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DateRange
@@ -177,6 +179,29 @@ fun TodoListDetailScreen(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    if (listType == "wishlist") {
+                        val coroutineScope = rememberCoroutineScope()
+                        val platformContext = com.jetbrains.kmpapp.ui.rememberPlatformContext()
+                        Surface(
+                            onClick = {
+                                coroutineScope.launch {
+                                    val url = viewModel.ensurePublicShareUrl()
+                                    if (url != null) {
+                                        com.jetbrains.kmpapp.ui.shareUrl(url, platformContext)
+                                    } else {
+                                        snackbarHostState.showSnackbar("Не удалось создать ссылку")
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(36.dp),
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text("📤", fontSize = 16.sp)
+                            }
+                        }
+                    }
                     Box {
                         Surface(
                             onClick = { showMenu = true },
@@ -377,6 +402,8 @@ fun TodoListDetailScreen(
     }
 
     editingItem?.let { item ->
+        val picker = com.jetbrains.kmpapp.media.rememberImagePicker()
+        val attachmentsRepo = org.koin.compose.koinInject<com.jetbrains.kmpapp.data.attachments.AttachmentsRepository>()
         ItemBottomSheet(
             listType = listType,
             item = item,
@@ -390,6 +417,14 @@ fun TodoListDetailScreen(
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
                 editingItem = null
+            },
+            onAttachPhoto = {
+                val picked = picker.pick() ?: return@ItemBottomSheet "Отменено"
+                val res = attachmentsRepo.upload(item.id, picked.mimeType, picked.bytes)
+                res.fold(
+                    onSuccess = { "Фото загружено" },
+                    onFailure = { it.message ?: "Ошибка загрузки" },
+                )
             },
             onCreateCategory = { name ->
                 categoryScope?.let { viewModel.createCategory(it, name) }
@@ -658,8 +693,11 @@ private fun ItemBottomSheet(
         choreSchedule: ChoreSchedule?,
     ) -> Unit,
     onCreateCategory: (name: String) -> Unit,
+    onAttachPhoto: (suspend () -> String?)? = null,    // null когда недоступно (новый item / нет picker)
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val attachScope = rememberCoroutineScope()
+    var attachStatus by remember { mutableStateOf<String?>(null) }
 
     var title by remember { mutableStateOf(item?.title ?: "") }
     var note by remember { mutableStateOf(item?.note ?: "") }
@@ -714,6 +752,16 @@ private fun ItemBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+            if (onAttachPhoto != null) {
+                IconButton(onClick = {
+                    attachScope.launch {
+                        attachStatus = "Загрузка…"
+                        attachStatus = onAttachPhoto() ?: "Не удалось"
+                    }
+                }) {
+                    Text("📎", fontSize = 20.sp)
+                }
+            }
             IconButton(onClick = { isFavorite = !isFavorite }) {
                 Text(
                     "⭐",
@@ -721,6 +769,14 @@ private fun ItemBottomSheet(
                     modifier = Modifier.alpha(if (isFavorite) 1f else 0.3f),
                 )
             }
+        }
+        attachStatus?.let { status ->
+            Text(
+                status,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
         }
 
         LazyColumn(

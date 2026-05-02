@@ -26,6 +26,7 @@ import com.jetbrains.kmpapp.data.notifications.KtorNotificationsApi
 import com.jetbrains.kmpapp.data.notifications.NotificationsApi
 import com.jetbrains.kmpapp.screens.notifications.NotificationsViewModel
 import com.jetbrains.kmpapp.screens.settings.NotificationPrefsViewModel
+import com.jetbrains.kmpapp.screens.calendar.CalendarViewModel
 import com.jetbrains.kmpapp.data.chat.ChatApi
 import com.jetbrains.kmpapp.data.chat.KtorChatApi
 import com.jetbrains.kmpapp.data.devices.DeviceApi
@@ -37,6 +38,18 @@ import com.jetbrains.kmpapp.data.wishlist.KtorPublicWishlistApi
 import com.jetbrains.kmpapp.data.wishlist.PublicWishlistApi
 import com.jetbrains.kmpapp.data.calendar.CalendarSharingApi
 import com.jetbrains.kmpapp.data.calendar.KtorCalendarSharingApi
+import com.jetbrains.kmpapp.data.gamification.GamificationApi
+import com.jetbrains.kmpapp.data.gamification.GamificationRepository
+import com.jetbrains.kmpapp.data.gamification.KtorGamificationApi
+import com.jetbrains.kmpapp.data.achievements.AchievementsApi
+import com.jetbrains.kmpapp.data.achievements.AchievementsRepository
+import com.jetbrains.kmpapp.data.achievements.KtorAchievementsApi
+import com.jetbrains.kmpapp.data.goals.GoalsApi
+import com.jetbrains.kmpapp.data.goals.GoalsRepository
+import com.jetbrains.kmpapp.data.goals.KtorGoalsApi
+import com.jetbrains.kmpapp.screens.family.GamificationViewModel
+import com.jetbrains.kmpapp.screens.goals.GoalDetailViewModel
+import com.jetbrains.kmpapp.screens.goals.GoalsViewModel
 import com.jetbrains.kmpapp.screens.wishlist.PublicWishlistViewModel
 import com.jetbrains.kmpapp.push.DeviceRegistrar
 import com.jetbrains.kmpapp.push.PushTokenProvider
@@ -54,6 +67,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.plugins.HttpSend
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.plugin
@@ -94,6 +108,7 @@ val dataModule = module {
             install(ContentNegotiation) {
                 json(json, contentType = ContentType.Any)
             }
+            install(SSE)
             defaultRequest {
                 tokenStorage.getAccessToken()?.let { bearerAuth(it) }
             }
@@ -143,6 +158,9 @@ val dataModule = module {
                 get<CategoriesRepository>().clear()
                 get<SuggestionsRepository>().clear()
                 get<SyncRepository>().clear()
+                get<GamificationRepository>().clearAll()
+                get<AchievementsRepository>().clearAll()
+                get<GoalsRepository>().clearAll()
             },
             onAuthenticated = { get<DeviceRegistrar>().registerInBackground() },
         )
@@ -190,6 +208,12 @@ val dataModule = module {
     single { AttachmentsRepository(get()) }
     single<PublicWishlistApi> { KtorPublicWishlistApi(get(named("authClient")), getApiBaseUrl()) }
     single<CalendarSharingApi> { KtorCalendarSharingApi(get(named("apiClient")), getApiBaseUrl()) }
+    single<GamificationApi> { KtorGamificationApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { GamificationRepository(get()) }
+    single<AchievementsApi> { KtorAchievementsApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { AchievementsRepository(get()) }
+    single<GoalsApi> { KtorGoalsApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { GoalsRepository(get()) }
 }
 
 val viewModelModule = module {
@@ -206,6 +230,10 @@ val viewModelModule = module {
     factoryOf(::ChatViewModel)
     factoryOf(::NotificationPrefsViewModel)
     factoryOf(::PublicWishlistViewModel)
+    factoryOf(::CalendarViewModel)
+    factoryOf(::GamificationViewModel)
+    factoryOf(::GoalsViewModel)
+    factoryOf(::GoalDetailViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>
