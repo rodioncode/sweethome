@@ -9,6 +9,9 @@ import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 class KtorChatApi(
     private val apiClient: HttpClient,
@@ -37,5 +40,22 @@ class KtorChatApi(
     override suspend fun markRead(workspaceId: String): Result<Unit> = runCatching {
         apiClient.post("$baseUrl/workspaces/$workspaceId/chat/read")
         Unit
+    }
+
+    override fun streamMessages(workspaceId: String): Flow<ChatStreamEvent> = flow {
+        emit(ChatStreamEvent.Connecting)
+        var lastSnapshot: List<ChatMessage> = emptyList()
+        while (true) {
+            getMessages(workspaceId).fold(
+                onSuccess = { msgs ->
+                    if (msgs != lastSnapshot) {
+                        lastSnapshot = msgs
+                        emit(ChatStreamEvent.Snapshot(msgs))
+                    }
+                },
+                onFailure = { emit(ChatStreamEvent.Disconnected(it.message)) },
+            )
+            delay(3_000)
+        }
     }
 }

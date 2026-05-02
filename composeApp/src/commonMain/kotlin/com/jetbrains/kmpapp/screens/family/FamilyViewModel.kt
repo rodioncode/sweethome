@@ -6,10 +6,12 @@ import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.lists.TodoList
+import com.jetbrains.kmpapp.data.sync.SyncRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -17,6 +19,7 @@ import kotlinx.coroutines.launch
 class FamilyViewModel(
     private val groupsRepository: GroupsRepository,
     private val listsRepository: ListsRepository,
+    private val syncRepository: SyncRepository,
 ) : ViewModel() {
 
     private val _isLoading = MutableStateFlow(true)
@@ -25,6 +28,10 @@ class FamilyViewModel(
     val familySpace: StateFlow<Group?> = groupsRepository.groups
         .map { groups -> groups.firstOrNull { it.type == "family" } }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    val balance: StateFlow<Int> = combine(familySpace, syncRepository.memberBalances) { space, balances ->
+        space?.id?.let { id -> balances.firstOrNull { it.workspaceId == id }?.balance } ?: 0
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
 
     private val _familyLists = MutableStateFlow<List<TodoList>>(emptyList())
     val familyLists: StateFlow<List<TodoList>> = _familyLists.asStateFlow()

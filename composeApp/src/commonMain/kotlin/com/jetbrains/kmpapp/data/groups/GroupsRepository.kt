@@ -78,6 +78,15 @@ class GroupsRepository(
         return result
     }
 
+    suspend fun updateWorkspace(workspaceId: String, request: PatchWorkspaceRequest): Result<Group> {
+        val result = groupsApi.patchWorkspace(workspaceId, request)
+        result.onSuccess { updated ->
+            _groups.value = _groups.value.map { if (it.id == workspaceId) updated else it }
+        }
+        result.onFailure { _error.value = it.message }
+        return result
+    }
+
     suspend fun transferOwnership(groupId: String, userId: String): Result<Unit> {
         val result = groupsApi.transferOwnership(groupId, TransferOwnershipRequest(toUserId = userId))
         result.onSuccess {

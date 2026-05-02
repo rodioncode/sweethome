@@ -6,7 +6,9 @@ import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.data.chat.ChatApi
 import com.jetbrains.kmpapp.data.chat.ChatMessage
+import com.jetbrains.kmpapp.data.chat.ChatStreamEvent
 import com.jetbrains.kmpapp.data.chat.SendMessageRequest
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -18,13 +20,19 @@ class ChatViewModel(
     private val authRepository: AuthRepository,
 ) : ViewModel() {
 
+    enum class Connection { Idle, Connecting, Online, Reconnecting }
+
     private val _messages = MutableStateFlow<List<ChatMessage>>(emptyList())
     val messages: StateFlow<List<ChatMessage>> = _messages
 
     private val _currentUserId = MutableStateFlow<String?>(null)
     val currentUserId: StateFlow<String?> = _currentUserId
 
+    private val _connection = MutableStateFlow(Connection.Idle)
+    val connection: StateFlow<Connection> = _connection
+
     private var workspaceId: String = ""
+    private var streamJob: Job? = null
 
     fun init(workspaceId: String) {
         if (this.workspaceId == workspaceId) return
@@ -32,15 +40,23 @@ class ChatViewModel(
         viewModelScope.launch {
             val state = authRepository.authState.first()
             _currentUserId.update { (state as? AuthState.Authenticated)?.userId }
-            loadMessages()
             chatApi.markRead(workspaceId)
         }
+        startStream()
     }
 
-    fun loadMessages() {
-        viewModelScope.launch {
-            chatApi.getMessages(workspaceId).onSuccess { msgs ->
-                _messages.update { msgs }
+    private fun startStream() {
+        streamJob?.cancel()
+        streamJob = viewModelScope.launch {
+            chatApi.streamMessages(workspaceId).collect { ev ->
+                when (ev) {
+                    is ChatStreamEvent.Snapshot -> {
+                        _messages.update { ev.messages }
+                        _connection.value = Connection.Online
+                    }
+                    ChatStreamEvent.Connecting -> _connection.value = Connection.Connecting
+                    is ChatStreamEvent.Disconnected -> _connection.value = Connection.Reconnecting
+                }
             }
         }
     }
@@ -53,5 +69,10 @@ class ChatViewModel(
                 _messages.update { it + msg }
             }
         }
+    }
+
+    override fun onCleared() {
+        streamJob?.cancel()
+        super.onCleared()
     }
 }

@@ -25,8 +25,21 @@ import com.jetbrains.kmpapp.data.profile.ProfileApi
 import com.jetbrains.kmpapp.data.notifications.KtorNotificationsApi
 import com.jetbrains.kmpapp.data.notifications.NotificationsApi
 import com.jetbrains.kmpapp.screens.notifications.NotificationsViewModel
+import com.jetbrains.kmpapp.screens.settings.NotificationPrefsViewModel
 import com.jetbrains.kmpapp.data.chat.ChatApi
 import com.jetbrains.kmpapp.data.chat.KtorChatApi
+import com.jetbrains.kmpapp.data.devices.DeviceApi
+import com.jetbrains.kmpapp.data.devices.KtorDeviceApi
+import com.jetbrains.kmpapp.data.attachments.AttachmentsApi
+import com.jetbrains.kmpapp.data.attachments.AttachmentsRepository
+import com.jetbrains.kmpapp.data.attachments.KtorAttachmentsApi
+import com.jetbrains.kmpapp.data.wishlist.KtorPublicWishlistApi
+import com.jetbrains.kmpapp.data.wishlist.PublicWishlistApi
+import com.jetbrains.kmpapp.data.calendar.CalendarSharingApi
+import com.jetbrains.kmpapp.data.calendar.KtorCalendarSharingApi
+import com.jetbrains.kmpapp.screens.wishlist.PublicWishlistViewModel
+import com.jetbrains.kmpapp.push.DeviceRegistrar
+import com.jetbrains.kmpapp.push.PushTokenProvider
 import com.jetbrains.kmpapp.screens.chat.ChatViewModel
 import com.jetbrains.kmpapp.auth.AuthViewModel
 import com.jetbrains.kmpapp.screens.groups.GroupDetailViewModel
@@ -129,7 +142,9 @@ val dataModule = module {
                 get<GroupsRepository>().clearAll()
                 get<CategoriesRepository>().clear()
                 get<SuggestionsRepository>().clear()
+                get<SyncRepository>().clear()
             },
+            onAuthenticated = { get<DeviceRegistrar>().registerInBackground() },
         )
     }
 
@@ -163,6 +178,18 @@ val dataModule = module {
     single<ProfileApi> { KtorProfileApi(get(named("apiClient")), getApiBaseUrl()) }
     single<NotificationsApi> { KtorNotificationsApi(get(named("apiClient")), getApiBaseUrl()) }
     single<ChatApi> { KtorChatApi(get(named("apiClient")), getApiBaseUrl()) }
+    single<DeviceApi> { KtorDeviceApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { DeviceRegistrar(get(), get(), get()) }
+    single<AttachmentsApi> {
+        KtorAttachmentsApi(
+            apiClient = get(named("apiClient")),
+            uploadClient = get(named("authClient")),
+            baseUrl = getApiBaseUrl(),
+        )
+    }
+    single { AttachmentsRepository(get()) }
+    single<PublicWishlistApi> { KtorPublicWishlistApi(get(named("authClient")), getApiBaseUrl()) }
+    single<CalendarSharingApi> { KtorCalendarSharingApi(get(named("apiClient")), getApiBaseUrl()) }
 }
 
 val viewModelModule = module {
@@ -177,6 +204,8 @@ val viewModelModule = module {
     factoryOf(::TemplatesViewModel)
     factoryOf(::NotificationsViewModel)
     factoryOf(::ChatViewModel)
+    factoryOf(::NotificationPrefsViewModel)
+    factoryOf(::PublicWishlistViewModel)
 }
 
 expect fun platformModules(): List<org.koin.core.module.Module>

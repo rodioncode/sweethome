@@ -133,6 +133,9 @@ private class IosKeychainTokenStorage : TokenStorage {
     override fun getSyncTimestamp() = keychainRead(KEY_SYNC_TS)
     override fun saveSyncTimestamp(timestamp: String) = keychainSave(KEY_SYNC_TS, timestamp)
 
+    override fun getRegisteredPushToken() = keychainRead(KEY_PUSH_TOKEN)
+    override fun saveRegisteredPushToken(token: String) = keychainSave(KEY_PUSH_TOKEN, token)
+
     companion object {
         private const val SERVICE = "com.sweethome.app"
         private const val KEY_ACCESS = "access_token"
@@ -140,5 +143,6 @@ private class IosKeychainTokenStorage : TokenStorage {
         private const val KEY_USER_ID = "user_id"
         private const val KEY_IS_GUEST = "is_guest"
         private const val KEY_SYNC_TS = "sync_timestamp"
+        private const val KEY_PUSH_TOKEN = "push_token"
     }
 }

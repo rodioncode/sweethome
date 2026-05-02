@@ -58,6 +58,12 @@ private class AndroidTokenStorage(private val context: Context) : TokenStorage {
         prefs.edit().putString(KEY_SYNC_TS, timestamp).apply()
     }
 
+    override fun getRegisteredPushToken(): String? = prefs.getString(KEY_PUSH_TOKEN, null)
+
+    override fun saveRegisteredPushToken(token: String) {
+        prefs.edit().putString(KEY_PUSH_TOKEN, token).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "auth_tokens"
         private const val KEY_ACCESS = "access_token"
@@ -65,5 +71,6 @@ private class AndroidTokenStorage(private val context: Context) : TokenStorage {
         private const val KEY_USER_ID = "user_id"
         private const val KEY_IS_GUEST = "is_guest"
         private const val KEY_SYNC_TS = "sync_timestamp"
+        private const val KEY_PUSH_TOKEN = "push_token"
     }
 }

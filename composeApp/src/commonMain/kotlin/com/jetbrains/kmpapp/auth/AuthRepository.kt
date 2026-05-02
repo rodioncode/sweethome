@@ -10,6 +10,7 @@ class AuthRepository(
     private val tokenStorage: TokenStorage,
     private val listsStorage: ListsStorage,
     private val onLogout: () -> Unit = {},
+    private val onAuthenticated: () -> Unit = {},
 ) {
     private val _authState = MutableStateFlow<AuthState>(AuthState.Initial)
     val authState: StateFlow<AuthState> = _authState.asStateFlow()
@@ -28,6 +29,7 @@ class AuthRepository(
                     userId = userId,
                     isGuest = tokenStorage.getIsGuest() ?: false,
                 )
+                onAuthenticated()
             }
             else -> _authState.value = AuthState.Unauthenticated
         }
@@ -39,6 +41,7 @@ class AuthRepository(
         result.onSuccess { tokens ->
             tokenStorage.saveTokens(tokens, isGuest = false)
             _authState.value = AuthState.Authenticated(userId = tokens.userId, isGuest = false)
+            onAuthenticated()
         }
         return result.map { }
     }
@@ -48,6 +51,7 @@ class AuthRepository(
         result.onSuccess { tokens ->
             tokenStorage.saveTokens(tokens, isGuest = false)
             _authState.value = AuthState.Authenticated(userId = tokens.userId, isGuest = false)
+            onAuthenticated()
         }
         return result.map { }
     }
@@ -57,6 +61,7 @@ class AuthRepository(
         result.onSuccess { tokens ->
             tokenStorage.saveTokens(tokens, isGuest = true)
             _authState.value = AuthState.Authenticated(userId = tokens.userId, isGuest = true)
+            onAuthenticated()
         }
         return result.map { }
     }

@@ -62,6 +62,7 @@ internal fun FamilyContent(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val familySpace by viewModel.familySpace.collectAsStateWithLifecycle()
     val familyLists by viewModel.familyLists.collectAsStateWithLifecycle()
+    val balance by viewModel.balance.collectAsStateWithLifecycle()
     val isCreating by viewModel.isCreating.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -102,6 +103,7 @@ internal fun FamilyContent(
                 spaceName = familySpace!!.title,
                 memberCount = 0,
                 lists = familyLists,
+                balance = balance,
                 onSettingsClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onListClick = onListClick,
                 onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
@@ -323,6 +325,7 @@ private fun FamilyHomeContent(
     spaceName: String,
     memberCount: Int,
     lists: List<TodoList>,
+    balance: Int,
     onSettingsClick: () -> Unit,
     onListClick: (String) -> Unit,
     onSpaceClick: () -> Unit,
@@ -370,7 +373,8 @@ private fun FamilyHomeContent(
                                 modifier = Modifier.padding(top = 2.dp),
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                            com.jetbrains.kmpapp.ui.components.BalancePill(balance = balance)
                             HeaderIconButton("🏆", onClick = onGamificationClick)
                             HeaderIconButton("⚙️", onClick = onSettingsClick)
                         }

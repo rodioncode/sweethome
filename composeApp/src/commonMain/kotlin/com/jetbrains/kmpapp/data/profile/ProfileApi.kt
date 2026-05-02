@@ -7,4 +7,7 @@ interface ProfileApi {
     suspend fun getActivity(): Result<List<ProfileActivityEvent>>
     suspend fun getNotificationPreferences(): Result<List<NotificationPreference>>
     suspend fun updateNotificationPreference(request: UpdateNotificationPreferenceRequest): Result<Unit>
+    suspend fun deleteAccount(): Result<Unit>
 }
+
+class TooManyRequestsException : Exception("rate_limited")

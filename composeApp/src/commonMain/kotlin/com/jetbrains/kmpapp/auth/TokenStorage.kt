@@ -9,6 +9,8 @@ interface TokenStorage {
     fun clear()
     fun getSyncTimestamp(): String?
     fun saveSyncTimestamp(timestamp: String)
+    fun getRegisteredPushToken(): String?
+    fun saveRegisteredPushToken(token: String)
 }
 
 expect fun createTokenStorage(platformContext: Any?): TokenStorage
