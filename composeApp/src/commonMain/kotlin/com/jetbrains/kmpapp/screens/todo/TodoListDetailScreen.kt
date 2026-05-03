@@ -3,6 +3,7 @@ package com.jetbrains.kmpapp.screens.todo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,6 +72,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -124,6 +127,8 @@ fun TodoListDetailScreen(
     var assigneePickerFor by remember { mutableStateOf<TodoItem?>(null) }
     var showMenu by remember { mutableStateOf(false) }
     var showSaveAsTemplateDialog by remember { mutableStateOf(false) }
+    var shoppingDetailsFor by remember { mutableStateOf<TodoItem?>(null) }
+    var openDetailsSectionInEditor by remember { mutableStateOf(false) }
     val saveAsTemplateScope = rememberCoroutineScope()
 
     LaunchedEffect(listId) { viewModel.loadList(listId) }
@@ -374,6 +379,16 @@ fun TodoListDetailScreen(
                             currentUserId?.let { viewModel.setAssignee(item, it) }
                         },
                         onPickAssignee = { assigneePickerFor = item },
+                        onLongPress = if (listType == "shopping") {
+                            {
+                                if (item.shopping?.hasShoppingDetails() == true) {
+                                    shoppingDetailsFor = item
+                                } else {
+                                    openDetailsSectionInEditor = true
+                                    editingItem = item
+                                }
+                            }
+                        } else null,
                     )
                 }
 
@@ -433,6 +448,19 @@ fun TodoListDetailScreen(
         )
     }
 
+    shoppingDetailsFor?.let { item ->
+        ShoppingDetailsSheet(
+            item = item,
+            listColor = listColor,
+            onEdit = {
+                shoppingDetailsFor = null
+                openDetailsSectionInEditor = true
+                editingItem = item
+            },
+            onDismiss = { shoppingDetailsFor = null },
+        )
+    }
+
     if (showSaveAsTemplateDialog) {
         val initialTitle = list?.title.orEmpty()
         SaveAsTemplateDialog(
@@ -474,12 +502,17 @@ fun TodoListDetailScreen(
             isGroupList = isGroupList,
             members = groupMembers,
             listColor = listColor,
+            initialOpenShoppingDetails = openDetailsSectionInEditor,
             onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
             onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
-            onDismiss = { editingItem = null },
+            onDismiss = {
+                editingItem = null
+                openDetailsSectionInEditor = false
+            },
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
                 editingItem = null
+                openDetailsSectionInEditor = false
             },
             onAttachPhoto = {
                 val picked = picker.pick() ?: return@ItemBottomSheet "Отменено"
@@ -548,6 +581,7 @@ private fun TodoItemRow(
     currentUserId: String? = null,
     onQuickAssignSelf: () -> Unit = {},
     onPickAssignee: () -> Unit = {},
+    onLongPress: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -587,12 +621,20 @@ private fun TodoItemRow(
                     }
                 }
 
-                // Content
-                Column(
-                    modifier = Modifier
+                // Content (tap = edit, long-press = secondary action — for shopping items show details sheet)
+                val contentModifier = if (onLongPress != null) {
+                    Modifier
                         .weight(1f)
-                        .clickable { onEdit() },
-                ) {
+                        .pointerInput(item.id) {
+                            detectTapGestures(
+                                onTap = { onEdit() },
+                                onLongPress = { onLongPress() },
+                            )
+                        }
+                } else {
+                    Modifier.weight(1f).clickable { onEdit() }
+                }
+                Column(modifier = contentModifier) {
                     Text(
                         text = item.title,
                         fontSize = 14.sp,
@@ -622,15 +664,34 @@ private fun TodoItemRow(
                         }
                         // assignedTo показывается отдельным AssigneeChip справа — в meta не дублируем.
                     }
-                    if (metaParts.isNotEmpty()) {
+                    val indicators = item.shopping?.let { s ->
+                        buildList {
+                            if (!s.imageUrl.isNullOrBlank()) add("📷")
+                            if (!s.productUrl.isNullOrBlank()) add("🌐")
+                            if (!s.brand.isNullOrBlank()) add("🏷")
+                        }
+                    }.orEmpty()
+                    if (metaParts.isNotEmpty() || indicators.isNotEmpty()) {
                         Spacer(Modifier.height(3.dp))
-                        Text(
-                            text = metaParts.joinToString(" · "),
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (metaParts.isNotEmpty()) {
+                                Text(
+                                    text = metaParts.joinToString(" · "),
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                            }
+                            if (indicators.isNotEmpty()) {
+                                if (metaParts.isNotEmpty()) Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = indicators.joinToString(" "),
+                                    fontSize = 11.sp,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -964,6 +1025,7 @@ private fun ItemBottomSheet(
     isGroupList: Boolean = false,
     members: List<GroupMember> = emptyList(),
     listColor: Color,
+    initialOpenShoppingDetails: Boolean = false,
     onLoadTemplatesForPicker: () -> Unit = {},
     onResolveTaskTemplate: suspend (id: String) -> TaskTemplateDetail? = { null },
     onDismiss: () -> Unit,
@@ -1005,6 +1067,12 @@ private fun ItemBottomSheet(
     }
     var selectedCategory by remember {
         mutableStateOf(if (listType == "shopping") item?.shopping?.category else null)
+    }
+    var brand by remember { mutableStateOf(item?.shopping?.brand ?: "") }
+    var imageUrl by remember { mutableStateOf(item?.shopping?.imageUrl ?: "") }
+    var productUrl by remember { mutableStateOf(item?.shopping?.productUrl ?: "") }
+    var detailsSectionExpanded by remember {
+        mutableStateOf(initialOpenShoppingDetails || item?.shopping?.hasShoppingDetails() == true)
     }
     var showNewCategoryField by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
@@ -1189,6 +1257,75 @@ private fun ItemBottomSheet(
                         }
                     }
                 }
+                // Collapsible «Детали товара» section (brand / image / product url)
+                item {
+                    Surface(
+                        onClick = { detailsSectionExpanded = !detailsSectionExpanded },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "🏷 Детали товара",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                if (detailsSectionExpanded) Icons.Default.KeyboardArrowDown
+                                else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                if (detailsSectionExpanded) {
+                    item {
+                        OutlinedTextField(
+                            value = brand,
+                            onValueChange = { brand = it },
+                            label = { Text("Бренд") },
+                            placeholder = { Text("Nordic, Coca-Cola…") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                    item {
+                        OutlinedTextField(
+                            value = productUrl,
+                            onValueChange = { productUrl = it },
+                            label = { Text("Ссылка на товар") },
+                            placeholder = { Text("https://…") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                    item {
+                        OutlinedTextField(
+                            value = imageUrl,
+                            onValueChange = { imageUrl = it },
+                            label = { Text("Ссылка на фото") },
+                            placeholder = { Text("https://…") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        if (imageUrl.startsWith("http", ignoreCase = true)) {
+                            Spacer(Modifier.height(8.dp))
+                            ProductImagePreview(url = imageUrl)
+                        }
+                    }
+                }
             }
 
             // Home chore fields
@@ -1342,13 +1479,17 @@ private fun ItemBottomSheet(
             item {
                 Surface(
                     onClick = {
-                        val shopping = if (listType == "shopping" &&
-                            (quantity.isNotBlank() || unit.isNotBlank() || selectedCategory != null)
-                        ) {
+                        val shopping = if (listType == "shopping" && (
+                                quantity.isNotBlank() || unit.isNotBlank() || selectedCategory != null ||
+                                    brand.isNotBlank() || imageUrl.isNotBlank() || productUrl.isNotBlank()
+                            )) {
                             ShoppingItemFields(
                                 quantity = quantity.toDoubleOrNull(),
                                 unit = unit.takeIf { it.isNotBlank() },
                                 category = selectedCategory,
+                                brand = brand.takeIf { it.isNotBlank() },
+                                imageUrl = imageUrl.takeIf { it.isNotBlank() },
+                                productUrl = productUrl.takeIf { it.isNotBlank() },
                             )
                         } else null
                         val choreSchedule = if (listType == "home_chores" &&
@@ -1419,6 +1560,12 @@ private fun ItemBottomSheet(
                             }
                             sd.unit?.let { unit = it }
                             sd.category?.let { selectedCategory = it }
+                            sd.brand?.takeIf { it.isNotBlank() }?.let { brand = it }
+                            sd.imageUrl?.takeIf { it.isNotBlank() }?.let { imageUrl = it }
+                            sd.productUrl?.takeIf { it.isNotBlank() }?.let { productUrl = it }
+                            if (sd.brand != null || sd.imageUrl != null || sd.productUrl != null) {
+                                detailsSectionExpanded = true
+                            }
                         }
                         detail.choreSchedule?.let { ch ->
                             ch.intervalDays?.let { intervalDays = it.toString() }
@@ -1441,6 +1588,12 @@ private fun ItemBottomSheet(
                     }
                     sh.unit?.let { unit = it }
                     sh.category?.let { selectedCategory = it }
+                    sh.brand?.takeIf { it.isNotBlank() }?.let { brand = it }
+                    sh.imageUrl?.takeIf { it.isNotBlank() }?.let { imageUrl = it }
+                    sh.productUrl?.takeIf { it.isNotBlank() }?.let { productUrl = it }
+                    if (sh.brand != null || sh.imageUrl != null || sh.productUrl != null) {
+                        detailsSectionExpanded = true
+                    }
                 }
                 picked.choreSchedule?.let { ch ->
                     ch.intervalDays?.let { intervalDays = it.toString() }
@@ -1466,4 +1619,144 @@ private fun SheetFieldLabel(text: String) {
         letterSpacing = 0.3.sp,
         modifier = Modifier.padding(bottom = 6.dp),
     )
+}
+
+internal fun ShoppingItemFields.hasShoppingDetails(): Boolean =
+    !brand.isNullOrBlank() || !productUrl.isNullOrBlank() || !imageUrl.isNullOrBlank()
+
+@Composable
+private fun ProductImagePreview(url: String) {
+    coil3.compose.AsyncImage(
+        model = url,
+        contentDescription = null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShoppingDetailsSheet(
+    item: TodoItem,
+    listColor: Color,
+    onEdit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+    val s = item.shopping
+
+    val close: () -> Unit = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = item.title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            val qtyMeta = s?.let { sf ->
+                val qty = sf.quantity?.let { q -> if (q % 1 == 0.0) q.toLong().toString() else q.toString() }
+                listOfNotNull(
+                    qty?.let { "$it ${sf.unit ?: ""}".trim() },
+                    sf.category,
+                ).joinToString(" · ")
+            }.orEmpty()
+            if (qtyMeta.isNotBlank()) {
+                Text(qtyMeta, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+
+            // Image
+            s?.imageUrl?.takeIf { it.startsWith("http", ignoreCase = true) }?.let { url ->
+                ProductImagePreview(url = url)
+                Spacer(Modifier.height(SweetHomeSpacing.md))
+            }
+
+            // Brand
+            s?.brand?.takeIf { it.isNotBlank() }?.let {
+                DetailsRow(emoji = "🏷", label = "Бренд", value = it)
+            }
+
+            // Product URL — clickable
+            s?.productUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                val isClickable = url.startsWith("http", ignoreCase = true)
+                Surface(
+                    onClick = { if (isClickable) uriHandler.openUri(url) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("🌐", fontSize = 16.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Ссылка на товар", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                url,
+                                fontSize = 13.sp,
+                                color = if (isClickable) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (isClickable) Text("→", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+            Surface(
+                onClick = { onEdit(); close() },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = listColor,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        "✎  Редактировать",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+        }
+    }
+}
+
+@Composable
+private fun DetailsRow(emoji: String, label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(emoji, fontSize = 16.sp)
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
 }
