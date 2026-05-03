@@ -123,6 +123,8 @@ fun TodoListDetailScreen(
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
     var assigneePickerFor by remember { mutableStateOf<TodoItem?>(null) }
     var showMenu by remember { mutableStateOf(false) }
+    var showSaveAsTemplateDialog by remember { mutableStateOf(false) }
+    val saveAsTemplateScope = rememberCoroutineScope()
 
     LaunchedEffect(listId) { viewModel.loadList(listId) }
     LaunchedEffect(error) {
@@ -227,6 +229,18 @@ fun TodoListDetailScreen(
                             }
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            // Save-as-template (G-03 фаза C). Запрещено для wishlist (бэкенд вернёт 400).
+                            if (listType != "wishlist") {
+                                DropdownMenuItem(
+                                    text = { Text("Сохранить как шаблон") },
+                                    onClick = {
+                                        showMenu = false
+                                        showSaveAsTemplateDialog = true
+                                    },
+                                    leadingIcon = { Text("📋", fontSize = 16.sp) },
+                                )
+                                HorizontalDivider()
+                            }
                             DropdownMenuItem(
                                 text = { Text("Удалить список") },
                                 onClick = { showMenu = false },
@@ -415,6 +429,23 @@ fun TodoListDetailScreen(
             },
             onCreateCategory = { name ->
                 categoryScope?.let { viewModel.createCategory(it, name) }
+            },
+        )
+    }
+
+    if (showSaveAsTemplateDialog) {
+        val initialTitle = list?.title.orEmpty()
+        SaveAsTemplateDialog(
+            initialTitle = initialTitle,
+            onDismiss = { showSaveAsTemplateDialog = false },
+            onConfirm = { title, category, description ->
+                showSaveAsTemplateDialog = false
+                saveAsTemplateScope.launch {
+                    viewModel.saveListAsTemplate(category, title, description).fold(
+                        onSuccess = { snackbarHostState.showSnackbar("Шаблон сохранён в «Мои»") },
+                        onFailure = { snackbarHostState.showSnackbar(it.message ?: "Не удалось сохранить шаблон") },
+                    )
+                }
             },
         )
     }
@@ -787,6 +818,61 @@ private fun roleLabel(role: String): String = when (role) {
     "admin" -> "Админ"
     "mentor" -> "Наставник"
     else -> "Участник"
+}
+
+@Composable
+private fun SaveAsTemplateDialog(
+    initialTitle: String,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, category: String, description: String) -> Unit,
+) {
+    var title by remember { mutableStateOf(initialTitle) }
+    var category by remember { mutableStateOf("Общие") }
+    var description by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Сохранить как шаблон") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Шаблон будет приватным. Опубликовать можно из карточки шаблона.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Название") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Категория") },
+                    placeholder = { Text("Общие, Завтраки, Поездка…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание (необязательно)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(title, category, description) },
+                enabled = title.isNotBlank(),
+            ) { Text("Сохранить") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
+        },
+    )
 }
 
 private val dayOptions = listOf(

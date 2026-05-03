@@ -16,6 +16,7 @@ import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
+import com.jetbrains.kmpapp.data.templates.ListTemplate
 import com.jetbrains.kmpapp.data.templates.TaskTemplate
 import com.jetbrains.kmpapp.data.templates.TaskTemplateDetail
 import com.jetbrains.kmpapp.data.templates.TemplatesRepository
@@ -134,6 +135,25 @@ class TodoListDetailViewModel(
 
     suspend fun getTaskTemplateDetail(id: String): TaskTemplateDetail? =
         templatesRepository.getTaskTemplateDetail(id).getOrNull()
+
+    /**
+     * Сохраняет текущий список как private list-template.
+     * Возвращает Result — UI показывает success/error снэк-баром.
+     */
+    suspend fun saveListAsTemplate(
+        category: String,
+        title: String,
+        description: String? = null,
+    ): Result<ListTemplate> {
+        val list = listsRepository.currentListWithItems.value?.first
+            ?: return Result.failure(IllegalStateException("Список не загружен"))
+        return templatesRepository.saveListAsTemplate(
+            listId = list.id,
+            category = category.trim().ifBlank { "Общие" },
+            title = title.trim().ifBlank { list.title },
+            description = description?.trim()?.takeIf { it.isNotBlank() },
+        )
+    }
 
     fun addItem(
         listId: String,
