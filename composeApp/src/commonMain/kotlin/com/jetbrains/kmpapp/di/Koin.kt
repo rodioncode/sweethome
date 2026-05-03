@@ -20,6 +20,9 @@ import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.suggestions.KtorSuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsApi
 import com.jetbrains.kmpapp.data.suggestions.SuggestionsRepository
+import com.jetbrains.kmpapp.data.templates.KtorTemplatesApi
+import com.jetbrains.kmpapp.data.templates.TemplatesApi
+import com.jetbrains.kmpapp.data.templates.TemplatesRepository
 import com.jetbrains.kmpapp.data.profile.KtorProfileApi
 import com.jetbrains.kmpapp.data.profile.ProfileApi
 import com.jetbrains.kmpapp.data.notifications.KtorNotificationsApi
@@ -161,6 +164,7 @@ val dataModule = module {
                 get<GamificationRepository>().clearAll()
                 get<AchievementsRepository>().clearAll()
                 get<GoalsRepository>().clearAll()
+                get<TemplatesRepository>().clearAll()
             },
             onAuthenticated = { get<DeviceRegistrar>().registerInBackground() },
         )
@@ -189,6 +193,9 @@ val dataModule = module {
 
     single<SuggestionsApi> { KtorSuggestionsApi(get(named("apiClient")), getApiBaseUrl()) }
     single { SuggestionsRepository(get()) }
+
+    single<TemplatesApi> { KtorTemplatesApi(get(named("apiClient")), getApiBaseUrl()) }
+    single { TemplatesRepository(get()) }
 
     single<SyncApi> { KtorSyncApi(get(named("apiClient")), getApiBaseUrl()) }
     single { SyncRepository(get(), get(), get(), get()) }

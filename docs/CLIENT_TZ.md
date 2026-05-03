@@ -325,8 +325,12 @@ val showMediaSection = listType == "media"
 
 **Шаблоны inline:**
 - `TemplatePickerBottomSheet` — показывает **только шаблоны совместимого типа** (`listType`)
-- После выбора: `viewModel.onTemplateSelected(template)` → pre-fill всех полей
-- Использует существующие `SuggestionsRepository` (chore-templates + frequent-items + favorites)
+- После выбора: `viewModel.onTemplateSelected(template)` → pre-fill всех полей формы (title, note, priority, reward, shopping/chore/media поля)
+- Источники данных (Templates v2 backend, см. `docs/GAP_ANALYSIS.md` G-03):
+  - **Шаблоны** = `GET /v1/task-templates/public?scope=<listType>` ∪ `GET /v1/task-templates/mine?scope=<listType>`
+  - **Часто добавляете** = `GET /v1/suggestions/frequent-items?listId=<id>`
+  - **Избранное** = `GET /v1/suggestions/favorites`
+- Старые `SuggestionsRepository.choreTemplates` / `allTemplates` (на legacy-эндпоинтах `/suggestions/chore-templates` и `/templates`) — **deprecated**, мигрировать на новые методы.
 
 ---
 
