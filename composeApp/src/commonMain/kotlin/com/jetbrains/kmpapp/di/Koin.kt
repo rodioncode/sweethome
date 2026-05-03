@@ -63,6 +63,7 @@ import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.family.FamilyViewModel
 import com.jetbrains.kmpapp.screens.home.HomeViewModel
 import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
+import com.jetbrains.kmpapp.screens.templates.TemplateDetailViewModel
 import com.jetbrains.kmpapp.screens.templates.TemplatesViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailViewModel
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
@@ -233,6 +234,7 @@ val viewModelModule = module {
     factoryOf(::FamilyViewModel)
     factoryOf(::HomeViewModel)
     factoryOf(::TemplatesViewModel)
+    factoryOf(::TemplateDetailViewModel)
     factoryOf(::NotificationsViewModel)
     factoryOf(::ChatViewModel)
     factoryOf(::NotificationPrefsViewModel)

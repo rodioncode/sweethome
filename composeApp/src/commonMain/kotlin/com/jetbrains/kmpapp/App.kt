@@ -1,8 +1,10 @@
 package com.jetbrains.kmpapp
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -25,6 +27,7 @@ import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.chat.ChatScreen
 import com.jetbrains.kmpapp.screens.notifications.NotificationsScreen
 import com.jetbrains.kmpapp.screens.templates.TemplateDetailScreen
+import com.jetbrains.kmpapp.screens.templates.TemplatesScreen
 import com.jetbrains.kmpapp.screens.main.MainScreen
 import com.jetbrains.kmpapp.screens.profile.ProfileContent
 import com.jetbrains.kmpapp.screens.splash.SplashScreen
@@ -88,7 +91,14 @@ data class GoalDetailDestination(val goalId: String = "")
 data class PublicWishlistDestination(val token: String = "")
 
 @Serializable
-data class TemplateDetailDestination(val title: String = "Список покупок", val icon: String = "🛒")
+data class TemplateDetailDestination(
+    val templateId: String,
+    val scope: String = "shopping",
+    val titleHint: String = "",
+)
+
+@Serializable
+object TemplatesDestination
 
 @Serializable
 object NotificationsDestination
@@ -258,6 +268,7 @@ fun App() {
                     ProfileContent(
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
                         navigateToSettings = { navController.navigate(SettingsDestination) },
+                        navigateToTemplates = { navController.navigate(TemplatesDestination) },
                     )
                 }
                 composable<SettingsDestination> {
@@ -359,13 +370,22 @@ fun App() {
                 composable<TemplateDetailDestination> { backStackEntry ->
                     val dest = backStackEntry.toRoute<TemplateDetailDestination>()
                     TemplateDetailScreen(
-                        templateTitle = dest.title,
-                        templateIcon = dest.icon,
+                        templateId = dest.templateId,
+                        scope = dest.scope,
+                        titleHint = dest.titleHint,
                         navigateBack = { navController.popBackStack() },
                         navigateToLists = {
                             navController.navigate(ListDestination) {
                                 popUpTo(ListDestination) { inclusive = false }
                             }
+                        },
+                    )
+                }
+                composable<TemplatesDestination> {
+                    TemplatesScreen(
+                        contentPadding = PaddingValues(0.dp),
+                        navigateToTemplateDetail = { id, title, scope ->
+                            navController.navigate(TemplateDetailDestination(id, scope, title))
                         },
                     )
                 }

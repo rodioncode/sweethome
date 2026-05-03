@@ -41,6 +41,7 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ProfileContent(
     navigateToLinkEmail: () -> Unit,
     navigateToSettings: () -> Unit = {},
+    navigateToTemplates: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<ProfileViewModel>()
     val isGuest by viewModel.isGuest.collectAsStateWithLifecycle()
@@ -225,24 +226,26 @@ fun ProfileContent(
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Column {
+                    data class SettingsItem(val icon: String, val label: String, val onClick: () -> Unit)
                     val settingsItems = listOf(
-                        "🔔" to "Уведомления",
-                        "📅" to "Интеграция с календарём",
-                        "🤖" to "Telegram-бот",
-                        "🌙" to "Тема",
-                        "🌐" to "Язык",
+                        SettingsItem("📋", "Шаблоны", navigateToTemplates),
+                        SettingsItem("🔔", "Уведомления", navigateToSettings),
+                        SettingsItem("📅", "Интеграция с календарём", navigateToSettings),
+                        SettingsItem("🤖", "Telegram-бот", navigateToSettings),
+                        SettingsItem("🌙", "Тема", navigateToSettings),
+                        SettingsItem("🌐", "Язык", navigateToSettings),
                     )
-                    settingsItems.forEachIndexed { index, (icon, label) ->
+                    settingsItems.forEachIndexed { index, entry ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { navigateToSettings() }
+                                .clickable { entry.onClick() }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text(icon, fontSize = 18.sp)
-                            Text(label, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                            Text(entry.icon, fontSize = 18.sp)
+                            Text(entry.label, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                             Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         if (index < settingsItems.lastIndex) {
