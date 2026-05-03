@@ -111,6 +111,30 @@ fun MainScreen(
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Pending cross-tab navigation. NavController.navigate() requires the target tab's NavHost
+    // to be in composition (so setGraph() has been called). When the user triggers a cross-tab
+    // jump from a tab that hasn't been visited yet, we stash the route here and let a
+    // LaunchedEffect dispatch it once the target NavHost is ready.
+    var pendingListsRoute by remember { mutableStateOf<Any?>(null) }
+    var pendingGroupsRoute by remember { mutableStateOf<Any?>(null) }
+
+    val listsBackStackEntry by listsNavController.currentBackStackEntryAsState()
+    val groupsBackStackEntry by groupsNavController.currentBackStackEntryAsState()
+
+    LaunchedEffect(listsBackStackEntry, pendingListsRoute) {
+        val route = pendingListsRoute ?: return@LaunchedEffect
+        if (listsBackStackEntry == null) return@LaunchedEffect
+        pendingListsRoute = null
+        listsNavController.navigate(route) { launchSingleTop = true }
+    }
+
+    LaunchedEffect(groupsBackStackEntry, pendingGroupsRoute) {
+        val route = pendingGroupsRoute ?: return@LaunchedEffect
+        if (groupsBackStackEntry == null) return@LaunchedEffect
+        pendingGroupsRoute = null
+        groupsNavController.navigate(route) { launchSingleTop = true }
+    }
+
     LaunchedEffect(selectedTab) {
         if (selectedTab == MainTab.LISTS) todoListsViewModel.refresh()
     }
@@ -133,10 +157,8 @@ fun MainScreen(
         groupsViewModel.uiEvent.collect { event ->
             when (event) {
                 is GroupsUiEvent.NavigateToGroup -> {
+                    pendingGroupsRoute = GroupsDetail(event.groupId, event.groupName)
                     selectedTab = MainTab.GROUPS
-                    groupsNavController.navigate(GroupsDetail(event.groupId, event.groupName)) {
-                        launchSingleTop = true
-                    }
                 }
             }
         }
@@ -184,8 +206,7 @@ fun MainScreen(
             }
         },
         floatingActionButton = {
-            val listsBackStack by listsNavController.currentBackStackEntryAsState()
-            val isInListDetail = listsBackStack?.destination?.hasRoute(ListsDetail::class) == true
+            val isInListDetail = listsBackStackEntry?.destination?.hasRoute(ListsDetail::class) == true
             if (selectedTab == MainTab.LISTS && !isInListDetail) {
                 FloatingActionButton(onClick = { showCreateListDialog = true }) {
                     Icon(Icons.Default.Add, "Добавить список")
@@ -207,12 +228,12 @@ fun MainScreen(
             MainTab.HOME -> FamilyContent(
                 contentPadding = paddingValues,
                 onSpaceClick = { groupId, name ->
+                    pendingGroupsRoute = GroupsDetail(groupId, name)
                     selectedTab = MainTab.GROUPS
-                    groupsNavController.navigate(GroupsDetail(groupId, name)) { launchSingleTop = true }
                 },
                 onListClick = { listId ->
+                    pendingListsRoute = ListsDetail(listId)
                     selectedTab = MainTab.LISTS
-                    listsNavController.navigate(ListsDetail(listId)) { launchSingleTop = true }
                 },
                 navigateToGamification = navigateToGamification,
                 navigateToShop = navigateToShop,
@@ -234,8 +255,8 @@ fun MainScreen(
             MainTab.CALENDAR -> com.jetbrains.kmpapp.screens.calendar.CalendarContent(
                 contentPadding = paddingValues,
                 onItemOpen = { listId, _ ->
+                    pendingListsRoute = ListsDetail(listId)
                     selectedTab = MainTab.LISTS
-                    listsNavController.navigate(ListsDetail(listId)) { launchSingleTop = true }
                 },
             )
             MainTab.GROUPS -> GroupsTabNavHost(
@@ -247,8 +268,8 @@ fun MainScreen(
                 navigateToJoinByCode = navigateToJoinByCode,
                 onCreateGroup = if (!isGuest) ({ showCreateGroupDialog = true }) else null,
                 navigateToListDetail = { listId ->
+                    pendingListsRoute = ListsDetail(listId)
                     selectedTab = MainTab.LISTS
-                    listsNavController.navigate(ListsDetail(listId)) { launchSingleTop = true }
                 },
                 navigateToChat = navigateToChat,
             )
