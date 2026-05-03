@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 private data class ItemsWrapper(val items: List<TodoItem>)
 
-@Suppress("OverridingDeprecatedMember", "DEPRECATION")
+@Suppress("OVERRIDE_DEPRECATION", "DEPRECATION")
 class KtorSuggestionsApi(
     private val apiClient: HttpClient,
     private val baseUrl: String,

@@ -20,6 +20,9 @@ class SuggestionsRepository(private val api: SuggestionsApi) {
     private val _frequentItems = MutableStateFlow<List<TodoItem>>(emptyList())
     val frequentItems: StateFlow<List<TodoItem>> = _frequentItems.asStateFlow()
 
+    private val _favoriteItems = MutableStateFlow<List<TodoItem>>(emptyList())
+    val favoriteItems: StateFlow<List<TodoItem>> = _favoriteItems.asStateFlow()
+
     @Deprecated(
         "Templates v2: используйте TemplatesRepository.loadPublicTaskTemplates(scope=\"home_chores\").",
     )
@@ -38,6 +41,10 @@ class SuggestionsRepository(private val api: SuggestionsApi) {
         api.getFrequentItems(listId).onSuccess { _frequentItems.value = it }
     }
 
+    suspend fun loadFavoriteItems() {
+        api.getFavorites().onSuccess { _favoriteItems.value = it }
+    }
+
     @Deprecated(
         "Templates v2: используйте TemplatesRepository.getListTemplateDetail(id).",
         ReplaceWith("templatesRepository.getListTemplateDetail(id)"),
@@ -54,5 +61,6 @@ class SuggestionsRepository(private val api: SuggestionsApi) {
         _choreTemplates.value = emptyList()
         _allTemplates.value = emptyList()
         _frequentItems.value = emptyList()
+        _favoriteItems.value = emptyList()
     }
 }

@@ -84,6 +84,8 @@ import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
+import com.jetbrains.kmpapp.data.templates.TaskTemplate
+import com.jetbrains.kmpapp.data.templates.TaskTemplateDetail
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
@@ -114,6 +116,8 @@ fun TodoListDetailScreen(
     val groupMembers by viewModel.groupMembers.collectAsStateWithLifecycle()
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
     val isGroupListFlag by viewModel.isGroupList.collectAsStateWithLifecycle()
+    val taskTemplates by viewModel.taskTemplatesForList.collectAsStateWithLifecycle()
+    val favoriteItems by viewModel.favoriteItems.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
@@ -397,9 +401,13 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            taskTemplates = taskTemplates,
             isGroupList = isGroupList,
             members = groupMembers,
             listColor = listColor,
+            onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
+            onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
             onDismiss = { showAddSheet = false },
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.addItem(listId, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
@@ -430,9 +438,13 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            taskTemplates = taskTemplates,
             isGroupList = isGroupList,
             members = groupMembers,
             listColor = listColor,
+            onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
+            onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
             onDismiss = { editingItem = null },
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
@@ -861,9 +873,13 @@ private fun ItemBottomSheet(
     categories: List<Category>,
     choreTemplates: List<ChoreTemplate>,
     frequentItems: List<TodoItem>,
+    favoriteItems: List<TodoItem> = emptyList(),
+    taskTemplates: List<TaskTemplate> = emptyList(),
     isGroupList: Boolean = false,
     members: List<GroupMember> = emptyList(),
     listColor: Color,
+    onLoadTemplatesForPicker: () -> Unit = {},
+    onResolveTaskTemplate: suspend (id: String) -> TaskTemplateDetail? = { null },
     onDismiss: () -> Unit,
     onConfirm: (
         title: String,
@@ -906,6 +922,8 @@ private fun ItemBottomSheet(
     }
     var showNewCategoryField by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
+    var showPicker by remember { mutableStateOf(false) }
+    val pickerScope = rememberCoroutineScope()
 
     val typeHeadings = mapOf(
         "shopping" to "Добавить товар",
@@ -1003,6 +1021,43 @@ private fun ItemBottomSheet(
                                     unit = suggestion.shopping?.unit ?: ""
                                 },
                                 label = { Text(suggestion.title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Use template button (G-03) — only when adding new item
+            if (item == null) {
+                item {
+                    Surface(
+                        onClick = {
+                            onLoadTemplatesForPicker()
+                            showPicker = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("📋", fontSize = 18.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Использовать шаблон",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                "→",
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
                     }
@@ -1258,6 +1313,60 @@ private fun ItemBottomSheet(
                 Spacer(Modifier.height(SweetHomeSpacing.lg))
             }
         }
+    }
+
+    if (showPicker) {
+        TemplatePickerSheet(
+            listType = listType,
+            taskTemplates = taskTemplates,
+            frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            onPickTemplate = { template ->
+                pickerScope.launch {
+                    onResolveTaskTemplate(template.id)?.let { detail ->
+                        title = detail.title
+                        detail.note?.takeIf { it.isNotBlank() }?.let { note = it }
+                        detail.priority?.let { priority = it }
+                        detail.shoppingDetails?.let { sd ->
+                            sd.quantity?.let {
+                                quantity = if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+                            }
+                            sd.unit?.let { unit = it }
+                            sd.category?.let { selectedCategory = it }
+                        }
+                        detail.choreSchedule?.let { ch ->
+                            ch.intervalDays?.let { intervalDays = it.toString() }
+                            ch.daysOfWeek?.takeIf { it.isNotEmpty() }?.let { selectedDays = it }
+                            ch.startDate?.takeIf { it.isNotBlank() }?.let { startDate = it }
+                            ch.endDate?.takeIf { it.isNotBlank() }?.let { endDate = it }
+                            ch.category?.let { selectedZone = it }
+                        }
+                    }
+                }
+                showPicker = false
+            },
+            onPickItem = { picked ->
+                title = picked.title
+                picked.note?.takeIf { it.isNotBlank() }?.let { note = it }
+                picked.priority?.let { priority = it }
+                picked.shopping?.let { sh ->
+                    sh.quantity?.let {
+                        quantity = if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+                    }
+                    sh.unit?.let { unit = it }
+                    sh.category?.let { selectedCategory = it }
+                }
+                picked.choreSchedule?.let { ch ->
+                    ch.intervalDays?.let { intervalDays = it.toString() }
+                    ch.daysOfWeek?.takeIf { it.isNotEmpty() }?.let { selectedDays = it }
+                    ch.startDate?.takeIf { it.isNotBlank() }?.let { startDate = it }
+                    ch.endDate?.takeIf { it.isNotBlank() }?.let { endDate = it }
+                    ch.category?.let { selectedZone = it }
+                }
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
     }
 }
 
