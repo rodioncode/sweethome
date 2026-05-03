@@ -1,5 +1,11 @@
 # WORK_PLAN — Family Todo (KMP Client)
 
+> ⚠️ **Документ частично устарел.** Эпоха Family Todo, большая часть пунктов 1–9 уже сделана.
+> Актуальные источники для текущей разработки:
+> - `docs/GAP_ANALYSIS.md` — gap-ы G-01…G-13 (UI-ориентированный roadmap)
+> - Backend `family-todo-backend/docs/CLIENT_GUIDE.md` — контракт API v1 (источник правды для интеграции)
+> - **Templates v2:** клиент сейчас использует legacy-эндпоинты `/suggestions/chore-templates` и `/templates`. На бэкенде с 2026-05 уже доступны `/v1/templates`, `/v1/task-templates`, `/v1/lists/{id}/save-as-template`, `/v1/admin/templates/...` (см. backend §9). Раздел 6 ниже отражает только legacy.
+>
 > Основан на `CLIENT_API_GUIDE.md` и текущем состоянии кодовой базы.
 > Статус проверялся вручную по исходникам (`composeApp/src/commonMain`).
 

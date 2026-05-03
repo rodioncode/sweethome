@@ -78,13 +78,31 @@
 ---
 
 #### G-03: Выбор шаблона inline (bottom sheet)
-**Текущее состояние:** Экран шаблонов есть (Templates), но нет inline-выбора при создании задачи.  
-**Что нужно:**
-- Bottom sheet поверх экрана создания задачи
+**Текущее состояние:** Экран шаблонов есть (Templates, частично mock), но нет inline-выбора при создании задачи. Клиент использует **legacy** `/v1/suggestions/chore-templates` (deprecated) и `/v1/templates` (deprecated union view).
+
+**Бэкенд: Templates v2** (см. backend `docs/CLIENT_GUIDE.md` §9, на 2026-05-03 уже в `main`):
+- Две сущности — **list-templates** (`/v1/templates/*`) и **task-templates** (`/v1/task-templates/*`).
+- Видимость `private | pending | public` + state machine + админ-модерация.
+- list-templates: `GET /public`, `GET /mine`, `GET /favorites`, `GET /{id}`, `POST`, `PATCH`, `DELETE`, `POST /{id}/use` (с `overrides`), `POST /{id}/request-publication`, `POST /{id}/withdraw-publication`, `PUT/DELETE /{id}/favorite`.
+- task-templates: зеркальный набор + `POST /{id}/use` принимает `listId` и вставляет одну задачу в существующий список.
+- `POST /v1/lists/{id}/save-as-template` — сохранить список как шаблон (типы `wishlist` запрещены).
+- Items в шаблонах: `id, sortOrder, title, note, priority, reward, shoppingDetails, choreSchedule, mediaDetails`.
+
+**Что нужно (G-03):**
+- Bottom sheet поверх экрана создания задачи (внутри `ItemBottomSheet`)
 - Разделы: «Шаблоны», «Часто добавляете», «Избранное»
-- Карточка шаблона: название, иконка, краткое описание
-- Тап на шаблон → pre-fill формы создания + закрыть bottom sheet
+  - **Шаблоны** = `/v1/task-templates/public?scope=<list_type>` ∪ `/v1/task-templates/mine?scope=<list_type>` (для совместимого скоупа)
+  - **Часто добавляете** = `/v1/suggestions/frequent-items?listId=<id>` (как сейчас)
+  - **Избранное** = `/v1/suggestions/favorites` (на клиенте есть API, в UI не интегрировано)
+- Карточка шаблона: название, иконка по scope, краткое описание; бейдж «Моё/pending» для своих
+- Тап на шаблон → pre-fill всех полей формы (title, note, priority, reward, shoppingDetails, choreSchedule, mediaDetails) → закрыть sheet
 - Все поля остаются редактируемыми после выбора
+
+**Расхождения с текущим кодом:**
+- `SuggestionsModels.Template` не содержит `scope`, `userId`, `visibility`, `isFavorite` — нужны новые модели.
+- `TemplateItem` содержит только `title` — отсутствуют `note/priority/reward/shoppingDetails/choreSchedule/mediaDetails` нужные для pre-fill.
+- `UseTemplateRequest` не имеет `overrides`.
+- Нет API/моделей для task-templates целиком, save-as-template, favorites.
 
 ---
 

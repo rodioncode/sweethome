@@ -34,7 +34,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTimePickerState
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -328,6 +334,15 @@ fun GroupDetailScreen(
                             val days = g?.workDays?.takeIf { it.isNotEmpty() }?.joinToString(", ") { dayLabel(it) } ?: "—"
                             Text(hours, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Text("Дни: $days", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // Live preview "сейчас рабочее / нерабочее"
+                            workHoursStatus(g?.workHoursStart, g?.workHoursEnd, g?.workDays)?.let { (label, isWork) ->
+                                Text(
+                                    text = label,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isWork) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             if (isOwner) Text("Нажмите, чтобы изменить", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                         }
                     }
@@ -663,6 +678,49 @@ private fun dayLabel(code: String): String = when (code) {
     "fri" -> "Пт"; "sat" -> "Сб"; "sun" -> "Вс"; else -> code
 }
 
+private fun parseHHmm(value: String?): Pair<Int, Int>? {
+    if (value.isNullOrBlank()) return null
+    val parts = value.split(":")
+    if (parts.size != 2) return null
+    val h = parts[0].toIntOrNull() ?: return null
+    val m = parts[1].toIntOrNull() ?: return null
+    if (h !in 0..23 || m !in 0..59) return null
+    return h to m
+}
+
+private fun formatHHmm(hour: Int, minute: Int): String =
+    "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+
+private fun DayOfWeek.toCode(): String = when (this) {
+    DayOfWeek.MONDAY -> "mon"; DayOfWeek.TUESDAY -> "tue"; DayOfWeek.WEDNESDAY -> "wed"
+    DayOfWeek.THURSDAY -> "thu"; DayOfWeek.FRIDAY -> "fri"; DayOfWeek.SATURDAY -> "sat"
+    DayOfWeek.SUNDAY -> "sun"
+}
+
+/**
+ * Возвращает («🟢 Сейчас рабочее время» / «🌙 Сейчас нерабочее время», isWork) либо null,
+ * если параметры не заданы.
+ */
+private fun workHoursStatus(start: String?, end: String?, days: List<String>?): Pair<String, Boolean>? {
+    val s = parseHHmm(start) ?: return null
+    val e = parseHHmm(end) ?: return null
+    val ldt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    val today = ldt.dayOfWeek.toCode()
+    val isWorkDay = days.isNullOrEmpty() || today in days
+    val nowMin = ldt.hour * 60 + ldt.minute
+    val startMin = s.first * 60 + s.second
+    val endMin = e.first * 60 + e.second
+    val isWorkHour = if (startMin <= endMin) {
+        nowMin in startMin until endMin
+    } else {
+        // Ночная смена (23:00–07:00)
+        nowMin >= startMin || nowMin < endMin
+    }
+    val active = isWorkDay && isWorkHour
+    return (if (active) "🟢 Сейчас рабочее время" else "🌙 Сейчас нерабочее время") to active
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WorkHoursDialog(
     initialStart: String,
@@ -671,33 +729,45 @@ private fun WorkHoursDialog(
     onDismiss: () -> Unit,
     onConfirm: (start: String?, end: String?, days: List<String>?) -> Unit,
 ) {
-    var start by remember { mutableStateOf(initialStart) }
-    var end by remember { mutableStateOf(initialEnd) }
+    val (sH, sM) = parseHHmm(initialStart) ?: (9 to 0)
+    val (eH, eM) = parseHHmm(initialEnd) ?: (18 to 0)
+    val startState = rememberTimePickerState(initialHour = sH, initialMinute = sM, is24Hour = true)
+    val endState = rememberTimePickerState(initialHour = eH, initialMinute = eM, is24Hour = true)
     val days = remember { mutableStateOf(initialDays.toSet()) }
     val allDays = listOf("mon", "tue", "wed", "thu", "fri", "sat", "sun")
+    var editingStart by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Рабочее время") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = start,
-                        onValueChange = { start = it },
-                        label = { Text("Начало") },
-                        singleLine = true,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    TimeChip(
+                        label = "Начало",
+                        time = formatHHmm(startState.hour, startState.minute),
+                        selected = editingStart,
+                        onClick = { editingStart = true },
                         modifier = Modifier.weight(1f),
                     )
-                    OutlinedTextField(
-                        value = end,
-                        onValueChange = { end = it },
-                        label = { Text("Конец") },
-                        singleLine = true,
+                    TimeChip(
+                        label = "Конец",
+                        time = formatHHmm(endState.hour, endState.minute),
+                        selected = !editingStart,
+                        onClick = { editingStart = false },
                         modifier = Modifier.weight(1f),
                     )
                 }
-                Text("Формат HH:MM. Дни:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (editingStart) TimePicker(state = startState) else TimePicker(state = endState)
+                }
+                Text("Дни недели:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     allDays.forEach { d ->
                         val selected = d in days.value
@@ -725,9 +795,49 @@ private fun WorkHoursDialog(
         confirmButton = {
             TextButton(onClick = {
                 val orderedDays = allDays.filter { it in days.value }
-                onConfirm(start.takeIf { it.isNotBlank() }, end.takeIf { it.isNotBlank() }, orderedDays.takeIf { it.isNotEmpty() })
+                onConfirm(
+                    formatHHmm(startState.hour, startState.minute),
+                    formatHHmm(endState.hour, endState.minute),
+                    orderedDays.takeIf { it.isNotEmpty() },
+                )
             }) { Text("Сохранить") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
+}
+
+@Composable
+private fun TimeChip(
+    label: String,
+    time: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) MaterialTheme.colorScheme.primaryContainer
+        else MaterialTheme.colorScheme.surfaceVariant,
+        border = androidx.compose.foundation.BorderStroke(
+            width = if (selected) 2.dp else 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.outline,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                time,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurface,
+            )
+        }
+    }
 }

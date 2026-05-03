@@ -337,6 +337,8 @@ private fun TransactionRow(tx: Transaction, currencyIcon: String, displayNameOf:
     }
 }
 
+private val currencyEmojiPresets = listOf("🪙", "⭐", "❤️", "💎", "🎁", "🏆", "✨", "🔥", "🌟", "🍀")
+
 @Composable
 private fun EditCurrencyDialog(
     initialName: String,
@@ -350,9 +352,50 @@ private fun EditCurrencyDialog(
         onDismissRequest = onDismiss,
         title = { Text("Валюта семьи") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it.take(30) }, label = { Text("Название") }, singleLine = true)
-                OutlinedTextField(value = icon, onValueChange = { icon = it.take(4) }, label = { Text("Иконка") }, singleLine = true)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(30) },
+                    label = { Text("Название (мн.ч., например «Монеты»)") },
+                    singleLine = true,
+                )
+                Text("Иконка:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    currencyEmojiPresets.forEach { preset ->
+                        val selected = icon == preset
+                        Surface(
+                            onClick = { icon = preset },
+                            shape = CircleShape,
+                            color = if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Text(preset, fontSize = 18.sp)
+                            }
+                        }
+                    }
+                }
+                OutlinedTextField(
+                    value = icon,
+                    onValueChange = { icon = it.take(4) },
+                    label = { Text("Или своя иконка") },
+                    singleLine = true,
+                )
+                // Preview
+                val previewName = name.trim().ifBlank { initialName }
+                val previewIcon = icon.trim().ifBlank { initialIcon }
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                ) {
+                    Text(
+                        text = "Участники будут зарабатывать $previewName $previewIcon",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    )
+                }
             }
         },
         confirmButton = {

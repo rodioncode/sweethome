@@ -3,6 +3,7 @@ package com.jetbrains.kmpapp.screens.todo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,6 +72,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
@@ -84,6 +87,8 @@ import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
+import com.jetbrains.kmpapp.data.templates.TaskTemplate
+import com.jetbrains.kmpapp.data.templates.TaskTemplateDetail
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
@@ -112,10 +117,19 @@ fun TodoListDetailScreen(
     val frequentItems by viewModel.frequentItems.collectAsStateWithLifecycle()
     val memberNames by viewModel.memberNames.collectAsStateWithLifecycle()
     val groupMembers by viewModel.groupMembers.collectAsStateWithLifecycle()
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val isGroupListFlag by viewModel.isGroupList.collectAsStateWithLifecycle()
+    val taskTemplates by viewModel.taskTemplatesForList.collectAsStateWithLifecycle()
+    val favoriteItems by viewModel.favoriteItems.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
+    var assigneePickerFor by remember { mutableStateOf<TodoItem?>(null) }
     var showMenu by remember { mutableStateOf(false) }
+    var showSaveAsTemplateDialog by remember { mutableStateOf(false) }
+    var shoppingDetailsFor by remember { mutableStateOf<TodoItem?>(null) }
+    var openDetailsSectionInEditor by remember { mutableStateOf(false) }
+    val saveAsTemplateScope = rememberCoroutineScope()
 
     LaunchedEffect(listId) { viewModel.loadList(listId) }
     LaunchedEffect(error) {
@@ -127,7 +141,8 @@ fun TodoListDetailScreen(
 
     val list = listWithItems?.first
     val listType = list?.type ?: "general_todos"
-    val isGroupList = groupMembers.isNotEmpty()
+    // Для гейтинга UI назначения используем оба сигнала: workspace-тип и факт загруженности участников.
+    val isGroupList = isGroupListFlag || groupMembers.isNotEmpty()
     val listColor = list?.color?.toComposeColor() ?: listColorForType(listType, isSystemInDarkTheme())
     val listIcon = list?.icon ?: listEmojiForType(listType)
     val categoryScope = when (listType) {
@@ -219,6 +234,18 @@ fun TodoListDetailScreen(
                             }
                         }
                         DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                            // Save-as-template (G-03 фаза C). Запрещено для wishlist (бэкенд вернёт 400).
+                            if (listType != "wishlist") {
+                                DropdownMenuItem(
+                                    text = { Text("Сохранить как шаблон") },
+                                    onClick = {
+                                        showMenu = false
+                                        showSaveAsTemplateDialog = true
+                                    },
+                                    leadingIcon = { Text("📋", fontSize = 16.sp) },
+                                )
+                                HorizontalDivider()
+                            }
                             DropdownMenuItem(
                                 text = { Text("Удалить список") },
                                 onClick = { showMenu = false },
@@ -346,6 +373,22 @@ fun TodoListDetailScreen(
                         onDelete = { viewModel.deleteItem(item) },
                         onEdit = { editingItem = item },
                         memberNames = memberNames,
+                        isGroupList = isGroupList,
+                        currentUserId = currentUserId,
+                        onQuickAssignSelf = {
+                            currentUserId?.let { viewModel.setAssignee(item, it) }
+                        },
+                        onPickAssignee = { assigneePickerFor = item },
+                        onLongPress = if (listType == "shopping") {
+                            {
+                                if (item.shopping?.hasShoppingDetails() == true) {
+                                    shoppingDetailsFor = item
+                                } else {
+                                    openDetailsSectionInEditor = true
+                                    editingItem = item
+                                }
+                            }
+                        } else null,
                     )
                 }
 
@@ -387,9 +430,13 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            taskTemplates = taskTemplates,
             isGroupList = isGroupList,
             members = groupMembers,
             listColor = listColor,
+            onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
+            onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
             onDismiss = { showAddSheet = false },
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.addItem(listId, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
@@ -398,6 +445,46 @@ fun TodoListDetailScreen(
             onCreateCategory = { name ->
                 categoryScope?.let { viewModel.createCategory(it, name) }
             },
+        )
+    }
+
+    shoppingDetailsFor?.let { item ->
+        ShoppingDetailsSheet(
+            item = item,
+            listColor = listColor,
+            onEdit = {
+                shoppingDetailsFor = null
+                openDetailsSectionInEditor = true
+                editingItem = item
+            },
+            onDismiss = { shoppingDetailsFor = null },
+        )
+    }
+
+    if (showSaveAsTemplateDialog) {
+        val initialTitle = list?.title.orEmpty()
+        SaveAsTemplateDialog(
+            initialTitle = initialTitle,
+            onDismiss = { showSaveAsTemplateDialog = false },
+            onConfirm = { title, category, description ->
+                showSaveAsTemplateDialog = false
+                saveAsTemplateScope.launch {
+                    viewModel.saveListAsTemplate(category, title, description).fold(
+                        onSuccess = { snackbarHostState.showSnackbar("Шаблон сохранён в «Мои»") },
+                        onFailure = { snackbarHostState.showSnackbar(it.message ?: "Не удалось сохранить шаблон") },
+                    )
+                }
+            },
+        )
+    }
+
+    assigneePickerFor?.let { item ->
+        AssigneePickerSheet(
+            members = groupMembers,
+            currentAssigneeId = item.assignedTo?.takeIf { it.isNotBlank() },
+            currentUserId = currentUserId,
+            onPick = { picked -> viewModel.setAssignee(item, picked) },
+            onDismiss = { assigneePickerFor = null },
         )
     }
 
@@ -410,13 +497,22 @@ fun TodoListDetailScreen(
             categories = categories,
             choreTemplates = choreTemplates,
             frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            taskTemplates = taskTemplates,
             isGroupList = isGroupList,
             members = groupMembers,
             listColor = listColor,
-            onDismiss = { editingItem = null },
+            initialOpenShoppingDetails = openDetailsSectionInEditor,
+            onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
+            onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
+            onDismiss = {
+                editingItem = null
+                openDetailsSectionInEditor = false
+            },
             onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
                 viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
                 editingItem = null
+                openDetailsSectionInEditor = false
             },
             onAttachPhoto = {
                 val picked = picker.pick() ?: return@ItemBottomSheet "Отменено"
@@ -481,6 +577,11 @@ private fun TodoItemRow(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     memberNames: Map<String, String> = emptyMap(),
+    isGroupList: Boolean = false,
+    currentUserId: String? = null,
+    onQuickAssignSelf: () -> Unit = {},
+    onPickAssignee: () -> Unit = {},
+    onLongPress: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -520,12 +621,20 @@ private fun TodoItemRow(
                     }
                 }
 
-                // Content
-                Column(
-                    modifier = Modifier
+                // Content (tap = edit, long-press = secondary action — for shopping items show details sheet)
+                val contentModifier = if (onLongPress != null) {
+                    Modifier
                         .weight(1f)
-                        .clickable { onEdit() },
-                ) {
+                        .pointerInput(item.id) {
+                            detectTapGestures(
+                                onTap = { onEdit() },
+                                onLongPress = { onLongPress() },
+                            )
+                        }
+                } else {
+                    Modifier.weight(1f).clickable { onEdit() }
+                }
+                Column(modifier = contentModifier) {
                     Text(
                         text = item.title,
                         fontSize = 14.sp,
@@ -553,20 +662,36 @@ private fun TodoItemRow(
                             val isOverdue = dueDate != null && !item.isDone && dueDate < today
                             add(if (isOverdue) "‼ до ${due.take(10)}" else "до ${due.take(10)}")
                         }
-                        item.assignedTo?.takeIf { it.isNotBlank() }?.let { userId ->
-                            val name = memberNames[userId] ?: userId.take(8)
-                            add("→ $name")
-                        }
+                        // assignedTo показывается отдельным AssigneeChip справа — в meta не дублируем.
                     }
-                    if (metaParts.isNotEmpty()) {
+                    val indicators = item.shopping?.let { s ->
+                        buildList {
+                            if (!s.imageUrl.isNullOrBlank()) add("📷")
+                            if (!s.productUrl.isNullOrBlank()) add("🌐")
+                            if (!s.brand.isNullOrBlank()) add("🏷")
+                        }
+                    }.orEmpty()
+                    if (metaParts.isNotEmpty() || indicators.isNotEmpty()) {
                         Spacer(Modifier.height(3.dp))
-                        Text(
-                            text = metaParts.joinToString(" · "),
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            if (metaParts.isNotEmpty()) {
+                                Text(
+                                    text = metaParts.joinToString(" · "),
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f, fill = false),
+                                )
+                            }
+                            if (indicators.isNotEmpty()) {
+                                if (metaParts.isNotEmpty()) Spacer(Modifier.width(6.dp))
+                                Text(
+                                    text = indicators.joinToString(" "),
+                                    fontSize = 11.sp,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -577,6 +702,15 @@ private fun TodoItemRow(
                         contentDescription = null,
                         tint = Color(0xFFFFA726),
                         modifier = Modifier.size(16.dp),
+                    )
+                }
+                if (isGroupList && !item.isDone) {
+                    AssigneeChip(
+                        assignedTo = item.assignedTo?.takeIf { it.isNotBlank() },
+                        currentUserId = currentUserId,
+                        memberNames = memberNames,
+                        onQuickAssignSelf = onQuickAssignSelf,
+                        onPickAssignee = onPickAssignee,
                     )
                 }
                 IconButton(
@@ -593,6 +727,213 @@ private fun TodoItemRow(
             }
         }
     }
+}
+
+@Composable
+private fun AssigneeChip(
+    assignedTo: String?,
+    currentUserId: String?,
+    memberNames: Map<String, String>,
+    onQuickAssignSelf: () -> Unit,
+    onPickAssignee: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isMe = assignedTo != null && assignedTo == currentUserId
+    val isUnassigned = assignedTo == null
+    val (bg, fg) = when {
+        isUnassigned -> Color.Transparent to MaterialTheme.colorScheme.onSurfaceVariant
+        isMe -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val label = when {
+        isUnassigned -> "+"
+        isMe -> "Я"
+        else -> {
+            val name = memberNames[assignedTo] ?: assignedTo!!
+            name.firstOrNull()?.uppercase() ?: "?"
+        }
+    }
+    val onClick = if (isUnassigned) onQuickAssignSelf else onPickAssignee
+    Box(
+        modifier = modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(bg)
+            .border(
+                width = 1.dp,
+                color = if (isUnassigned) MaterialTheme.colorScheme.outline else Color.Transparent,
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = if (isUnassigned) 16.sp else 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = fg,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AssigneePickerSheet(
+    members: List<GroupMember>,
+    currentAssigneeId: String?,
+    currentUserId: String?,
+    onPick: (userId: String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val close: (String?) -> Unit = { picked ->
+        onPick(picked)
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            Text(
+                "Назначить исполнителя",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            // Unassign option
+            AssigneePickerRow(
+                initial = "—",
+                title = "Не назначен",
+                subtitle = null,
+                selected = currentAssigneeId == null,
+                onClick = { close(null) },
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            members.forEach { member ->
+                val isMe = member.userId == currentUserId
+                val name = member.displayName?.takeIf { it.isNotBlank() } ?: member.userId.take(8)
+                AssigneePickerRow(
+                    initial = name.firstOrNull()?.uppercase() ?: "?",
+                    title = if (isMe) "$name (вы)" else name,
+                    subtitle = roleLabel(member.role),
+                    selected = currentAssigneeId == member.userId,
+                    onClick = { close(member.userId) },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun AssigneePickerRow(
+    initial: String,
+    title: String,
+    subtitle: String?,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = initial,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            subtitle?.let {
+                Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (selected) {
+            Text("✓", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+private fun roleLabel(role: String): String = when (role) {
+    "owner" -> "Владелец"
+    "admin" -> "Админ"
+    "mentor" -> "Наставник"
+    else -> "Участник"
+}
+
+@Composable
+private fun SaveAsTemplateDialog(
+    initialTitle: String,
+    onDismiss: () -> Unit,
+    onConfirm: (title: String, category: String, description: String) -> Unit,
+) {
+    var title by remember { mutableStateOf(initialTitle) }
+    var category by remember { mutableStateOf("Общие") }
+    var description by remember { mutableStateOf("") }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Сохранить как шаблон") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "Шаблон будет приватным. Опубликовать можно из карточки шаблона.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Название") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = category,
+                    onValueChange = { category = it },
+                    label = { Text("Категория") },
+                    placeholder = { Text("Общие, Завтраки, Поездка…") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание (необязательно)") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(title, category, description) },
+                enabled = title.isNotBlank(),
+            ) { Text("Сохранить") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Отмена") }
+        },
+    )
 }
 
 private val dayOptions = listOf(
@@ -679,9 +1020,14 @@ private fun ItemBottomSheet(
     categories: List<Category>,
     choreTemplates: List<ChoreTemplate>,
     frequentItems: List<TodoItem>,
+    favoriteItems: List<TodoItem> = emptyList(),
+    taskTemplates: List<TaskTemplate> = emptyList(),
     isGroupList: Boolean = false,
     members: List<GroupMember> = emptyList(),
     listColor: Color,
+    initialOpenShoppingDetails: Boolean = false,
+    onLoadTemplatesForPicker: () -> Unit = {},
+    onResolveTaskTemplate: suspend (id: String) -> TaskTemplateDetail? = { null },
     onDismiss: () -> Unit,
     onConfirm: (
         title: String,
@@ -722,8 +1068,16 @@ private fun ItemBottomSheet(
     var selectedCategory by remember {
         mutableStateOf(if (listType == "shopping") item?.shopping?.category else null)
     }
+    var brand by remember { mutableStateOf(item?.shopping?.brand ?: "") }
+    var imageUrl by remember { mutableStateOf(item?.shopping?.imageUrl ?: "") }
+    var productUrl by remember { mutableStateOf(item?.shopping?.productUrl ?: "") }
+    var detailsSectionExpanded by remember {
+        mutableStateOf(initialOpenShoppingDetails || item?.shopping?.hasShoppingDetails() == true)
+    }
     var showNewCategoryField by remember { mutableStateOf(false) }
     var newCategoryName by remember { mutableStateOf("") }
+    var showPicker by remember { mutableStateOf(false) }
+    val pickerScope = rememberCoroutineScope()
 
     val typeHeadings = mapOf(
         "shopping" to "Добавить товар",
@@ -827,6 +1181,43 @@ private fun ItemBottomSheet(
                 }
             }
 
+            // Use template button (G-03) — only when adding new item
+            if (item == null) {
+                item {
+                    Surface(
+                        onClick = {
+                            onLoadTemplatesForPicker()
+                            showPicker = true
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("📋", fontSize = 18.sp)
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                "Использовать шаблон",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                "→",
+                                fontSize = 18.sp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                }
+            }
+
             // Title
             item {
                 SheetFieldLabel("Название *")
@@ -863,6 +1254,75 @@ private fun ItemBottomSheet(
                                     label = { Text(u, fontSize = 12.sp) },
                                 )
                             }
+                        }
+                    }
+                }
+                // Collapsible «Детали товара» section (brand / image / product url)
+                item {
+                    Surface(
+                        onClick = { detailsSectionExpanded = !detailsSectionExpanded },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "🏷 Детали товара",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Icon(
+                                if (detailsSectionExpanded) Icons.Default.KeyboardArrowDown
+                                else Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                }
+                if (detailsSectionExpanded) {
+                    item {
+                        OutlinedTextField(
+                            value = brand,
+                            onValueChange = { brand = it },
+                            label = { Text("Бренд") },
+                            placeholder = { Text("Nordic, Coca-Cola…") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                    item {
+                        OutlinedTextField(
+                            value = productUrl,
+                            onValueChange = { productUrl = it },
+                            label = { Text("Ссылка на товар") },
+                            placeholder = { Text("https://…") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                    }
+                    item {
+                        OutlinedTextField(
+                            value = imageUrl,
+                            onValueChange = { imageUrl = it },
+                            label = { Text("Ссылка на фото") },
+                            placeholder = { Text("https://…") },
+                            singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        if (imageUrl.startsWith("http", ignoreCase = true)) {
+                            Spacer(Modifier.height(8.dp))
+                            ProductImagePreview(url = imageUrl)
                         }
                     }
                 }
@@ -1019,13 +1479,17 @@ private fun ItemBottomSheet(
             item {
                 Surface(
                     onClick = {
-                        val shopping = if (listType == "shopping" &&
-                            (quantity.isNotBlank() || unit.isNotBlank() || selectedCategory != null)
-                        ) {
+                        val shopping = if (listType == "shopping" && (
+                                quantity.isNotBlank() || unit.isNotBlank() || selectedCategory != null ||
+                                    brand.isNotBlank() || imageUrl.isNotBlank() || productUrl.isNotBlank()
+                            )) {
                             ShoppingItemFields(
                                 quantity = quantity.toDoubleOrNull(),
                                 unit = unit.takeIf { it.isNotBlank() },
                                 category = selectedCategory,
+                                brand = brand.takeIf { it.isNotBlank() },
+                                imageUrl = imageUrl.takeIf { it.isNotBlank() },
+                                productUrl = productUrl.takeIf { it.isNotBlank() },
                             )
                         } else null
                         val choreSchedule = if (listType == "home_chores" &&
@@ -1077,6 +1541,72 @@ private fun ItemBottomSheet(
             }
         }
     }
+
+    if (showPicker) {
+        TemplatePickerSheet(
+            listType = listType,
+            taskTemplates = taskTemplates,
+            frequentItems = frequentItems,
+            favoriteItems = favoriteItems,
+            onPickTemplate = { template ->
+                pickerScope.launch {
+                    onResolveTaskTemplate(template.id)?.let { detail ->
+                        title = detail.title
+                        detail.note?.takeIf { it.isNotBlank() }?.let { note = it }
+                        detail.priority?.let { priority = it }
+                        detail.shoppingDetails?.let { sd ->
+                            sd.quantity?.let {
+                                quantity = if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+                            }
+                            sd.unit?.let { unit = it }
+                            sd.category?.let { selectedCategory = it }
+                            sd.brand?.takeIf { it.isNotBlank() }?.let { brand = it }
+                            sd.imageUrl?.takeIf { it.isNotBlank() }?.let { imageUrl = it }
+                            sd.productUrl?.takeIf { it.isNotBlank() }?.let { productUrl = it }
+                            if (sd.brand != null || sd.imageUrl != null || sd.productUrl != null) {
+                                detailsSectionExpanded = true
+                            }
+                        }
+                        detail.choreSchedule?.let { ch ->
+                            ch.intervalDays?.let { intervalDays = it.toString() }
+                            ch.daysOfWeek?.takeIf { it.isNotEmpty() }?.let { selectedDays = it }
+                            ch.startDate?.takeIf { it.isNotBlank() }?.let { startDate = it }
+                            ch.endDate?.takeIf { it.isNotBlank() }?.let { endDate = it }
+                            ch.category?.let { selectedZone = it }
+                        }
+                    }
+                }
+                showPicker = false
+            },
+            onPickItem = { picked ->
+                title = picked.title
+                picked.note?.takeIf { it.isNotBlank() }?.let { note = it }
+                picked.priority?.let { priority = it }
+                picked.shopping?.let { sh ->
+                    sh.quantity?.let {
+                        quantity = if (it % 1 == 0.0) it.toLong().toString() else it.toString()
+                    }
+                    sh.unit?.let { unit = it }
+                    sh.category?.let { selectedCategory = it }
+                    sh.brand?.takeIf { it.isNotBlank() }?.let { brand = it }
+                    sh.imageUrl?.takeIf { it.isNotBlank() }?.let { imageUrl = it }
+                    sh.productUrl?.takeIf { it.isNotBlank() }?.let { productUrl = it }
+                    if (sh.brand != null || sh.imageUrl != null || sh.productUrl != null) {
+                        detailsSectionExpanded = true
+                    }
+                }
+                picked.choreSchedule?.let { ch ->
+                    ch.intervalDays?.let { intervalDays = it.toString() }
+                    ch.daysOfWeek?.takeIf { it.isNotEmpty() }?.let { selectedDays = it }
+                    ch.startDate?.takeIf { it.isNotBlank() }?.let { startDate = it }
+                    ch.endDate?.takeIf { it.isNotBlank() }?.let { endDate = it }
+                    ch.category?.let { selectedZone = it }
+                }
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
+        )
+    }
 }
 
 @Composable
@@ -1089,4 +1619,144 @@ private fun SheetFieldLabel(text: String) {
         letterSpacing = 0.3.sp,
         modifier = Modifier.padding(bottom = 6.dp),
     )
+}
+
+internal fun ShoppingItemFields.hasShoppingDetails(): Boolean =
+    !brand.isNullOrBlank() || !productUrl.isNullOrBlank() || !imageUrl.isNullOrBlank()
+
+@Composable
+private fun ProductImagePreview(url: String) {
+    coil3.compose.AsyncImage(
+        model = url,
+        contentDescription = null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShoppingDetailsSheet(
+    item: TodoItem,
+    listColor: Color,
+    onEdit: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
+    val s = item.shopping
+
+    val close: () -> Unit = {
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+        ) {
+            Text(
+                text = item.title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            val qtyMeta = s?.let { sf ->
+                val qty = sf.quantity?.let { q -> if (q % 1 == 0.0) q.toLong().toString() else q.toString() }
+                listOfNotNull(
+                    qty?.let { "$it ${sf.unit ?: ""}".trim() },
+                    sf.category,
+                ).joinToString(" · ")
+            }.orEmpty()
+            if (qtyMeta.isNotBlank()) {
+                Text(qtyMeta, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+
+            // Image
+            s?.imageUrl?.takeIf { it.startsWith("http", ignoreCase = true) }?.let { url ->
+                ProductImagePreview(url = url)
+                Spacer(Modifier.height(SweetHomeSpacing.md))
+            }
+
+            // Brand
+            s?.brand?.takeIf { it.isNotBlank() }?.let {
+                DetailsRow(emoji = "🏷", label = "Бренд", value = it)
+            }
+
+            // Product URL — clickable
+            s?.productUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                val isClickable = url.startsWith("http", ignoreCase = true)
+                Surface(
+                    onClick = { if (isClickable) uriHandler.openUri(url) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("🌐", fontSize = 16.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Ссылка на товар", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                url,
+                                fontSize = 13.sp,
+                                color = if (isClickable) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (isClickable) Text("→", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+            Surface(
+                onClick = { onEdit(); close() },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = listColor,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        "✎  Редактировать",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+            Spacer(Modifier.height(SweetHomeSpacing.md))
+        }
+    }
+}
+
+@Composable
+private fun DetailsRow(emoji: String, label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(emoji, fontSize = 16.sp)
+        Spacer(Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(value, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
 }

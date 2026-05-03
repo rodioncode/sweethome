@@ -1,6 +1,7 @@
 package com.jetbrains.kmpapp.screens.templates
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,365 +18,340 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
+import com.jetbrains.kmpapp.data.templates.ListTemplate
+import com.jetbrains.kmpapp.data.templates.TemplateVisibility
+import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.listColorForType
+import com.jetbrains.kmpapp.ui.listEmojiForType
 import org.koin.compose.viewmodel.koinViewModel
 
-// Popular template card data for the 2-col grid (static, matching Figma)
-private data class PopularTemplate(
-    val emoji: String,
-    val title: String,
-    val subtitle: String,
-    val taskCount: Int,
-    val bgColor: Color,
-)
+private data class ScopeFilter(val key: String?, val emoji: String, val label: String)
 
-private val popularTemplates = listOf(
-    PopularTemplate("🛒", "Список покупок", "Продукты по категориям", 12, Color(0xFFE8F5E9)),
-    PopularTemplate("🧹", "Уборка дома", "Уборка по комнатам", 8, Color(0xFFFFF8E1)),
-    PopularTemplate("🧳", "Чемодан", "Вещи для отпуска", 20, Color(0xFFE3F2FD)),
-    PopularTemplate("🎂", "День рождения", "Организация праздника", 15, Color(0xFFFCE4EC)),
-)
-
-private data class TemplateCategory(
-    val emoji: String,
-    val title: String,
-    val count: Int,
-)
-
-private val allCategories = listOf(
-    TemplateCategory("🏠", "Дом и быт", 14),
-    TemplateCategory("✈️", "Путешествия", 8),
-    TemplateCategory("📚", "Учёба", 6),
-    TemplateCategory("🎉", "Праздники", 4),
-)
-
-private val filterChips = listOf(
-    "🏠 Дом",
-    "✈️ Путешествия",
-    "📚 Учёба",
+private val scopeFilters = listOf(
+    ScopeFilter(null, "📚", "Все"),
+    ScopeFilter("shopping", "🛒", "Покупки"),
+    ScopeFilter("home_chores", "🏠", "Дом"),
+    ScopeFilter("general_todos", "✅", "Задачи"),
+    ScopeFilter("travel", "✈️", "Путешествия"),
+    ScopeFilter("study", "📖", "Учёба"),
 )
 
 @Composable
-fun TemplatesContent(
-    contentPadding: PaddingValues = PaddingValues(),
+fun TemplatesScreen(
+    contentPadding: PaddingValues,
+    navigateToTemplateDetail: (id: String, title: String, scope: String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<TemplatesViewModel>()
+    val tab by viewModel.tab.collectAsStateWithLifecycle()
+    val scope by viewModel.scope.collectAsStateWithLifecycle()
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedChip by remember { mutableStateOf<Int?>(0) } // default first selected
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding),
+            .padding(contentPadding)
+            .padding(top = SweetHomeSpacing.sm),
     ) {
+        Text(
+            "Шаблоны",
+            fontSize = 22.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+        )
+        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        TemplatesTabsRow(selected = tab, onSelect = viewModel::setTab)
+        Spacer(Modifier.height(SweetHomeSpacing.xs))
+        ScopeFiltersRow(selected = scope, onSelect = viewModel::setScope)
+        Spacer(Modifier.height(SweetHomeSpacing.sm))
+
         if (isLoading && templates.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                CircularProgressIndicator()
             }
-            return@Column
-        }
-
-        LazyColumn(
-            contentPadding = PaddingValues(bottom = 24.dp),
-        ) {
-            // Search bar
-            item {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholder = { Text("Поиск шаблонов...") },
-                    singleLine = true,
-                    leadingIcon = { Text("🔍", fontSize = 16.sp) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    shape = RoundedCornerShape(12.dp),
-                )
-            }
-
-            // Category filter chips
-            item {
-                LazyRow(
-                    contentPadding = PaddingValues(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    items(filterChips.size) { index ->
-                        FilterChip(
-                            selected = selectedChip == index,
-                            onClick = { selectedChip = if (selectedChip == index) null else index },
-                            label = { Text(filterChips[index]) },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White,
-                            ),
-                        )
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-
-            // Popular templates section
-            item {
-                Text(
-                    text = "Популярные шаблоны",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-                Spacer(Modifier.height(8.dp))
-            }
-
-            // 2-column grid of popular templates
-            item {
-                Column(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    for (row in popularTemplates.chunked(2)) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            for (template in row) {
-                                PopularTemplateCard(
-                                    template = template,
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            // Fill remaining space if odd number
-                            if (row.size == 1) {
-                                Spacer(Modifier.weight(1f))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // All categories section
-            item {
-                Spacer(Modifier.height(24.dp))
-                Text(
-                    text = "Все категории",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-
-            items(allCategories) { category ->
-                Surface(
-                    onClick = {},
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    shadowElevation = 1.dp,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp, 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(14.dp)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text(text = category.emoji, fontSize = 24.sp)
-                        }
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = category.title,
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Text(
-                                text = "${category.count} шаблонов",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = MaterialTheme.colorScheme.primary,
-                        ) {
-                            Text(
-                                "Открыть",
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Dynamic templates from API (if loaded)
-            if (templates.isNotEmpty()) {
-                item {
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        text = "Шаблоны дел по дому",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                }
-                items(templates, key = { it.id }) { template ->
-                    ChoreTemplateCard(
-                        template = template,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun PopularTemplateCard(
-    template: PopularTemplate,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = template.bgColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        shape = RoundedCornerShape(16.dp),
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-        ) {
-            Text(text = template.emoji, fontSize = 28.sp)
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = template.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                text = template.subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(8.dp))
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White.copy(alpha = 0.7f),
+        } else if (templates.isEmpty()) {
+            EmptyState(tab = tab, scope = scope)
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    horizontal = SweetHomeSpacing.lg,
+                    vertical = SweetHomeSpacing.xs,
+                ),
+                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
             ) {
-                Text(
-                    text = "${template.taskCount} задач",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                )
+                items(templates, key = { it.id }) { template ->
+                    TemplateCard(
+                        template = template,
+                        onClick = {
+                            navigateToTemplateDetail(template.id, template.title, template.scope)
+                        },
+                        onToggleFavorite = { viewModel.toggleFavorite(template) },
+                    )
+                }
+                item { Spacer(Modifier.height(SweetHomeSpacing.xxl)) }
             }
         }
     }
 }
 
 @Composable
-private fun ChoreTemplateCard(
-    template: ChoreTemplate,
+private fun TemplatesTabsRow(
+    selected: TemplatesTab,
+    onSelect: (TemplatesTab) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SweetHomeSpacing.lg),
+        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+    ) {
+        TemplatesTab.entries.forEach { t ->
+            TabPill(
+                label = when (t) {
+                    TemplatesTab.PUBLIC -> "Публичные"
+                    TemplatesTab.MINE -> "Мои"
+                    TemplatesTab.FAVORITES -> "Избранное"
+                },
+                selected = selected == t,
+                onClick = { onSelect(t) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TabPill(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = SweetHomeShapes.Chip,
+        color = if (selected) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Box(
+            modifier = Modifier.padding(vertical = SweetHomeSpacing.xs),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScopeFiltersRow(
+    selected: String?,
+    onSelect: (String?) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = SweetHomeSpacing.lg),
+        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+    ) {
+        items(scopeFilters, key = { it.key ?: "__all__" }) { filter ->
+            val isSelected = selected == filter.key
+            Surface(
+                onClick = { onSelect(filter.key) },
+                shape = SweetHomeShapes.Chip,
+                color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surface,
+                border = if (isSelected) null
+                else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = SweetHomeSpacing.xxs),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(filter.emoji, fontSize = 13.sp)
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = filter.label,
+                        fontSize = 12.sp,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                        color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurface,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TemplateCard(
+    template: ListTemplate,
+    onClick: () -> Unit,
+    onToggleFavorite: () -> Unit,
+) {
+    val accent = listColorForType(template.scope, isDark = false)
+    val emoji = listEmojiForType(template.scope)
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = SweetHomeShapes.Card,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 1.dp,
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SweetHomeSpacing.md),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer,
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = categoryEmoji(template.category), fontSize = 18.sp)
-                }
+                Text(emoji, fontSize = 22.sp)
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = template.title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                )
-                if (!template.description.isNullOrBlank()) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = template.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = template.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Spacer(Modifier.width(SweetHomeSpacing.xs))
+                    visibilityBadge(template)?.let { badge ->
+                        VisibilityChip(label = badge.first, color = badge.second)
+                    }
+                }
+                template.description?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        text = it,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                if (template.category.isNotBlank()) {
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = "· ${template.category}",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     )
                 }
             }
+            Spacer(Modifier.width(SweetHomeSpacing.xs))
             Surface(
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                onClick = onToggleFavorite,
+                shape = CircleShape,
+                color = Color.Transparent,
+                modifier = Modifier.size(36.dp),
             ) {
-                Text(
-                    text = intervalLabel(template.intervalDays),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (template.isFavorite) "★" else "☆",
+                        fontSize = 20.sp,
+                        color = if (template.isFavorite) Color(0xFFFFA726)
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         }
     }
 }
 
-private fun categoryEmoji(category: String) = when (category) {
-    "kitchen" -> "🍳"
-    "bathroom" -> "🚿"
-    "living_room" -> "🛋"
-    "bedroom" -> "🛏"
-    "outdoor" -> "🌿"
-    "laundry" -> "👕"
-    "shopping" -> "🛒"
-    else -> "🏠"
+@Composable
+private fun VisibilityChip(label: String, color: Color) {
+    Surface(shape = SweetHomeShapes.Chip, color = color.copy(alpha = 0.14f)) {
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xs, vertical = 2.dp),
+        )
+    }
 }
 
-private fun intervalLabel(days: Int) = when (days) {
-    1 -> "Ежедневно"
-    7 -> "Еженедельно"
-    14 -> "2 нед."
-    30 -> "Ежемесячно"
-    else -> "${days}д."
+private fun visibilityBadge(t: ListTemplate): Pair<String, Color>? = when {
+    t.visibility == TemplateVisibility.PENDING -> "⏳ Pending" to Color(0xFFFFA726)
+    t.userId != null && !t.isSystem && t.visibility == TemplateVisibility.PRIVATE ->
+        "✦ Моё" to Color(0xFF5B7C5A)
+    t.isSystem -> "Системный" to Color(0xFF7A7A7A)
+    else -> null
+}
+
+@Composable
+private fun EmptyState(tab: TemplatesTab, scope: String?) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(SweetHomeSpacing.xxl),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = when (tab) {
+                TemplatesTab.PUBLIC -> "📚"
+                TemplatesTab.MINE -> "✦"
+                TemplatesTab.FAVORITES -> "★"
+            },
+            fontSize = 40.sp,
+        )
+        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Text(
+            text = when (tab) {
+                TemplatesTab.PUBLIC -> if (scope != null) "Нет публичных шаблонов в этой категории"
+                else "Публичных шаблонов пока нет"
+                TemplatesTab.MINE -> "Вы ещё не создавали шаблоны"
+                TemplatesTab.FAVORITES -> "Нет избранных шаблонов"
+            },
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(SweetHomeSpacing.xs))
+        Text(
+            text = when (tab) {
+                TemplatesTab.MINE -> "Откройте список → меню → «Сохранить как шаблон»"
+                else -> "Зайдите позже или создайте свой"
+            },
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
 }

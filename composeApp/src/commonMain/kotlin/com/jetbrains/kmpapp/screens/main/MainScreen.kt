@@ -202,6 +202,7 @@ fun MainScreen(
                 onNavigateToHome = { selectedTab = MainTab.HOME },
                 onNavigateToGroups = { selectedTab = MainTab.GROUPS },
                 navigateToProfile = navigateToProfile,
+                navigateToGoals = navigateToGoals,
             )
             MainTab.HOME -> FamilyContent(
                 contentPadding = paddingValues,

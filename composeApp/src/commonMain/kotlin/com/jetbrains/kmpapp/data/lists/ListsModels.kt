@@ -50,6 +50,9 @@ data class ShoppingItemFields(
     val quantity: Double? = null,
     val unit: String? = null,
     val category: String? = null,
+    val brand: String? = null,
+    val productUrl: String? = null,
+    val imageUrl: String? = null,
 )
 
 @Serializable
