@@ -41,6 +41,31 @@ actual fun createTokenStorage(platformContext: Any?): TokenStorage = IosKeychain
 @Suppress("UNCHECKED_CAST")
 private class IosKeychainTokenStorage : TokenStorage {
 
+    // In-memory cache populated on first read and on every save.
+    // Keychain writes can fail silently on some device/entitlement configs,
+    // and a missed write would leave the session unauthenticated for the rest
+    // of the run. The cache guarantees the current run works even if Keychain
+    // is unhealthy; persistence across launches still relies on Keychain.
+    private val cache = mutableMapOf<String, String?>()
+
+    private fun cachedRead(account: String): String? {
+        cache[account]?.let { return it }
+        if (cache.containsKey(account)) return null
+        val value = keychainRead(account)
+        cache[account] = value
+        return value
+    }
+
+    private fun cachedWrite(account: String, value: String) {
+        cache[account] = value
+        keychainSave(account, value)
+    }
+
+    private fun cachedDelete(account: String) {
+        cache[account] = null
+        keychainDelete(account)
+    }
+
     private fun CFStringRef?.ns(): NSString? =
         this?.let { interpretObjCPointerOrNull<NSString>(it.rawValue) }
 
@@ -107,30 +132,30 @@ private class IosKeychainTokenStorage : TokenStorage {
         } catch (_: Throwable) {}
     }
 
-    override fun getAccessToken() = keychainRead(KEY_ACCESS)
-    override fun getRefreshToken() = keychainRead(KEY_REFRESH)
-    override fun getUserId() = keychainRead(KEY_USER_ID)
-    override fun getIsGuest() = keychainRead(KEY_IS_GUEST)?.let { it == "true" }
+    override fun getAccessToken() = cachedRead(KEY_ACCESS)
+    override fun getRefreshToken() = cachedRead(KEY_REFRESH)
+    override fun getUserId() = cachedRead(KEY_USER_ID)
+    override fun getIsGuest() = cachedRead(KEY_IS_GUEST)?.let { it == "true" }
 
     override fun saveTokens(tokens: AuthTokens, isGuest: Boolean) {
-        keychainSave(KEY_ACCESS, tokens.accessToken)
-        keychainSave(KEY_REFRESH, tokens.refreshToken)
-        tokens.userId?.let { keychainSave(KEY_USER_ID, it) }
-        keychainSave(KEY_IS_GUEST, if (isGuest) "true" else "false")
+        cachedWrite(KEY_ACCESS, tokens.accessToken)
+        cachedWrite(KEY_REFRESH, tokens.refreshToken)
+        tokens.userId?.let { cachedWrite(KEY_USER_ID, it) }
+        cachedWrite(KEY_IS_GUEST, if (isGuest) "true" else "false")
     }
 
     override fun clear() {
-        keychainDelete(KEY_ACCESS)
-        keychainDelete(KEY_REFRESH)
-        keychainDelete(KEY_USER_ID)
-        keychainDelete(KEY_IS_GUEST)
+        cachedDelete(KEY_ACCESS)
+        cachedDelete(KEY_REFRESH)
+        cachedDelete(KEY_USER_ID)
+        cachedDelete(KEY_IS_GUEST)
     }
 
-    override fun getSyncTimestamp() = keychainRead(KEY_SYNC_TS)
-    override fun saveSyncTimestamp(timestamp: String) = keychainSave(KEY_SYNC_TS, timestamp)
+    override fun getSyncTimestamp() = cachedRead(KEY_SYNC_TS)
+    override fun saveSyncTimestamp(timestamp: String) = cachedWrite(KEY_SYNC_TS, timestamp)
 
-    override fun getRegisteredPushToken() = keychainRead(KEY_PUSH_TOKEN)
-    override fun saveRegisteredPushToken(token: String) = keychainSave(KEY_PUSH_TOKEN, token)
+    override fun getRegisteredPushToken() = cachedRead(KEY_PUSH_TOKEN)
+    override fun saveRegisteredPushToken(token: String) = cachedWrite(KEY_PUSH_TOKEN, token)
 
     companion object {
         private const val SERVICE = "com.sweethome.app"
