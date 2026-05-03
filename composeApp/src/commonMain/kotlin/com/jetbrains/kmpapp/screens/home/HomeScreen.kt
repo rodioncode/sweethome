@@ -28,12 +28,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.ui.PriorityHigh
+import com.jetbrains.kmpapp.ui.PriorityLow
+import com.jetbrains.kmpapp.ui.PriorityMedium
 import com.jetbrains.kmpapp.ui.SweetHomeShapes
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import com.jetbrains.kmpapp.ui.listColorForType
@@ -53,12 +57,15 @@ fun HomeContent(
     onNavigateToHome: () -> Unit,
     onNavigateToGroups: () -> Unit,
     navigateToProfile: () -> Unit,
+    navigateToGoals: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
     val userId by viewModel.userId.collectAsStateWithLifecycle()
     val displayName by viewModel.displayName.collectAsStateWithLifecycle()
     val recentLists by viewModel.recentLists.collectAsStateWithLifecycle()
+    val context by viewModel.context.collectAsStateWithLifecycle()
+    val todayTasks by viewModel.todayTasks.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier
@@ -119,6 +126,15 @@ fun HomeContent(
             }
         }
 
+        // --- Context pill: Личное / Работа ---
+        item {
+            ContextPill(
+                selected = context,
+                onSelect = viewModel::setContext,
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+            )
+        }
+
         // --- Notification banner ---
         item {
             Surface(
@@ -142,7 +158,7 @@ fun HomeContent(
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
-                        text = "\uD83C\uDFE0 Семья Ивановых: 3 новых задачи",
+                        text = "🏠 Семья Ивановых: 3 новых задачи",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
@@ -165,7 +181,7 @@ fun HomeContent(
                     horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
                 ) {
                     QuickActionCard(
-                        emoji = "\uD83D\uDCDD",
+                        emoji = "📝",
                         label = "Новый список",
                         backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
                         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -173,7 +189,7 @@ fun HomeContent(
                         modifier = Modifier.weight(1f),
                     )
                     QuickActionCard(
-                        emoji = "\uD83C\uDFE0",
+                        emoji = "🏠",
                         label = "Мой дом",
                         backgroundColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
@@ -181,7 +197,7 @@ fun HomeContent(
                         modifier = Modifier.weight(1f),
                     )
                     QuickActionCard(
-                        emoji = "\uD83D\uDC65",
+                        emoji = "👥",
                         label = "Группа",
                         backgroundColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -190,6 +206,41 @@ fun HomeContent(
                     )
                 }
             }
+        }
+
+        // --- "Сегодня" section ---
+        item {
+            Text(
+                text = "Сегодня",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+            )
+        }
+        if (todayTasks.isEmpty()) {
+            item {
+                TodayEmptyState(
+                    context = context,
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                )
+            }
+        } else {
+            items(todayTasks, key = { it.id }) { task ->
+                TodayTaskCard(
+                    task = task,
+                    onClick = { navigateToListDetail(task.listId) },
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                )
+            }
+        }
+
+        // --- Goals widget (placeholder) ---
+        item {
+            GoalsWidgetPlaceholder(
+                onClick = navigateToGoals,
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+            )
         }
 
         // --- Recent lists header ---
@@ -208,7 +259,7 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "Все \u2192",
+                    text = "Все →",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
@@ -275,6 +326,241 @@ fun HomeContent(
 }
 
 @Composable
+private fun ContextPill(
+    selected: DashboardContext,
+    onSelect: (DashboardContext) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = SweetHomeShapes.Chip,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+    ) {
+        Row(
+            modifier = Modifier.padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            ContextPillSegment(
+                label = "Личное",
+                emoji = "🏠",
+                selected = selected == DashboardContext.PERSONAL,
+                onClick = { onSelect(DashboardContext.PERSONAL) },
+            )
+            ContextPillSegment(
+                label = "Работа",
+                emoji = "💼",
+                selected = selected == DashboardContext.WORK,
+                onClick = { onSelect(DashboardContext.WORK) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun ContextPillSegment(
+    label: String,
+    emoji: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = SweetHomeShapes.Chip,
+        color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.xs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(text = emoji, fontSize = 14.sp)
+            Spacer(Modifier.width(SweetHomeSpacing.xxs))
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TodayTaskCard(
+    task: TodayTaskUi,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isDark = isSystemInDarkTheme()
+    val accent = task.listColorHex?.toComposeColor() ?: listColorForType(task.listType, isDark)
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = SweetHomeShapes.Card,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // List icon badge
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(accent.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = task.listIcon, fontSize = 18.sp)
+            }
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    priorityDot(task.priority)?.let { dotColor ->
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(dotColor),
+                        )
+                        Spacer(Modifier.width(SweetHomeSpacing.xxs))
+                    }
+                    Text(
+                        text = task.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = task.listTitle,
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            DueBadge(label = task.dueLabel, isOverdue = task.isOverdue)
+        }
+    }
+}
+
+@Composable
+private fun DueBadge(label: String, isOverdue: Boolean) {
+    val bg = if (isOverdue) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
+    Surface(
+        shape = SweetHomeShapes.Chip,
+        color = bg,
+    ) {
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            color = fg,
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xs, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun TodayEmptyState(
+    context: DashboardContext,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = SweetHomeShapes.Card,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SweetHomeSpacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(text = "🎉", fontSize = 28.sp)
+            Spacer(Modifier.height(SweetHomeSpacing.xs))
+            Text(
+                text = "На сегодня всё чисто",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(SweetHomeSpacing.xxs))
+            Text(
+                text = when (context) {
+                    DashboardContext.PERSONAL -> "Нет задач с дедлайном на сегодня в личном пространстве"
+                    DashboardContext.WORK -> "Нет рабочих задач с дедлайном на сегодня"
+                },
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun GoalsWidgetPlaceholder(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = SweetHomeShapes.Card,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SweetHomeSpacing.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "🎯", fontSize = 22.sp)
+            }
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "Цели",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "Поставьте цель и отслеживайте прогресс",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                )
+            }
+            Text(
+                text = "→",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+    }
+}
+
+@Composable
 private fun QuickActionCard(
     emoji: String,
     label: String,
@@ -310,6 +596,13 @@ private fun QuickActionCard(
     }
 }
 
+private fun priorityDot(priority: String?): Color? = when (priority) {
+    "high" -> PriorityHigh
+    "medium" -> PriorityMedium
+    "low" -> PriorityLow
+    else -> null
+}
+
 private fun greeting(): String {
     val hour = try {
         Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
@@ -317,9 +610,9 @@ private fun greeting(): String {
         12
     }
     return when {
-        hour < 6 -> "Доброй ночи \uD83C\uDF19"
-        hour < 12 -> "Доброе утро \u2600\uFE0F"
-        hour < 18 -> "Добрый день \uD83D\uDC4B"
-        else -> "Добрый вечер \uD83C\uDF06"
+        hour < 6 -> "Доброй ночи 🌙"
+        hour < 12 -> "Доброе утро ☀️"
+        hour < 18 -> "Добрый день 👋"
+        else -> "Добрый вечер 🌆"
     }
 }
