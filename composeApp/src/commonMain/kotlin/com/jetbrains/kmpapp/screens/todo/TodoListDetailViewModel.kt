@@ -2,10 +2,13 @@ package com.jetbrains.kmpapp.screens.todo
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jetbrains.kmpapp.auth.AuthRepository
+import com.jetbrains.kmpapp.auth.AuthState
 import com.jetbrains.kmpapp.data.categories.CategoriesRepository
 import com.jetbrains.kmpapp.data.categories.Category
 import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
+import com.jetbrains.kmpapp.data.groups.WorkspaceType
 import com.jetbrains.kmpapp.data.lists.ChoreSchedule
 import com.jetbrains.kmpapp.data.lists.ListsRepository
 import com.jetbrains.kmpapp.data.lists.ShoppingItemFields
@@ -25,6 +28,7 @@ class TodoListDetailViewModel(
     private val categoriesRepository: CategoriesRepository,
     private val suggestionsRepository: SuggestionsRepository,
     private val groupsRepository: GroupsRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     val listWithItems: StateFlow<Pair<TodoList, List<TodoItem>>?> =
@@ -37,12 +41,29 @@ class TodoListDetailViewModel(
 
     val groupMembers: StateFlow<List<GroupMember>> = groupsRepository.members
 
+    val currentUserId: StateFlow<String?> = authRepository.authState
+        .map { (it as? AuthState.Authenticated)?.userId }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
+    /** Список считается «групповым», если он принадлежит workspace типа != personal. */
+    val isGroupList: StateFlow<Boolean> = combine(
+        listsRepository.currentListWithItems,
+        groupsRepository.groups,
+    ) { lwi, groups ->
+        val ws = lwi?.first?.workspaceId?.let { id -> groups.firstOrNull { it.id == id } }
+        ws != null && ws.type != WorkspaceType.PERSONAL
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     val categories: StateFlow<List<Category>> = categoriesRepository.categories
     val choreTemplates: StateFlow<List<ChoreTemplate>> = suggestionsRepository.choreTemplates
     val frequentItems: StateFlow<List<TodoItem>> = suggestionsRepository.frequentItems
 
     fun loadList(listId: String) {
         viewModelScope.launch {
+            // Подтянуть список workspaces, чтобы isGroupList корректно вычислился сразу.
+            if (groupsRepository.groups.value.isEmpty()) {
+                launch { groupsRepository.loadGroups() }
+            }
             listsRepository.loadListWithItems(listId)
             listsRepository.currentListWithItems.value?.first?.let { list ->
                 when (list.type) {
@@ -55,7 +76,22 @@ class TodoListDetailViewModel(
                         launch { suggestionsRepository.loadChoreTemplates() }
                     }
                 }
+                // Подгрузить участников workspace, если это групповой список (нужно для AssigneeChip).
+                val ws = groupsRepository.groups.value.firstOrNull { it.id == list.workspaceId }
+                if (ws != null && ws.type != WorkspaceType.PERSONAL) {
+                    launch { groupsRepository.loadWorkspaceMembers(list.workspaceId) }
+                }
             }
+        }
+    }
+
+    /**
+     * Назначает/снимает исполнителя для задачи.
+     * @param userId id участника или null, чтобы снять назначение (передаётся как "" по контракту API).
+     */
+    fun setAssignee(item: TodoItem, userId: String?) {
+        viewModelScope.launch {
+            listsRepository.updateItem(itemId = item.id, assignedTo = userId ?: "")
         }
     }
 

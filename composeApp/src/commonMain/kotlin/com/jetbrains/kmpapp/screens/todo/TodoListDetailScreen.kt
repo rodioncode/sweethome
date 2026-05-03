@@ -112,9 +112,12 @@ fun TodoListDetailScreen(
     val frequentItems by viewModel.frequentItems.collectAsStateWithLifecycle()
     val memberNames by viewModel.memberNames.collectAsStateWithLifecycle()
     val groupMembers by viewModel.groupMembers.collectAsStateWithLifecycle()
+    val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val isGroupListFlag by viewModel.isGroupList.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var showAddSheet by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<TodoItem?>(null) }
+    var assigneePickerFor by remember { mutableStateOf<TodoItem?>(null) }
     var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(listId) { viewModel.loadList(listId) }
@@ -127,7 +130,8 @@ fun TodoListDetailScreen(
 
     val list = listWithItems?.first
     val listType = list?.type ?: "general_todos"
-    val isGroupList = groupMembers.isNotEmpty()
+    // Для гейтинга UI назначения используем оба сигнала: workspace-тип и факт загруженности участников.
+    val isGroupList = isGroupListFlag || groupMembers.isNotEmpty()
     val listColor = list?.color?.toComposeColor() ?: listColorForType(listType, isSystemInDarkTheme())
     val listIcon = list?.icon ?: listEmojiForType(listType)
     val categoryScope = when (listType) {
@@ -346,6 +350,12 @@ fun TodoListDetailScreen(
                         onDelete = { viewModel.deleteItem(item) },
                         onEdit = { editingItem = item },
                         memberNames = memberNames,
+                        isGroupList = isGroupList,
+                        currentUserId = currentUserId,
+                        onQuickAssignSelf = {
+                            currentUserId?.let { viewModel.setAssignee(item, it) }
+                        },
+                        onPickAssignee = { assigneePickerFor = item },
                     )
                 }
 
@@ -398,6 +408,16 @@ fun TodoListDetailScreen(
             onCreateCategory = { name ->
                 categoryScope?.let { viewModel.createCategory(it, name) }
             },
+        )
+    }
+
+    assigneePickerFor?.let { item ->
+        AssigneePickerSheet(
+            members = groupMembers,
+            currentAssigneeId = item.assignedTo?.takeIf { it.isNotBlank() },
+            currentUserId = currentUserId,
+            onPick = { picked -> viewModel.setAssignee(item, picked) },
+            onDismiss = { assigneePickerFor = null },
         )
     }
 
@@ -481,6 +501,10 @@ private fun TodoItemRow(
     onDelete: () -> Unit,
     onEdit: () -> Unit,
     memberNames: Map<String, String> = emptyMap(),
+    isGroupList: Boolean = false,
+    currentUserId: String? = null,
+    onQuickAssignSelf: () -> Unit = {},
+    onPickAssignee: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val today = remember { Clock.System.todayIn(TimeZone.currentSystemDefault()) }
@@ -553,10 +577,7 @@ private fun TodoItemRow(
                             val isOverdue = dueDate != null && !item.isDone && dueDate < today
                             add(if (isOverdue) "‼ до ${due.take(10)}" else "до ${due.take(10)}")
                         }
-                        item.assignedTo?.takeIf { it.isNotBlank() }?.let { userId ->
-                            val name = memberNames[userId] ?: userId.take(8)
-                            add("→ $name")
-                        }
+                        // assignedTo показывается отдельным AssigneeChip справа — в meta не дублируем.
                     }
                     if (metaParts.isNotEmpty()) {
                         Spacer(Modifier.height(3.dp))
@@ -579,6 +600,15 @@ private fun TodoItemRow(
                         modifier = Modifier.size(16.dp),
                     )
                 }
+                if (isGroupList && !item.isDone) {
+                    AssigneeChip(
+                        assignedTo = item.assignedTo?.takeIf { it.isNotBlank() },
+                        currentUserId = currentUserId,
+                        memberNames = memberNames,
+                        onQuickAssignSelf = onQuickAssignSelf,
+                        onPickAssignee = onPickAssignee,
+                    )
+                }
                 IconButton(
                     onClick = onDelete,
                     modifier = Modifier.size(32.dp),
@@ -593,6 +623,158 @@ private fun TodoItemRow(
             }
         }
     }
+}
+
+@Composable
+private fun AssigneeChip(
+    assignedTo: String?,
+    currentUserId: String?,
+    memberNames: Map<String, String>,
+    onQuickAssignSelf: () -> Unit,
+    onPickAssignee: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isMe = assignedTo != null && assignedTo == currentUserId
+    val isUnassigned = assignedTo == null
+    val (bg, fg) = when {
+        isUnassigned -> Color.Transparent to MaterialTheme.colorScheme.onSurfaceVariant
+        isMe -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val label = when {
+        isUnassigned -> "+"
+        isMe -> "Я"
+        else -> {
+            val name = memberNames[assignedTo] ?: assignedTo!!
+            name.firstOrNull()?.uppercase() ?: "?"
+        }
+    }
+    val onClick = if (isUnassigned) onQuickAssignSelf else onPickAssignee
+    Box(
+        modifier = modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(bg)
+            .border(
+                width = 1.dp,
+                color = if (isUnassigned) MaterialTheme.colorScheme.outline else Color.Transparent,
+                shape = CircleShape,
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontSize = if (isUnassigned) 16.sp else 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = fg,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AssigneePickerSheet(
+    members: List<GroupMember>,
+    currentAssigneeId: String?,
+    currentUserId: String?,
+    onPick: (userId: String?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val close: (String?) -> Unit = { picked ->
+        onPick(picked)
+        scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
+    }
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        ) {
+            Text(
+                "Назначить исполнителя",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp),
+            )
+            // Unassign option
+            AssigneePickerRow(
+                initial = "—",
+                title = "Не назначен",
+                subtitle = null,
+                selected = currentAssigneeId == null,
+                onClick = { close(null) },
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            members.forEach { member ->
+                val isMe = member.userId == currentUserId
+                val name = member.displayName?.takeIf { it.isNotBlank() } ?: member.userId.take(8)
+                AssigneePickerRow(
+                    initial = name.firstOrNull()?.uppercase() ?: "?",
+                    title = if (isMe) "$name (вы)" else name,
+                    subtitle = roleLabel(member.role),
+                    selected = currentAssigneeId == member.userId,
+                    onClick = { close(member.userId) },
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+@Composable
+private fun AssigneePickerRow(
+    initial: String,
+    title: String,
+    subtitle: String?,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surfaceVariant
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = initial,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            subtitle?.let {
+                Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        if (selected) {
+            Text("✓", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+private fun roleLabel(role: String): String = when (role) {
+    "owner" -> "Владелец"
+    "admin" -> "Админ"
+    "mentor" -> "Наставник"
+    else -> "Участник"
 }
 
 private val dayOptions = listOf(
