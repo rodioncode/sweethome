@@ -19,22 +19,33 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -51,6 +62,8 @@ fun ProfileContent(
     val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
+    val telegramStatus by viewModel.telegramStatus.collectAsStateWithLifecycle()
+    val telegramLinkState by viewModel.telegramLinkState.collectAsStateWithLifecycle()
     var showDeleteDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     Scaffold { paddingValues ->
@@ -231,7 +244,6 @@ fun ProfileContent(
                         SettingsItem("📋", "Шаблоны", navigateToTemplates),
                         SettingsItem("🔔", "Уведомления", navigateToSettings),
                         SettingsItem("📅", "Интеграция с календарём", navigateToSettings),
-                        SettingsItem("🤖", "Telegram-бот", navigateToSettings),
                         SettingsItem("🌙", "Тема", navigateToSettings),
                         SettingsItem("🌐", "Язык", navigateToSettings),
                     )
@@ -254,6 +266,19 @@ fun ProfileContent(
                     }
                 }
             }
+        }
+
+        // --- Telegram ---
+        item {
+            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            SectionLabel("TELEGRAM")
+        }
+        item {
+            TelegramSection(
+                status = telegramStatus,
+                onLink = { viewModel.startTelegramLink() },
+                onUnlink = { viewModel.unlinkTelegram() },
+            )
         }
 
         // --- My spaces ---
@@ -360,6 +385,28 @@ fun ProfileContent(
         }
         else -> Unit
     }
+
+    when (val ls = telegramLinkState) {
+        is ProfileViewModel.TelegramLinkState.Pending -> {
+            TelegramLinkSheet(
+                code = ls.code,
+                expiresAtIso = ls.expiresAt,
+                deeplink = ls.deeplink,
+                onCheckNow = { viewModel.checkLinkNow() },
+                onRetry = { viewModel.startTelegramLink() },
+                onDismiss = { viewModel.cancelTelegramLink() },
+            )
+        }
+        is ProfileViewModel.TelegramLinkState.Error -> {
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { viewModel.cancelTelegramLink() },
+                confirmButton = { androidx.compose.material3.TextButton(onClick = { viewModel.cancelTelegramLink() }) { Text("OK") } },
+                title = { Text("Не удалось") },
+                text = { Text(ls.message) },
+            )
+        }
+        else -> Unit
+    }
 }
 
 @Composable
@@ -450,4 +497,197 @@ private fun SpaceRow(
         Text(title, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text("$subtitle ›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+@Composable
+private fun TelegramSection(
+    status: com.jetbrains.kmpapp.data.telegram.TelegramLinkStatusResponse?,
+    onLink: () -> Unit,
+    onUnlink: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = SweetHomeSpacing.md),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    ) {
+        if (status?.linked == true) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("🤖", fontSize = 22.sp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        val name = status.telegramUsername?.let { "@$it" } ?: "Привязан"
+                        Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        val linkedAt = formatLinkedAt(status.linkedAt)
+                        if (linkedAt != null) {
+                            Text("привязан $linkedAt", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+                Surface(
+                    onClick = onUnlink,
+                    modifier = Modifier.align(Alignment.End),
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                ) {
+                    Text(
+                        "Отвязать",
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("🤖", fontSize = 22.sp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Telegram", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                    Text("Добавляйте задачи прямо из бота", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Surface(
+                    onClick = onLink,
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                ) {
+                    Text(
+                        "Привязать",
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun TelegramLinkSheet(
+    code: String,
+    expiresAtIso: String,
+    deeplink: String,
+    onCheckNow: () -> Unit,
+    onRetry: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val uriHandler = LocalUriHandler.current
+    val expiresAt = remember(expiresAtIso) { parseInstant(expiresAtIso) }
+    val secondsLeft by produceState(initialValue = computeSecondsLeft(expiresAt), key1 = expiresAt) {
+        while (true) {
+            value = computeSecondsLeft(expiresAt)
+            if (value <= 0L) break
+            delay(1_000)
+        }
+    }
+    val expired = secondsLeft <= 0L
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                "Привязка Telegram",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                formatCode(code),
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 6.sp,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Text(
+                if (expired) "Срок кода истёк" else "Действителен ещё ${formatTimer(secondsLeft)}",
+                fontSize = 13.sp,
+                color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Откройте бота — он сам подставит код. После этого вернитесь сюда.",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+            Surface(
+                onClick = {
+                    if (expired) onRetry() else uriHandler.openUri(deeplink)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.primary,
+            ) {
+                Text(
+                    if (expired) "Получить новый код" else "Открыть бота",
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    textAlign = TextAlign.Center,
+                )
+            }
+            if (!expired) {
+                Surface(
+                    onClick = onCheckNow,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                ) {
+                    Text(
+                        "Я уже привязал, проверить",
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun parseInstant(iso: String): Instant? = try {
+    Instant.parse(iso)
+} catch (_: Throwable) {
+    null
+}
+
+private fun computeSecondsLeft(expiresAt: Instant?): Long {
+    if (expiresAt == null) return 0L
+    val left = (expiresAt - Clock.System.now()).inWholeSeconds
+    return if (left < 0L) 0L else left
+}
+
+private fun formatTimer(secondsLeft: Long): String {
+    val minutes = secondsLeft / 60
+    val seconds = secondsLeft % 60
+    val mm = if (minutes < 10) "0$minutes" else minutes.toString()
+    val ss = if (seconds < 10) "0$seconds" else seconds.toString()
+    return "$mm:$ss"
+}
+
+private fun formatCode(code: String): String =
+    if (code.length == 6) "${code.substring(0, 3)} ${code.substring(3)}" else code
+
+private fun formatLinkedAt(iso: String?): String? {
+    val instant = iso?.let { parseInstant(it) } ?: return null
+    val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val day = if (dt.dayOfMonth < 10) "0${dt.dayOfMonth}" else dt.dayOfMonth.toString()
+    val month = dt.monthNumber.let { if (it < 10) "0$it" else it.toString() }
+    return "$day.$month.${dt.year}"
 }
