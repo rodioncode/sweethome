@@ -1,8 +1,6 @@
 package com.jetbrains.kmpapp.auth
 
-import kotlinx.cinterop.CValuesRef
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.cinterop.ObjCObjectVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.interpretCPointer
@@ -92,16 +90,14 @@ private class IosKeychainTokenStorage : TokenStorage {
             setObject(boolTrue, kSecReturnData.ns()!!)
             setObject(kSecMatchLimitOne.ns()!!, kSecMatchLimit.ns()!!)
         }
-        val result = alloc<ObjCObjectVar<Any?>>()
-        val status = SecItemCopyMatching(
-            query.toCFDict(),
-            result.ptr as CValuesRef<CFTypeRefVar>
-        )
+        val result = alloc<CFTypeRefVar>()
+        val status = SecItemCopyMatching(query.toCFDict(), result.ptr)
         if (status != errSecSuccess) return@memScoped null
-        val nsData = result.value as? NSData ?: run {
-            keychainDelete(account)
-            return@memScoped null
-        }
+        // Toll-free bridge CFData → NSData via raw ObjC pointer (same trick used for NSString/NSNumber above).
+        // Casting `result.value as? NSData` doesn't reliably bridge — yields null and previously triggered
+        // a destructive keychainDelete() that nuked the token, breaking auth on iOS after login.
+        val cfData = result.value ?: return@memScoped null
+        val nsData = interpretObjCPointerOrNull<NSData>(cfData.rawValue) ?: return@memScoped null
         NSString.create(nsData, NSUTF8StringEncoding)?.toString()
     }
 
