@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
+import com.jetbrains.kmpapp.data.goals.Goal
+import com.jetbrains.kmpapp.data.goals.GoalsApi
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.WorkspaceType
 import com.jetbrains.kmpapp.data.lists.ListsRepository
@@ -43,11 +45,23 @@ data class TodayTaskUi(
     val priority: String?,
 )
 
+/** UI-карточка ближайшей цели для виджета на Dashboard. */
+data class NearestGoalUi(
+    val id: String,
+    val workspaceId: String,
+    val title: String,
+    val deadlineLabel: String?,
+    val isOverdue: Boolean,
+    val totalSteps: Int,
+    val doneSteps: Int,
+)
+
 class HomeViewModel(
     private val authRepository: AuthRepository,
     private val listsRepository: ListsRepository,
     private val groupsRepository: GroupsRepository,
     private val profileApi: ProfileApi,
+    private val goalsApi: GoalsApi,
 ) : ViewModel() {
 
     val isGuest: StateFlow<Boolean> = authRepository.authState
@@ -127,6 +141,44 @@ class HomeViewModel(
             .toList()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /**
+     * Все активные цели (не isDone, не архив) по всем доступным workspaces.
+     * Кеш HomeVM локальный — не трогает GoalsRepository (которая управляется GoalsScreen).
+     */
+    private val _allGoals = MutableStateFlow<List<Goal>>(emptyList())
+
+    /** Ближайшая цель в текущем контексте. */
+    val nearestGoal: StateFlow<NearestGoalUi?> = combine(
+        _allGoals, contextWorkspaceIds,
+    ) { goals, ctxIds ->
+        val tz = TimeZone.currentSystemDefault()
+        val today = Clock.System.now().toLocalDateTime(tz).date
+        goals.asSequence()
+            .filter { !it.isDone && it.archivedAt == null }
+            .filter { ctxIds.isEmpty() || it.workspaceId in ctxIds }
+            .mapNotNull { goal ->
+                val deadlineDate = goal.deadline?.toLocalDateOrNull()
+                goal to deadlineDate
+            }
+            .sortedWith(
+                // Сначала с ближайшим дедлайном, потом без дедлайна (deadline = null уходит в конец).
+                compareBy(nullsLast()) { it.second },
+            )
+            .firstOrNull()
+            ?.let { (goal, deadlineDate) ->
+                val isOverdue = deadlineDate != null && deadlineDate < today
+                NearestGoalUi(
+                    id = goal.id,
+                    workspaceId = goal.workspaceId,
+                    title = goal.title,
+                    deadlineLabel = deadlineDate?.let { formatGoalDeadline(it, today) },
+                    isOverdue = isOverdue,
+                    totalSteps = goal.steps.size,
+                    doneSteps = goal.steps.count { it.isDone },
+                )
+            }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
+
     init {
         viewModelScope.launch {
             profileApi.getProfile().onSuccess { _displayName.value = it.displayName }
@@ -136,6 +188,13 @@ class HomeViewModel(
             if (groupsRepository.groups.value.isEmpty()) {
                 groupsRepository.loadGroups()
             }
+            // После загрузки workspaces — тянем цели по каждому параллельно, агрегируем локально.
+            val ids = groupsRepository.groups.value.filter { it.archivedAt == null }.map { it.id }
+            val collected = mutableListOf<Goal>()
+            ids.forEach { id ->
+                goalsApi.listGoals(id).onSuccess { collected += it }
+            }
+            _allGoals.value = collected
         }
         viewModelScope.launch {
             // Items для секции «Сегодня» агрегируются из локального кеша Room — заполним его, если пуст.
@@ -168,5 +227,23 @@ private fun formatDueLabel(due: Instant, today: LocalDate, tz: TimeZone): String
         daysLate == 1 -> "Вчера, $time"
         ldt.date == today -> "Сегодня, $time"
         else -> time
+    }
+}
+
+private fun String.toLocalDateOrNull(): LocalDate? = try {
+    LocalDate.parse(this.take(10))
+} catch (_: Throwable) {
+    null
+}
+
+private fun formatGoalDeadline(deadline: LocalDate, today: LocalDate): String {
+    val days = today.daysUntil(deadline)
+    return when {
+        days < 0 -> "Просрочено ${-days}д"
+        days == 0 -> "Сегодня"
+        days == 1 -> "Завтра"
+        days < 7 -> "Через ${days}д"
+        days < 30 -> "Через ${days / 7}нед"
+        else -> "До $deadline"
     }
 }

@@ -66,6 +66,7 @@ fun HomeContent(
     val recentLists by viewModel.recentLists.collectAsStateWithLifecycle()
     val context by viewModel.context.collectAsStateWithLifecycle()
     val todayTasks by viewModel.todayTasks.collectAsStateWithLifecycle()
+    val nearestGoal by viewModel.nearestGoal.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier
@@ -235,9 +236,10 @@ fun HomeContent(
             }
         }
 
-        // --- Goals widget (placeholder) ---
+        // --- Goals widget ---
         item {
-            GoalsWidgetPlaceholder(
+            GoalsWidget(
+                goal = nearestGoal,
                 onClick = navigateToGoals,
                 modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
             )
@@ -508,7 +510,8 @@ private fun TodayEmptyState(
 }
 
 @Composable
-private fun GoalsWidgetPlaceholder(
+private fun GoalsWidget(
+    goal: NearestGoalUi?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -520,42 +523,75 @@ private fun GoalsWidgetPlaceholder(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(SweetHomeSpacing.md),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = "🎯", fontSize = 22.sp)
-            }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(text = "🎯", fontSize = 22.sp)
+                }
+                Spacer(Modifier.width(SweetHomeSpacing.sm))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = if (goal == null) "Цели" else goal.title,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                        maxLines = 1,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        text = if (goal == null) {
+                            "Поставьте цель и отслеживайте прогресс"
+                        } else {
+                            buildString {
+                                goal.deadlineLabel?.let { append(it) }
+                                if (goal.totalSteps > 0) {
+                                    if (isNotEmpty()) append(" · ")
+                                    append("${goal.doneSteps}/${goal.totalSteps} шагов")
+                                }
+                                if (isEmpty()) append("Без дедлайна")
+                            }
+                        },
+                        fontSize = 12.sp,
+                        color = if (goal?.isOverdue == true) MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
+                    )
+                }
                 Text(
-                    text = "Цели",
-                    fontSize = 15.sp,
+                    text = "→",
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = "Поставьте цель и отслеживайте прогресс",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
-                )
             }
-            Text(
-                text = "→",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
+            // Прогресс-бар по шагам, если они есть
+            if (goal != null && goal.totalSteps > 0) {
+                Spacer(Modifier.height(SweetHomeSpacing.xs))
+                val progress = goal.doneSteps.toFloat() / goal.totalSteps.toFloat()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(SweetHomeShapes.Chip)
+                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(6.dp)
+                            .background(MaterialTheme.colorScheme.secondary),
+                    )
+                }
+            }
         }
     }
 }
