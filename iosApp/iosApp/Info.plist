@@ -31,13 +31,6 @@
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>7201737-sz00141.twc1.net</key>
-			<dict>
-				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
-				<key>NSIncludesSubdomains</key>
-				<false/>
-			</dict>
 			<key>localhost</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
