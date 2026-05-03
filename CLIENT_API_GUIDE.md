@@ -692,6 +692,63 @@ Soft delete: элемент помечается `deletedAt`, version инкре
 
 **UX:** показать как быстрый доступ или в строке поиска при добавлении.
 
+### 3.9. Telegram-привязка
+
+Привязка аккаунта SweetHome к Telegram-боту: пользователь получает 6-значный код в приложении, открывает deeplink на бота, бот сам подставляет код по `start`-параметру.
+
+#### POST /v1/telegram/link/start 🔒
+Сгенерировать одноразовый код и deeplink. Старый код инвалидируется.
+
+```
+← Request: пустое тело
+
+→ Response 200:
+{
+  "data": {
+    "code": "123456",
+    "expiresAt": "2026-05-03T15:30:00Z",
+    "deeplink": "https://t.me/sweethome_bot?start=123456"
+  },
+  "error": null
+}
+```
+
+#### GET /v1/telegram/link/status 🔒
+Текущее состояние привязки.
+
+```
+→ Response 200 (привязан):
+{
+  "data": {
+    "linked": true,
+    "telegramUserId": 12345678,
+    "telegramUsername": "ivan",
+    "linkedAt": "2026-05-03T15:32:11Z"
+  },
+  "error": null
+}
+
+→ Response 200 (не привязан):
+{
+  "data": { "linked": false },
+  "error": null
+}
+```
+
+#### DELETE /v1/telegram/link 🔒
+Отвязать Telegram-аккаунт. Бот теряет связь с пользователем SweetHome.
+
+```
+→ Response 200:
+{ "data": {}, "error": null }
+```
+
+**UX:**
+- В Профиле — секция «Telegram». Если не привязан — кнопка «Привязать», по тапу `POST /v1/telegram/link/start` и bottom sheet с кодом, обратным таймером до `expiresAt` и кнопкой «Открыть бота» (`UriHandler.openUri(deeplink)`).
+- Пока sheet открыт — polling `GET /v1/telegram/link/status` раз в 3 сек, плюс кнопка «Я уже привязал, проверить» для ручной проверки.
+- При `linked = true` — закрыть sheet, в секции показать `@username` + дату привязки + кнопку «Отвязать» (`DELETE /v1/telegram/link`).
+- При истечении `expiresAt` — таймер показывает «Срок истёк», кнопка переключается на «Получить новый код» (повторный `POST /start`).
+
 ---
 
 ## 4. Логика по типам списков

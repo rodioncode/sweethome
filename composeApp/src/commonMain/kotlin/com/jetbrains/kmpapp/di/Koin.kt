@@ -34,6 +34,8 @@ import com.jetbrains.kmpapp.data.chat.ChatApi
 import com.jetbrains.kmpapp.data.chat.KtorChatApi
 import com.jetbrains.kmpapp.data.devices.DeviceApi
 import com.jetbrains.kmpapp.data.devices.KtorDeviceApi
+import com.jetbrains.kmpapp.data.telegram.KtorTelegramApi
+import com.jetbrains.kmpapp.data.telegram.TelegramApi
 import com.jetbrains.kmpapp.data.attachments.AttachmentsApi
 import com.jetbrains.kmpapp.data.attachments.AttachmentsRepository
 import com.jetbrains.kmpapp.data.attachments.KtorAttachmentsApi
@@ -205,6 +207,7 @@ val dataModule = module {
     single<NotificationsApi> { KtorNotificationsApi(get(named("apiClient")), getApiBaseUrl()) }
     single<ChatApi> { KtorChatApi(get(named("apiClient")), getApiBaseUrl()) }
     single<DeviceApi> { KtorDeviceApi(get(named("apiClient")), getApiBaseUrl()) }
+    single<TelegramApi> { KtorTelegramApi(get(named("apiClient")), getApiBaseUrl()) }
     single { DeviceRegistrar(get(), get(), get()) }
     single<AttachmentsApi> {
         KtorAttachmentsApi(
