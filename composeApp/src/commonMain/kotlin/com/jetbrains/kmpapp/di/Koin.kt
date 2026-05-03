@@ -92,7 +92,6 @@ val dataModule = module {
     single(named("authClient")) {
         val json = Json { ignoreUnknownKeys = true; encodeDefaults = true; explicitNulls = false }
         HttpClient {
-            followRedirects = false
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
@@ -108,7 +107,6 @@ val dataModule = module {
         val tokenStorage = get<TokenStorage>()
         val refreshMutex = Mutex()
         val client = HttpClient {
-            followRedirects = false
             install(Logging) {
                 logger = createHttpLogger()
                 level = LogLevel.ALL
