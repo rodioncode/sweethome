@@ -60,7 +60,7 @@ class KtorChatApi(
         while (true) {
             emit(ChatStreamEvent.Connecting)
             // Стартовый снапшот через REST.
-            val initial = getMessages(workspaceId).getOrNull() ?: emptyList()
+            val initial = getMessages(workspaceId).getOrNull().orEmpty().sortedBy { it.createdAt }
             val accumulated = initial.toMutableList()
             emit(ChatStreamEvent.Snapshot(accumulated.toList()))
 
@@ -88,8 +88,9 @@ class KtorChatApi(
                 while (currentTimeMillisCompat() - pollStart < pollUntil) {
                     delay(3_000)
                     getMessages(workspaceId).onSuccess { msgs ->
-                        if (msgs != accumulated) {
-                            accumulated.clear(); accumulated.addAll(msgs)
+                        val sorted = msgs.sortedBy { it.createdAt }
+                        if (sorted != accumulated) {
+                            accumulated.clear(); accumulated.addAll(sorted)
                             emit(ChatStreamEvent.Snapshot(accumulated.toList()))
                         }
                     }
