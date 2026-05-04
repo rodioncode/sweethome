@@ -105,7 +105,15 @@ class TodoListDetailViewModel(
                 val ws = groupsRepository.groups.value.firstOrNull { it.id == list.workspaceId }
                 if (ws != null && ws.type != WorkspaceType.PERSONAL) {
                     launch { groupsRepository.loadWorkspaceMembers(list.workspaceId) }
+                } else {
+                    // Для личного списка очищаем кэш участников от предыдущего группового списка,
+                    // иначе UI поля «Исполнитель» оставался бы видимым по членам прошлого workspace.
+                    groupsRepository.clearMembers()
                 }
+                // Превентивно подгружаем шаблоны и избранное, чтобы TemplatePicker сразу был с данными.
+                launch { templatesRepository.loadPublicTaskTemplates(scope = list.type) }
+                launch { templatesRepository.loadMyTaskTemplates() }
+                launch { suggestionsRepository.loadFavoriteItems() }
             }
         }
     }
@@ -162,6 +170,7 @@ class TodoListDetailViewModel(
         dueAt: String? = null,
         isFavorite: Boolean = false,
         assignedTo: String? = null,
+        reward: String? = null,
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
     ) {
@@ -173,6 +182,7 @@ class TodoListDetailViewModel(
                 assignedTo = assignedTo?.takeIf { it.isNotBlank() },
                 dueAt = dueAt?.takeIf { it.isNotBlank() },
                 isFavorite = isFavorite.takeIf { it },
+                reward = reward?.takeIf { it.isNotBlank() },
                 shopping = shopping,
                 choreSchedule = choreSchedule,
             )
@@ -186,6 +196,7 @@ class TodoListDetailViewModel(
         dueAt: String,
         isFavorite: Boolean,
         assignedTo: String? = null,
+        reward: String? = null,
         shopping: ShoppingItemFields? = null,
         choreSchedule: ChoreSchedule? = null,
     ) {
@@ -197,6 +208,7 @@ class TodoListDetailViewModel(
                 assignedTo = assignedTo,
                 dueAt = dueAt.takeIf { it.isNotBlank() },
                 isFavorite = isFavorite.takeIf { it != item.isFavorite },
+                reward = reward?.let { if (it != (item.reward ?: "")) it else null },
                 shopping = shopping,
                 choreSchedule = choreSchedule,
             )

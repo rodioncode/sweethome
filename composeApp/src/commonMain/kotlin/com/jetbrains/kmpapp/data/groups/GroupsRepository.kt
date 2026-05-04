@@ -104,6 +104,10 @@ class GroupsRepository(
         _error.value = null
     }
 
+    fun clearMembers() {
+        _members.value = emptyList()
+    }
+
     fun clearError() {
         _error.value = null
     }

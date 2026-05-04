@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jetbrains.kmpapp.auth.AuthRepository
 import com.jetbrains.kmpapp.auth.AuthState
+import com.jetbrains.kmpapp.data.calendar.toDueInstantOrNull
 import com.jetbrains.kmpapp.data.goals.Goal
 import com.jetbrains.kmpapp.data.goals.GoalsApi
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
@@ -117,7 +118,7 @@ class HomeViewModel(
         items.asSequence()
             .filter { !it.isDone && it.listId in activeListIds }
             .mapNotNull { item ->
-                val due = item.dueAt?.toInstantOrNull() ?: return@mapNotNull null
+                val due = item.dueAt.toDueInstantOrNull(tz) ?: return@mapNotNull null
                 if (due >= startOfTomorrow) return@mapNotNull null
                 val list = listsById[item.listId] ?: return@mapNotNull null
                 Triple(item, due, list)
@@ -210,12 +211,6 @@ class HomeViewModel(
             type == WorkspaceType.MENTORING ||
             type == WorkspaceType.GROUP
     }
-}
-
-private fun String.toInstantOrNull(): Instant? = try {
-    Instant.parse(this)
-} catch (_: Throwable) {
-    null
 }
 
 private fun formatDueLabel(due: Instant, today: LocalDate, tz: TimeZone): String {

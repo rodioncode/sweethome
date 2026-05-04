@@ -162,10 +162,10 @@ private fun GroupCard(
         else -> "👤"
     }
     val wsIconBg = when (group.type) {
-        "family" -> Color(0xFFFFF3E0)
-        "group" -> Color(0xFFE3F2FD)
-        "work" -> Color(0xFFE8F5E9)
-        "mentoring" -> Color(0xFFF3E5F5)
+        "family" -> MaterialTheme.colorScheme.secondaryContainer
+        "group" -> MaterialTheme.colorScheme.primaryContainer
+        "work" -> MaterialTheme.colorScheme.tertiaryContainer
+        "mentoring" -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
     }
     val typeLabel = when (group.type) {

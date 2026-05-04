@@ -6,6 +6,7 @@ import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.Instant
@@ -31,9 +32,20 @@ private fun parseIsoDate(iso: String?): LocalDate? = try {
     else null
 } catch (_: Throwable) { null }
 
-private fun parseInstant(iso: String?): Instant? = try {
-    if (iso == null) null else Instant.parse(iso)
-} catch (_: Throwable) { null }
+/**
+ * Парсит ISO-инстант ("2026-05-04T15:00:00Z") или date-only ("2026-05-04") в Instant.
+ * Date-only трактуется как полночь в указанном часовом поясе.
+ */
+fun String?.toDueInstantOrNull(tz: TimeZone = TimeZone.currentSystemDefault()): Instant? {
+    if (this == null) return null
+    return try {
+        Instant.parse(this)
+    } catch (_: Throwable) {
+        parseIsoDate(this)?.atStartOfDayIn(tz)
+    }
+}
+
+private fun parseInstant(iso: String?, tz: TimeZone): Instant? = iso.toDueInstantOrNull(tz)
 
 private val DAY_OF_WEEK_MAP = mapOf(
     "mon" to DayOfWeek.MONDAY, "tue" to DayOfWeek.TUESDAY, "wed" to DayOfWeek.WEDNESDAY,
@@ -58,7 +70,7 @@ fun expandItemsToEvents(
 
     for (item in items) {
         // Single dueAt
-        parseInstant(item.dueAt)?.let { instant ->
+        parseInstant(item.dueAt, timeZone)?.let { instant ->
             val dt = instant.toLocalDateTime(timeZone)
             val date = dt.date
             if (date in from..to) {
@@ -81,7 +93,7 @@ fun expandItemsToEvents(
         item.choreSchedule?.let { sched ->
             val schedStart = parseIsoDate(sched.startDate)
             val schedEnd = parseIsoDate(sched.endDate)
-            val lastDone = parseInstant(sched.lastDoneAt)?.toLocalDateTime(timeZone)?.date
+            val lastDone = parseInstant(sched.lastDoneAt, timeZone)?.toLocalDateTime(timeZone)?.date
 
             // intervalDays — генерируем серию от base даты
             sched.intervalDays?.takeIf { it > 0 }?.let { interval ->

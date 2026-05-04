@@ -74,6 +74,7 @@ internal fun FamilyContent(
     navigateToGamification: () -> Unit = {},
     navigateToShop: () -> Unit = {},
     navigateToGoals: () -> Unit = {},
+    navigateToJoinByCode: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<FamilyViewModel>()
@@ -122,6 +123,7 @@ internal fun FamilyContent(
             EmptyFamilyState(
                 isCreating = isCreating,
                 onCreateClick = { showCreateDialog = true },
+                onJoinByCodeClick = navigateToJoinByCode,
             )
         } else {
             FamilyHomeContent(
@@ -180,6 +182,7 @@ internal fun FamilyContent(
 private fun EmptyFamilyState(
     isCreating: Boolean,
     onCreateClick: () -> Unit,
+    onJoinByCodeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -191,7 +194,7 @@ private fun EmptyFamilyState(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color.White)
+                    .background(MaterialTheme.colorScheme.surface)
                     .padding(horizontal = SweetHomeSpacing.md, vertical = 18.dp),
             ) {
                 Text(
@@ -309,25 +312,39 @@ private fun EmptyFamilyState(
         // Join by code
         item {
             Spacer(Modifier.height(SweetHomeSpacing.md))
-            Card(
+            Surface(
+                onClick = onJoinByCodeClick,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.md),
                 shape = SweetHomeShapes.Card,
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 0.5.dp,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                ),
             ) {
-                Box(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
+                        .height(48.dp)
                         .padding(horizontal = SweetHomeSpacing.md),
-                    contentAlignment = Alignment.CenterStart,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
+                    Text("🔗", fontSize = 16.sp)
                     Text(
                         text = "Вступить по коду приглашения",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = "→",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
@@ -346,7 +363,7 @@ private fun FeatureCard(
     Card(
         modifier = modifier.height(72.dp),
         shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
@@ -480,15 +497,18 @@ private fun FamilyHomeContent(
                     .padding(horizontal = SweetHomeSpacing.lg, vertical = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                listOf(
-                    Triple("📋", "Списки",    Color(0xFFE8F3E8)),
-                    Triple("💬", "Чат",       Color(0xFFFFF3E0)),
-                    Triple("⚙️", "Настройки", Color(0xFFF3E5F5)),
-                ).forEach { (emoji, label, bg) ->
+                data class NavTile(val emoji: String, val label: String, val bg: Color, val fg: Color)
+                val navTiles = listOf(
+                    NavTile("📋", "Списки", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer),
+                    NavTile("💬", "Чат", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer),
+                    NavTile("⚙️", "Настройки", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer),
+                )
+                navTiles.forEach { tile ->
                     NavCard(
-                        emoji = emoji,
-                        label = label,
-                        bgColor = bg,
+                        emoji = tile.emoji,
+                        label = tile.label,
+                        bgColor = tile.bg,
+                        textColor = tile.fg,
                         onClick = onSpaceClick,
                         modifier = Modifier.weight(1f),
                     )
@@ -545,7 +565,7 @@ private fun FamilyHomeContent(
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.lg),
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFF3D5C3C),
+                color = MaterialTheme.colorScheme.primary,
                 shadowElevation = 2.dp,
             ) {
                 Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -577,7 +597,7 @@ private fun FamilyHomeContent(
                     .fillMaxWidth()
                     .padding(horizontal = SweetHomeSpacing.lg),
                 shape = RoundedCornerShape(16.dp),
-                color = Color(0xFFD4956B),
+                color = MaterialTheme.colorScheme.secondary,
                 shadowElevation = 2.dp,
             ) {
                 Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -690,7 +710,7 @@ private fun StatsBar(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(0.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Row(
@@ -778,7 +798,7 @@ private fun ActivityCard(
             .fillMaxWidth()
             .padding(horizontal = SweetHomeSpacing.lg, vertical = SweetHomeSpacing.xxs),
         shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
@@ -824,12 +844,13 @@ private fun NavCard(
     bgColor: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Card(
         onClick = onClick,
         modifier = modifier.height(84.dp),
         shape = SweetHomeShapes.Card,
-        colors = CardDefaults.cardColors(containerColor = bgColor),
+        colors = CardDefaults.cardColors(containerColor = bgColor, contentColor = textColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Column(
@@ -843,7 +864,7 @@ private fun NavCard(
                 text = label,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = textColor,
             )
         }
     }
@@ -869,7 +890,7 @@ private fun FamilyListCard(
             .padding(horizontal = SweetHomeSpacing.lg, vertical = SweetHomeSpacing.xxs)
             .clickable(onClick = onClick),
         shape = SweetHomeShapes.Card,
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(

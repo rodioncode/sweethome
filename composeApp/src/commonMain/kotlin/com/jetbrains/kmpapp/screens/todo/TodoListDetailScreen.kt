@@ -141,8 +141,9 @@ fun TodoListDetailScreen(
 
     val list = listWithItems?.first
     val listType = list?.type ?: "general_todos"
-    // Для гейтинга UI назначения используем оба сигнала: workspace-тип и факт загруженности участников.
-    val isGroupList = isGroupListFlag || groupMembers.isNotEmpty()
+    // Доверяем VM-флагу (workspace-тип). Hack «members.isNotEmpty()» создавал ложное-true для
+    // личного списка после открытия группового — кэш участников не сбрасывался.
+    val isGroupList = isGroupListFlag
     val listColor = list?.color?.toComposeColor() ?: listColorForType(listType, isSystemInDarkTheme())
     val listIcon = list?.icon ?: listEmojiForType(listType)
     val categoryScope = when (listType) {
@@ -438,8 +439,18 @@ fun TodoListDetailScreen(
             onLoadTemplatesForPicker = { viewModel.loadTemplatesForPicker() },
             onResolveTaskTemplate = { id -> viewModel.getTaskTemplateDetail(id) },
             onDismiss = { showAddSheet = false },
-            onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
-                viewModel.addItem(listId, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
+            onConfirm = { title, note, dueAt, isFavorite, assignedTo, reward, shopping, choreSchedule ->
+                viewModel.addItem(
+                    listId = listId,
+                    title = title,
+                    note = note,
+                    dueAt = dueAt,
+                    isFavorite = isFavorite,
+                    assignedTo = assignedTo,
+                    reward = reward,
+                    shopping = shopping,
+                    choreSchedule = choreSchedule,
+                )
                 showAddSheet = false
             },
             onCreateCategory = { name ->
@@ -509,8 +520,18 @@ fun TodoListDetailScreen(
                 editingItem = null
                 openDetailsSectionInEditor = false
             },
-            onConfirm = { title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule ->
-                viewModel.updateItem(item, title, note, dueAt, isFavorite, assignedTo, shopping, choreSchedule)
+            onConfirm = { title, note, dueAt, isFavorite, assignedTo, reward, shopping, choreSchedule ->
+                viewModel.updateItem(
+                    item = item,
+                    title = title,
+                    note = note,
+                    dueAt = dueAt,
+                    isFavorite = isFavorite,
+                    assignedTo = assignedTo,
+                    reward = reward,
+                    shopping = shopping,
+                    choreSchedule = choreSchedule,
+                )
                 editingItem = null
                 openDetailsSectionInEditor = false
             },
@@ -1035,6 +1056,7 @@ private fun ItemBottomSheet(
         dueAt: String,
         isFavorite: Boolean,
         assignedTo: String?,
+        reward: String?,
         shopping: ShoppingItemFields?,
         choreSchedule: ChoreSchedule?,
     ) -> Unit,
@@ -1057,6 +1079,7 @@ private fun ItemBottomSheet(
         } ?: "")
     }
     var unit by remember { mutableStateOf(item?.shopping?.unit ?: "") }
+    var reward by remember { mutableStateOf(item?.reward ?: "") }
     var intervalDays by remember { mutableStateOf(item?.choreSchedule?.intervalDays?.toString() ?: "") }
     var selectedDays by remember { mutableStateOf(item?.choreSchedule?.daysOfWeek ?: emptyList()) }
     var startDate by remember { mutableStateOf(item?.choreSchedule?.startDate ?: "") }
@@ -1431,6 +1454,21 @@ private fun ItemBottomSheet(
                 }
             }
 
+            // Reward — только в групповых списках (награда осмыслена для назначаемых задач).
+            if (isGroupList) {
+                item {
+                    SheetFieldLabel("Награда")
+                    OutlinedTextField(
+                        value = reward,
+                        onValueChange = { reward = it },
+                        placeholder = { Text("Например: 50 ⭐ или поход в кино") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    )
+                }
+            }
+
             // Shopping categories
             if (categories.isNotEmpty() && listType == "shopping") {
                 item {
@@ -1518,6 +1556,7 @@ private fun ItemBottomSheet(
                             dueAtRfc3339,
                             isFavorite,
                             assignedTo,
+                            reward.takeIf { it.isNotBlank() },
                             shopping,
                             choreSchedule,
                         )

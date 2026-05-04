@@ -76,6 +76,7 @@ fun GroupDetailScreen(
     navigateToListDetail: (String) -> Unit,
     navigateToLinkEmail: () -> Unit,
     navigateToChat: (workspaceId: String, title: String, memberCount: Int) -> Unit = { _, _, _ -> },
+    navigateToCreateList: (workspaceId: String) -> Unit = {},
 ) {
     val viewModel = koinViewModel<GroupDetailViewModel>()
     val group by viewModel.group.collectAsStateWithLifecycle()
@@ -88,7 +89,6 @@ fun GroupDetailScreen(
     var showInviteDialog by remember { mutableStateOf(false) }
     var currentInvite by remember { mutableStateOf<Invite?>(null) }
     var showTransferDialog by remember { mutableStateOf(false) }
-    var showAddListDialog by remember { mutableStateOf(false) }
     var showMembersSheet by remember { mutableStateOf(false) }
     var showWorkHoursDialog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -292,7 +292,7 @@ fun GroupDetailScreen(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
-                    TextButton(onClick = { showAddListDialog = true }) {
+                    TextButton(onClick = { navigateToCreateList(groupId) }) {
                         Text("+ Создать", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                     }
                 }
@@ -464,30 +464,6 @@ fun GroupDetailScreen(
             },
             confirmButton = {},
             dismissButton = { TextButton(onClick = { showTransferDialog = false }) { Text("Отмена") } },
-        )
-    }
-
-    // Add list dialog
-    if (showAddListDialog) {
-        var listTitle by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showAddListDialog = false },
-            title = { Text("Новый список в группе") },
-            text = {
-                OutlinedTextField(
-                    value = listTitle,
-                    onValueChange = { listTitle = it },
-                    label = { Text("Название") },
-                    singleLine = true,
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.createListInGroup(listTitle.ifBlank { "Новый список" })
-                    showAddListDialog = false
-                }) { Text("Создать") }
-            },
-            dismissButton = { TextButton(onClick = { showAddListDialog = false }) { Text("Отмена") } },
         )
     }
 

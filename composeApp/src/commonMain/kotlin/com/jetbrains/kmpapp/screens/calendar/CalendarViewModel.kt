@@ -37,15 +37,15 @@ class CalendarViewModel(
 ) : ViewModel() {
 
     private val tz = TimeZone.currentSystemDefault()
-    private val today: LocalDate = Clock.System.now().toLocalDateTime(tz).date
+    private fun today(): LocalDate = Clock.System.now().toLocalDateTime(tz).date
 
     private val _view = MutableStateFlow(CalendarView.MONTH)
     val view: StateFlow<CalendarView> = _view.asStateFlow()
 
-    private val _cursor = MutableStateFlow(today)            // текущий месяц/период
+    private val _cursor = MutableStateFlow(today())          // текущий месяц/период
     val cursor: StateFlow<LocalDate> = _cursor.asStateFlow()
 
-    private val _selected = MutableStateFlow(today)
+    private val _selected = MutableStateFlow(today())
     val selected: StateFlow<LocalDate> = _selected.asStateFlow()
 
     private val _filters = MutableStateFlow(CalendarFilters())
@@ -96,7 +96,11 @@ class CalendarViewModel(
     fun setView(v: CalendarView) { _view.value = v }
     fun setCursor(d: LocalDate) { _cursor.value = d }
     fun setSelected(d: LocalDate) { _selected.value = d }
-    fun goToday() { _cursor.value = today; _selected.value = today }
+    fun goToday() {
+        val t = today()
+        _cursor.value = t
+        _selected.value = t
+    }
 
     fun setFilters(f: CalendarFilters) { _filters.value = f }
     fun toggleSource(s: EventSource) {
@@ -134,6 +138,20 @@ class CalendarViewModel(
                     .toInstant(tz).toString()
             }
             listsRepository.updateItem(itemId = itemId, dueAt = iso)
+        }
+    }
+
+    /** Создать новую задачу в выбранном списке с предзаполненной датой. */
+    fun createItemForList(listId: String, title: String, date: LocalDate, note: String? = null) {
+        viewModelScope.launch {
+            val dueIso = kotlinx.datetime.LocalDateTime(date, kotlinx.datetime.LocalTime(0, 0))
+                .toInstant(tz).toString()
+            listsRepository.createItem(
+                listId = listId,
+                title = title,
+                note = note?.takeIf { it.isNotBlank() },
+                dueAt = dueIso,
+            )
         }
     }
 }

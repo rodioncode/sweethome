@@ -77,6 +77,7 @@ import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.plugin
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.bearerAuth
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -115,6 +116,9 @@ val dataModule = module {
                 json(json, contentType = ContentType.Any)
             }
             install(SSE)
+            install(WebSockets) {
+                pingIntervalMillis = 20_000
+            }
             defaultRequest {
                 tokenStorage.getAccessToken()?.let { bearerAuth(it) }
             }

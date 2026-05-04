@@ -1,6 +1,7 @@
 package com.jetbrains.kmpapp.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -49,10 +50,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.BackgroundWarm
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -97,7 +94,7 @@ private fun RegisterContent(
         && termsAccepted
         && uiState !is AuthUiState.Loading
 
-    Scaffold(containerColor = BackgroundWarm) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -109,7 +106,7 @@ private fun RegisterContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
                 .padding(horizontal = 24.dp, vertical = 40.dp),
@@ -185,7 +182,7 @@ private fun RegisterContent(
                     placeholder = {
                         Text(
                             text = if (label == "Имя") "Как вас зовут?" else "your@email.com",
-                            color = Color(0xFFBDBDBD),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     },
                     singleLine = true,
@@ -195,10 +192,10 @@ private fun RegisterContent(
                     ),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = PrimaryGreen,
-                        unfocusedBorderColor = DividerColor,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     ),
                 )
                 Spacer(Modifier.height(16.dp))
@@ -215,7 +212,7 @@ private fun RegisterContent(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; onClearError() },
-                placeholder = { Text("••••••••", color = Color(0xFFBDBDBD)) },
+                placeholder = { Text("••••••••", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -230,10 +227,10 @@ private fun RegisterContent(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryGreen,
-                    unfocusedBorderColor = DividerColor,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
 
@@ -245,7 +242,7 @@ private fun RegisterContent(
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
                     .clickable { termsAccepted = !termsAccepted },
-                color = SurfaceVariantCream,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(12.dp),
             ) {
                 Row(
@@ -257,36 +254,25 @@ private fun RegisterContent(
                         modifier = Modifier
                             .size(22.dp)
                             .background(
-                                color = if (termsAccepted) PrimaryGreen else Color.White,
+                                color = if (termsAccepted) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surface,
                                 shape = RoundedCornerShape(6.dp),
                             )
-                            .then(
-                                if (!termsAccepted) Modifier.background(
-                                    Color.Transparent,
-                                    RoundedCornerShape(6.dp),
-                                ) else Modifier
+                            .border(
+                                width = 1.5.dp,
+                                color = if (termsAccepted) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline,
+                                shape = RoundedCornerShape(6.dp),
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        if (!termsAccepted) {
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .background(Color.White, RoundedCornerShape(6.dp))
-                                    .then(
-                                        Modifier.background(Color.Transparent)
-                                    ),
-                            )
-                            // Border
-                            Box(
-                                modifier = Modifier
-                                    .size(22.dp)
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(Color.White),
-                            )
-                        }
                         if (termsAccepted) {
-                            Text("✓", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(
+                                "✓",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
                         }
                     }
                     Column {
@@ -301,7 +287,7 @@ private fun RegisterContent(
                                 text = "условия использования",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.clickable {
                                     uriHandler.openUri("https://sweethome.app/terms")
                                 },
@@ -315,7 +301,7 @@ private fun RegisterContent(
                                 text = "политику конфиденциальности",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = PrimaryGreen,
+                                color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.clickable {
                                     uriHandler.openUri("https://sweethome.app/privacy")
                                 },
@@ -345,14 +331,16 @@ private fun RegisterContent(
                 enabled = canSubmit,
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = PrimaryGreen,
-                    disabledContainerColor = DividerColor,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    disabledContainerColor = MaterialTheme.colorScheme.outline,
+                    disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
                 } else {
@@ -377,8 +365,11 @@ private fun RegisterContent(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFDADCE0)),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                ),
                 shadowElevation = 2.dp,
             ) {
                 Row(
@@ -386,9 +377,14 @@ private fun RegisterContent(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                    Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.width(10.dp))
-                    Text("Войти через Google", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                    Text(
+                        "Войти через Google",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
 
@@ -412,7 +408,7 @@ private fun RegisterContent(
                         text = "Войти",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }

@@ -1,7 +1,10 @@
 package com.jetbrains.kmpapp
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
@@ -33,6 +36,7 @@ import com.jetbrains.kmpapp.screens.profile.ProfileContent
 import com.jetbrains.kmpapp.screens.splash.SplashScreen
 import com.jetbrains.kmpapp.screens.settings.SettingsScreen
 import com.jetbrains.kmpapp.screens.spaces.JoinByCodeScreen
+import com.jetbrains.kmpapp.screens.todo.CreateListScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.ui.SweetHomeTheme
 import kotlinx.serialization.Serializable
@@ -99,6 +103,9 @@ data class TemplateDetailDestination(
 
 @Serializable
 object TemplatesDestination
+
+@Serializable
+data class CreateListDestination(val workspaceId: String? = null)
 
 @Serializable
 object NotificationsDestination
@@ -262,6 +269,18 @@ fun App() {
                         navigateToChat = { workspaceId, title, memberCount ->
                             navController.navigate(ChatDestination(workspaceId, title, memberCount))
                         },
+                        navigateToCreateList = { workspaceId ->
+                            navController.navigate(CreateListDestination(workspaceId))
+                        },
+                        navigateToTemplates = { navController.navigate(TemplatesDestination) },
+                    )
+                }
+                composable<CreateListDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<CreateListDestination>()
+                    CreateListScreen(
+                        initialWorkspaceId = dest.workspaceId,
+                        onCreated = { navController.popBackStack() },
+                        onNavigateBack = { navController.popBackStack() },
                     )
                 }
                 composable<ProfileDestination> {
@@ -294,6 +313,9 @@ fun App() {
                         navigateToLinkEmail = { navController.navigate(LinkEmailDestination) },
                         navigateToChat = { workspaceId, title, memberCount ->
                             navController.navigate(ChatDestination(workspaceId, title, memberCount))
+                        },
+                        navigateToCreateList = { workspaceId ->
+                            navController.navigate(CreateListDestination(workspaceId))
                         },
                     )
                 }
@@ -382,12 +404,14 @@ fun App() {
                     )
                 }
                 composable<TemplatesDestination> {
-                    TemplatesScreen(
-                        contentPadding = PaddingValues(0.dp),
-                        navigateToTemplateDetail = { id, title, scope ->
-                            navController.navigate(TemplateDetailDestination(id, scope, title))
-                        },
-                    )
+                    Scaffold(contentWindowInsets = WindowInsets.systemBars) { padding ->
+                        TemplatesScreen(
+                            contentPadding = padding,
+                            navigateToTemplateDetail = { id, title, scope ->
+                                navController.navigate(TemplateDetailDestination(id, scope, title))
+                            },
+                        )
+                    }
                 }
                 composable<NotificationsDestination> {
                     NotificationsScreen()

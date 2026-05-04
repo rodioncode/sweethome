@@ -48,7 +48,6 @@ import com.jetbrains.kmpapp.screens.groups.GroupsContent
 import com.jetbrains.kmpapp.screens.groups.GroupsUiEvent
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.home.HomeContent
-import com.jetbrains.kmpapp.screens.todo.CreateListDialog
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListsContent
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
@@ -78,6 +77,8 @@ fun MainScreen(
     navigateToShop: () -> Unit = {},
     navigateToGoals: () -> Unit = {},
     navigateToChat: (workspaceId: String, title: String, memberCount: Int) -> Unit = { _, _, _ -> },
+    navigateToCreateList: (workspaceId: String?) -> Unit = {},
+    navigateToTemplates: () -> Unit = {},
     pendingInviteToken: String? = null,
 ) {
     val todoListsViewModel = koinViewModel<TodoListsViewModel>()
@@ -107,7 +108,6 @@ fun MainScreen(
     val isGuest by groupsViewModel.isGuest.collectAsStateWithLifecycle()
 
     var selectedTab by rememberSaveable { mutableStateOf(MainTab.DASHBOARD) }
-    var showCreateListDialog by remember { mutableStateOf(false) }
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -208,7 +208,7 @@ fun MainScreen(
         floatingActionButton = {
             val isInListDetail = listsBackStackEntry?.destination?.hasRoute(ListsDetail::class) == true
             if (selectedTab == MainTab.LISTS && !isInListDetail) {
-                FloatingActionButton(onClick = { showCreateListDialog = true }) {
+                FloatingActionButton(onClick = { navigateToCreateList(null) }) {
                     Icon(Icons.Default.Add, "Добавить список")
                 }
             }
@@ -219,7 +219,7 @@ fun MainScreen(
             MainTab.DASHBOARD -> HomeContent(
                 contentPadding = paddingValues,
                 navigateToListDetail = navigateToListDetail,
-                onCreateList = { showCreateListDialog = true },
+                onCreateList = { navigateToCreateList(null) },
                 onNavigateToHome = { selectedTab = MainTab.HOME },
                 onNavigateToGroups = { selectedTab = MainTab.GROUPS },
                 navigateToProfile = navigateToProfile,
@@ -238,19 +238,17 @@ fun MainScreen(
                 navigateToGamification = navigateToGamification,
                 navigateToShop = navigateToShop,
                 navigateToGoals = navigateToGoals,
+                navigateToJoinByCode = navigateToJoinByCode,
             )
             MainTab.LISTS -> ListsTabNavHost(
                 navController = listsNavController,
                 paddingValues = paddingValues,
                 lists = lists,
                 groups = allGroups,
-                showCreateDialog = showCreateListDialog,
-                onShowCreateDialog = { showCreateListDialog = it },
-                onCreateList = { title, type, icon, color, workspaceId ->
-                    todoListsViewModel.createList(title, type, workspaceId, icon, color)
-                },
                 isGuest = isGuest,
                 navigateToLinkEmail = navigateToLinkEmail,
+                navigateToCreateList = navigateToCreateList,
+                navigateToTemplates = navigateToTemplates,
             )
             MainTab.CALENDAR -> com.jetbrains.kmpapp.screens.calendar.CalendarContent(
                 contentPadding = paddingValues,
@@ -272,19 +270,9 @@ fun MainScreen(
                     selectedTab = MainTab.LISTS
                 },
                 navigateToChat = navigateToChat,
+                navigateToCreateList = navigateToCreateList,
             )
         }
-    }
-
-    if (showCreateListDialog) {
-        CreateListDialog(
-            groups = allGroups,
-            onDismiss = { showCreateListDialog = false },
-            onConfirm = { title, type, icon, color, workspaceId ->
-                todoListsViewModel.createList(title, type, workspaceId, icon, color)
-                showCreateListDialog = false
-            },
-        )
     }
 
     if (showCreateGroupDialog) {
@@ -304,11 +292,10 @@ private fun ListsTabNavHost(
     paddingValues: PaddingValues,
     lists: List<com.jetbrains.kmpapp.data.lists.TodoList>,
     groups: List<com.jetbrains.kmpapp.data.groups.Group>,
-    showCreateDialog: Boolean,
-    onShowCreateDialog: (Boolean) -> Unit,
-    onCreateList: (String, String, String?, String?, String) -> Unit,
     isGuest: Boolean,
     navigateToLinkEmail: () -> Unit,
+    navigateToCreateList: (workspaceId: String?) -> Unit,
+    navigateToTemplates: () -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -320,10 +307,9 @@ private fun ListsTabNavHost(
                 lists = lists,
                 groups = groups,
                 contentPadding = paddingValues,
-                showCreateDialog = showCreateDialog,
-                onShowCreateDialog = onShowCreateDialog,
-                onCreateList = onCreateList,
                 onListClick = { listId -> navController.navigate(ListsDetail(listId)) },
+                onCreateList = { navigateToCreateList(null) },
+                onNavigateToTemplates = navigateToTemplates,
                 isGuest = isGuest,
                 navigateToLinkEmail = navigateToLinkEmail,
             )
@@ -351,6 +337,7 @@ private fun GroupsTabNavHost(
     onCreateGroup: (() -> Unit)?,
     navigateToListDetail: (String) -> Unit,
     navigateToChat: (workspaceId: String, title: String, memberCount: Int) -> Unit,
+    navigateToCreateList: (workspaceId: String?) -> Unit,
 ) {
     NavHost(
         navController = navController,
@@ -379,6 +366,7 @@ private fun GroupsTabNavHost(
                 navigateToListDetail = navigateToListDetail,
                 navigateToLinkEmail = navigateToLinkEmail,
                 navigateToChat = navigateToChat,
+                navigateToCreateList = { ws -> navigateToCreateList(ws) },
             )
         }
     }
