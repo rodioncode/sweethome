@@ -12,10 +12,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -39,15 +42,29 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.goals.Goal
 import org.koin.compose.viewmodel.koinViewModel
 
+enum class GoalFilter(val label: String) {
+    ACTIVE("Активные"),
+    DONE("Завершённые"),
+    ARCHIVE("Архив"),
+}
+
 @Composable
 fun GoalsScreen(
     navigateBack: () -> Unit,
     navigateToGoal: (String) -> Unit,
 ) {
     val vm = koinViewModel<GoalsViewModel>()
-    val goals by vm.goals.collectAsStateWithLifecycle()
+    val allGoals by vm.goals.collectAsStateWithLifecycle()
     val workspaceId by vm.familyWorkspaceId.collectAsStateWithLifecycle()
     var creating by remember { mutableStateOf(false) }
+    var filter by remember { mutableStateOf(GoalFilter.ACTIVE) }
+    val goals = allGoals.filter { goal ->
+        when (filter) {
+            GoalFilter.ACTIVE -> !goal.isDone && goal.archivedAt == null
+            GoalFilter.DONE -> goal.isDone && goal.archivedAt == null
+            GoalFilter.ARCHIVE -> goal.archivedAt != null
+        }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -72,6 +89,24 @@ fun GoalsScreen(
                         }
                     }
                     Text("🎯 Цели", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                }
+            }
+
+            // ChipFilterRow
+            LazyRow(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(GoalFilter.entries.toList()) { f ->
+                    FilterChip(
+                        selected = filter == f,
+                        onClick = { filter = f },
+                        label = { Text(f.label, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
+                    )
                 }
             }
 

@@ -40,7 +40,7 @@ fun SweetHomeChip(
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.md),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (dotColor != null && !selected) {

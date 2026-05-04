@@ -196,7 +196,7 @@ fun GroupDetailScreen(
                                             onClick = { menuExpanded = false; showTransferDialog = true },
                                         )
                                         DropdownMenuItem(
-                                            text = { Text("Удалить группу", color = Color(0xFFD32F2F)) },
+                                            text = { Text("Удалить группу", color = MaterialTheme.colorScheme.error) },
                                             onClick = { menuExpanded = false; showDeleteConfirm = true },
                                         )
                                     }
@@ -396,7 +396,7 @@ fun GroupDetailScreen(
             text = { Text("Все списки группы будут удалены. Это действие необратимо.") },
             confirmButton = {
                 TextButton(onClick = { showDeleteConfirm = false; viewModel.deleteGroup() }) {
-                    Text("Удалить", color = Color(0xFFD32F2F))
+                    Text("Удалить", color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("Отмена") } },
@@ -519,8 +519,11 @@ fun GroupDetailScreen(
 @Composable
 private fun MemberAvatar(displayName: String, modifier: Modifier = Modifier) {
     val colors = listOf(
-        Color(0xFF5B7C5A), Color(0xFF42A5F5), Color(0xFFFF7043),
-        Color(0xFFAB47BC), Color(0xFFFFA726),
+        com.jetbrains.kmpapp.ui.PrimaryGreen,
+        com.jetbrains.kmpapp.ui.ListColors.SkyLight,
+        com.jetbrains.kmpapp.ui.ListColors.CoralLight,
+        com.jetbrains.kmpapp.ui.ListColors.LavenderLight,
+        com.jetbrains.kmpapp.ui.ListColors.AmberLight,
     )
     val color = colors[displayName.hashCode().and(0x7FFFFFFF) % colors.size]
     Box(
@@ -671,6 +674,7 @@ private fun DayOfWeek.toCode(): String = when (this) {
     DayOfWeek.MONDAY -> "mon"; DayOfWeek.TUESDAY -> "tue"; DayOfWeek.WEDNESDAY -> "wed"
     DayOfWeek.THURSDAY -> "thu"; DayOfWeek.FRIDAY -> "fri"; DayOfWeek.SATURDAY -> "sat"
     DayOfWeek.SUNDAY -> "sun"
+    else -> "mon"
 }
 
 /**

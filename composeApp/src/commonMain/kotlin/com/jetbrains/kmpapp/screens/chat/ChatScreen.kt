@@ -194,7 +194,7 @@ fun ChatScreen(
 @Composable
 private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
     val initial = msg.senderName.firstOrNull()?.uppercase() ?: "?"
-    val senderColor = Color(0xFF42A5F5)
+    val senderColor = com.jetbrains.kmpapp.ui.LocalSemanticColors.current.info
 
     Row(
         modifier = Modifier.fillMaxWidth(),

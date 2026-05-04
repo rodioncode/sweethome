@@ -54,11 +54,11 @@ fun SweetHomeExtendedFab(
         ),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.width(SweetHomeSpacing.md))
+            Spacer(Modifier.width(SweetHomeSpacing.xl))
             Text("+", fontSize = 22.sp)
-            Spacer(Modifier.width(SweetHomeSpacing.xs))
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
             Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(SweetHomeSpacing.lg))
+            Spacer(Modifier.width(SweetHomeSpacing.xxxl))
         }
     }
 }

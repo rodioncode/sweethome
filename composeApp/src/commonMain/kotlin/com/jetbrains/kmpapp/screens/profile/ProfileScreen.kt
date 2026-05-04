@@ -227,14 +227,14 @@ fun ProfileContent(
 
         // --- Settings section ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
             SectionLabel("НАСТРОЙКИ")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.md),
+                    .padding(horizontal = SweetHomeSpacing.xl),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -271,7 +271,7 @@ fun ProfileContent(
 
         // --- Telegram ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
             SectionLabel("TELEGRAM")
         }
         item {
@@ -284,14 +284,14 @@ fun ProfileContent(
 
         // --- My spaces ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
             SectionLabel("МОИ ПРОСТРАНСТВА")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.md),
+                    .padding(horizontal = SweetHomeSpacing.xl),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -326,14 +326,14 @@ fun ProfileContent(
 
         // --- Activity ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.lg))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
             SectionLabel("АКТИВНОСТЬ")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.md),
+                    .padding(horizontal = SweetHomeSpacing.xl),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
@@ -356,7 +356,7 @@ fun ProfileContent(
         }
 
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxxl))
             DangerZone(
                 onDelete = { showDeleteDialog = true },
             )
@@ -383,6 +383,67 @@ fun ProfileContent(
                 title = { Text("Не удалось") },
                 text = { Text(s.message) },
             )
+        }
+        ProfileViewModel.DeleteState.InProgress -> {
+            // Step 3: loading overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.45f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    Text(
+                        "Удаляем ваш аккаунт…",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.White,
+                    )
+                }
+            }
+        }
+        ProfileViewModel.DeleteState.Done -> {
+            // Step 3: success final screen
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center,
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+                    modifier = Modifier.padding(SweetHomeSpacing.xxxl),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("✓", fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                    }
+                    Text(
+                        "Аккаунт удалён",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Text(
+                        "Спасибо за время с SweetHome 🌿",
+                        fontSize = 15.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
         }
         else -> Unit
     }
@@ -412,7 +473,7 @@ fun ProfileContent(
 
 @Composable
 private fun DangerZone(onDelete: () -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.md)) {
+    Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl)) {
         SectionLabel("ОПАСНАЯ ЗОНА")
         Surface(
             onClick = onDelete,
@@ -475,7 +536,7 @@ private fun SectionLabel(text: String) {
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp,
-        modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = 0.dp).padding(bottom = 10.dp),
+        modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl, vertical = 0.dp).padding(bottom = 10.dp),
     )
 }
 
@@ -509,7 +570,7 @@ private fun TelegramSection(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.md),
+            .padding(horizontal = SweetHomeSpacing.xl),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),

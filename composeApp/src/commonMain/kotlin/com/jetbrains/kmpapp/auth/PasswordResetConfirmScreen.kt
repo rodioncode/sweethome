@@ -85,12 +85,12 @@ fun PasswordResetConfirmScreen(
             )
 
             if (!passwordsMatch) {
-                Text("Пароли не совпадают", color = Color.Red, fontSize = 12.sp)
+                Text("Пароли не совпадают", color = androidx.compose.material3.MaterialTheme.colorScheme.error, fontSize = 12.sp)
             }
 
             if (uiState is AuthUiState.Error) {
                 Spacer(Modifier.height(8.dp))
-                Text((uiState as AuthUiState.Error).message, color = Color.Red, fontSize = 13.sp)
+                Text((uiState as AuthUiState.Error).message, color = androidx.compose.material3.MaterialTheme.colorScheme.error, fontSize = 13.sp)
             }
 
             Spacer(Modifier.height(20.dp))

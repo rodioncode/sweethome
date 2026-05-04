@@ -31,7 +31,7 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
-enum class DashboardContext { PERSONAL, WORK }
+enum class DashboardContext { PERSONAL, WORK, FAMILY }
 
 data class TodayTaskUi(
     val id: String,
@@ -206,12 +206,48 @@ class HomeViewModel(
     }
 
     private fun DashboardContext.matches(type: String) = when (this) {
-        DashboardContext.PERSONAL -> type == WorkspaceType.PERSONAL || type == WorkspaceType.FAMILY
+        DashboardContext.PERSONAL -> type == WorkspaceType.PERSONAL
+        DashboardContext.FAMILY -> type == WorkspaceType.FAMILY
         DashboardContext.WORK -> type == WorkspaceType.WORK ||
             type == WorkspaceType.MENTORING ||
             type == WorkspaceType.GROUP
     }
+
+    /** Самая недавняя активность семьи (для Family pulse секции на Dashboard). */
+    val familyPulse: StateFlow<FamilyPulseUi?> = combine(
+        groupsRepository.groups,
+        listsRepository.allItems,
+        listsRepository.lists,
+    ) { groups, items, lists ->
+        val family = groups.firstOrNull {
+            it.type == WorkspaceType.FAMILY && it.archivedAt == null
+        } ?: return@combine null
+
+        val familyListIds = lists.filter { it.workspaceId == family.id }.map { it.id }.toSet()
+        if (familyListIds.isEmpty()) return@combine null
+
+        // Берём последнюю выполненную задачу как «пульс» семьи.
+        val recentDone = items.filter { it.isDone && it.listId in familyListIds }
+            .maxByOrNull { it.id }
+            ?: return@combine null
+
+        FamilyPulseUi(
+            workspaceTitle = family.title,
+            memberInitials = family.title.split(' ', '-').take(4).mapNotNull { word ->
+                word.firstOrNull()?.uppercase()
+            },
+            lastActionTitle = recentDone.title,
+            relativeTime = "недавно",
+        )
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 }
+
+data class FamilyPulseUi(
+    val workspaceTitle: String,
+    val memberInitials: List<String>,
+    val lastActionTitle: String,
+    val relativeTime: String,
+)
 
 private fun formatDueLabel(due: Instant, today: LocalDate, tz: TimeZone): String {
     val ldt = due.toLocalDateTime(tz)
