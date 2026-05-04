@@ -1,6 +1,7 @@
 package com.jetbrains.kmpapp.screens.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -9,9 +10,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,6 +61,7 @@ fun HomeContent(
     onNavigateToGroups: () -> Unit,
     navigateToProfile: () -> Unit,
     navigateToGoals: () -> Unit,
+    onNavigateToLists: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
@@ -67,20 +71,21 @@ fun HomeContent(
     val context by viewModel.context.collectAsStateWithLifecycle()
     val todayTasks by viewModel.todayTasks.collectAsStateWithLifecycle()
     val nearestGoal by viewModel.nearestGoal.collectAsStateWithLifecycle()
+    val familyPulse by viewModel.familyPulse.collectAsStateWithLifecycle()
 
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
             .padding(contentPadding),
-        contentPadding = PaddingValues(vertical = SweetHomeSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.md),
+        contentPadding = PaddingValues(vertical = SweetHomeSpacing.xl),
+        verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
     ) {
         // --- Header: greeting + avatar ---
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.lg),
+                    .padding(horizontal = SweetHomeSpacing.xxxl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -132,7 +137,7 @@ fun HomeContent(
             ContextPill(
                 selected = context,
                 onSelect = viewModel::setContext,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
             )
         }
 
@@ -141,7 +146,7 @@ fun HomeContent(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.lg)
+                    .padding(horizontal = SweetHomeSpacing.xxxl)
                     .shadow(
                         elevation = 8.dp,
                         shape = RoundedCornerShape(10.dp),
@@ -155,7 +160,7 @@ fun HomeContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
-                        .padding(horizontal = SweetHomeSpacing.md),
+                        .padding(horizontal = SweetHomeSpacing.xl),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
@@ -169,17 +174,17 @@ fun HomeContent(
 
         // --- Quick actions ---
         item {
-            Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg)) {
+            Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl)) {
                 Text(
                     text = "Быстрые действия",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = SweetHomeSpacing.sm),
+                    modifier = Modifier.padding(bottom = SweetHomeSpacing.base),
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
                 ) {
                     QuickActionCard(
                         emoji = "📝",
@@ -216,14 +221,14 @@ fun HomeContent(
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
             )
         }
         if (todayTasks.isEmpty()) {
             item {
                 TodayEmptyState(
                     context = context,
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
                 )
             }
         } else {
@@ -231,7 +236,7 @@ fun HomeContent(
                 TodayTaskCard(
                     task = task,
                     onClick = { navigateToListDetail(task.listId) },
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
                 )
             }
         }
@@ -241,7 +246,7 @@ fun HomeContent(
             GoalsWidget(
                 goal = nearestGoal,
                 onClick = navigateToGoals,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
             )
         }
 
@@ -250,7 +255,7 @@ fun HomeContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.lg),
+                    .padding(horizontal = SweetHomeSpacing.xxxl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -263,9 +268,9 @@ fun HomeContent(
                 Text(
                     text = "Все →",
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { /* TODO: navigate to all lists */ },
+                    modifier = Modifier.clickable(onClick = onNavigateToLists),
                 )
             }
         }
@@ -276,7 +281,7 @@ fun HomeContent(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SweetHomeSpacing.lg),
+                        .padding(horizontal = SweetHomeSpacing.xxxl),
                     shape = SweetHomeShapes.Card,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -284,7 +289,7 @@ fun HomeContent(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(SweetHomeSpacing.lg),
+                            .padding(SweetHomeSpacing.xxxl),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
@@ -309,7 +314,7 @@ fun HomeContent(
                 SweetHomeListCard(
                     title = list.title,
                     onClick = { navigateToListDetail(list.id) },
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
                     icon = list.icon ?: listEmojiForType(list.type),
                     listColor = color,
                     doneCount = list.doneCount,
@@ -323,7 +328,87 @@ fun HomeContent(
             }
         }
 
-        item { Spacer(Modifier.height(SweetHomeSpacing.xxl)) }
+        // --- Family pulse ---
+        familyPulse?.let { pulse ->
+            item {
+                FamilyPulseCard(
+                    pulse = pulse,
+                    onClick = onNavigateToHome,
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                )
+            }
+        }
+
+        item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
+    }
+}
+
+@Composable
+private fun FamilyPulseCard(
+    pulse: FamilyPulseUi,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = SweetHomeShapes.Card,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(SweetHomeSpacing.xl),
+        ) {
+            Text(
+                text = "В семье «${pulse.workspaceTitle}»".uppercase(),
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 0.5.sp,
+            )
+            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Avatar stack with overlap
+                Box(modifier = Modifier.height(32.dp).width((20 * pulse.memberInitials.size + 12).dp.coerceAtLeast(32.dp))) {
+                    pulse.memberInitials.forEachIndexed { i, initial ->
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .offset(x = (i * 22).dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .border(2.dp, MaterialTheme.colorScheme.surfaceVariant, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                text = initial,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Выполнено: «${pulse.lastActionTitle}»",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = pulse.relativeTime,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -335,11 +420,11 @@ private fun ContextPill(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Chip,
+        shape = SweetHomeShapes.PillLarge,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
-            modifier = Modifier.padding(4.dp),
+            modifier = Modifier.padding(SweetHomeSpacing.xxs),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             ContextPillSegment(
@@ -354,6 +439,13 @@ private fun ContextPill(
                 emoji = "💼",
                 selected = selected == DashboardContext.WORK,
                 onClick = { onSelect(DashboardContext.WORK) },
+                modifier = Modifier.weight(1f),
+            )
+            ContextPillSegment(
+                label = "Семья",
+                emoji = "👨‍👩‍👧",
+                selected = selected == DashboardContext.FAMILY,
+                onClick = { onSelect(DashboardContext.FAMILY) },
                 modifier = Modifier.weight(1f),
             )
         }
@@ -371,19 +463,20 @@ private fun ContextPillSegment(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = SweetHomeShapes.Chip,
+        shape = SweetHomeShapes.PillLarge,
         color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.xs),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.sm),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
         ) {
             Text(text = emoji, fontSize = 14.sp)
             Spacer(Modifier.width(SweetHomeSpacing.xxs))
             Text(
                 text = label,
                 fontSize = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                fontWeight = FontWeight.Bold,
                 color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -410,49 +503,64 @@ private fun TodayTaskCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
+                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
         ) {
-            // List icon badge
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape)
-                    .background(accent.copy(alpha = 0.16f)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(text = task.listIcon, fontSize = 18.sp)
+            // Overdue strip 3dp on left
+            if (task.isOverdue) {
+                Box(
+                    modifier = Modifier
+                        .width(4.dp)
+                        .fillMaxHeight()
+                        .background(MaterialTheme.colorScheme.error),
+                )
             }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    priorityDot(task.priority)?.let { dotColor ->
-                        Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .clip(CircleShape)
-                                .background(dotColor),
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.base),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(SweetHomeSpacing.iconButton)
+                        .clip(CircleShape)
+                        .background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(text = task.listIcon, fontSize = 18.sp)
+                }
+                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        priorityDot(task.priority)?.let { dotColor ->
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(dotColor),
+                            )
+                            Spacer(Modifier.width(SweetHomeSpacing.xxs))
+                        }
+                        Text(
+                            text = task.title,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (task.isOverdue) MaterialTheme.colorScheme.error
+                            else MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
                         )
-                        Spacer(Modifier.width(SweetHomeSpacing.xxs))
                     }
+                    Spacer(Modifier.height(2.dp))
                     Text(
-                        text = task.title,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = task.listTitle,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                     )
                 }
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    text = task.listTitle,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                )
+                Spacer(Modifier.width(SweetHomeSpacing.base))
+                DueBadge(label = task.dueLabel, isOverdue = task.isOverdue)
             }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
-            DueBadge(label = task.dueLabel, isOverdue = task.isOverdue)
         }
     }
 }
@@ -470,7 +578,7 @@ private fun DueBadge(label: String, isOverdue: Boolean) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = fg,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xs, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 4.dp),
         )
     }
 }
@@ -489,11 +597,11 @@ private fun TodayEmptyState(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.lg),
+                .padding(SweetHomeSpacing.xxxl),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(text = "🎉", fontSize = 28.sp)
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
+            Spacer(Modifier.height(SweetHomeSpacing.sm))
             Text(
                 text = "На сегодня всё чисто",
                 fontSize = 15.sp,
@@ -505,6 +613,7 @@ private fun TodayEmptyState(
                 text = when (context) {
                     DashboardContext.PERSONAL -> "Нет задач с дедлайном на сегодня в личном пространстве"
                     DashboardContext.WORK -> "Нет рабочих задач с дедлайном на сегодня"
+                    DashboardContext.FAMILY -> "Нет семейных задач с дедлайном на сегодня"
                 },
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -530,7 +639,7 @@ private fun GoalsWidget(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.md),
+                .padding(SweetHomeSpacing.xl),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -542,7 +651,7 @@ private fun GoalsWidget(
                 ) {
                     Text(text = "🎯", fontSize = 22.sp)
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.sm))
+                Spacer(Modifier.width(SweetHomeSpacing.base))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (goal == null) "Цели" else goal.title,
@@ -579,7 +688,7 @@ private fun GoalsWidget(
             }
             // Прогресс-бар по шагам, если они есть
             if (goal != null && goal.totalSteps > 0) {
-                Spacer(Modifier.height(SweetHomeSpacing.xs))
+                Spacer(Modifier.height(SweetHomeSpacing.sm))
                 val progress = goal.doneSteps.toFloat() / goal.totalSteps.toFloat()
                 Box(
                     modifier = Modifier
@@ -620,12 +729,12 @@ private fun QuickActionCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(SweetHomeSpacing.xs),
+                .padding(SweetHomeSpacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(text = emoji, fontSize = 26.sp)
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
+            Spacer(Modifier.height(SweetHomeSpacing.sm))
             Text(
                 text = label,
                 fontSize = 12.sp,

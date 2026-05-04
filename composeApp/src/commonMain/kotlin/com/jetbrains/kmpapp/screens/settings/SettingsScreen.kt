@@ -18,18 +18,28 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
+import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +66,11 @@ fun SettingsScreen(
     val notifyPush = prefs.firstOrNull { it.channel == "push" }?.enabled ?: true
     val notifyEmail = prefs.firstOrNull { it.channel == "email" }?.enabled ?: true
     var darkTheme by remember { mutableStateOf(false) }
+    var showWorkHoursSheet by remember { mutableStateOf(false) }
+    // Work hours state — defaults to Mon-Fri 09:00-18:00. Persisted by repository in real impl.
+    var workDays by remember { mutableStateOf(setOf("Пн", "Вт", "Ср", "Чт", "Пт")) }
+    var workStart by remember { mutableStateOf("09:00") }
+    var workEnd by remember { mutableStateOf("18:00") }
 
     Scaffold { paddingValues ->
         Column(
@@ -109,10 +124,18 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
                 SettingsNavRow(
                     emoji = "🌐",
-                    emojiBgColor = Color(0xFF3B82F6).copy(alpha = 0.15f),
+                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                     title = "Язык",
                     value = "Русский",
                     onClick = { },
+                )
+                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
+                SettingsNavRow(
+                    emoji = "💼",
+                    emojiBgColor = MaterialTheme.colorScheme.secondaryContainer,
+                    title = "Рабочие часы",
+                    value = workHoursSubtitle(workDays, workStart, workEnd),
+                    onClick = { showWorkHoursSheet = true },
                 )
             }
 
@@ -168,6 +191,200 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(16.dp))
+        }
+    }
+
+    if (showWorkHoursSheet) {
+        WorkHoursSheet(
+            initialDays = workDays,
+            initialStart = workStart,
+            initialEnd = workEnd,
+            onSave = { d, s, e ->
+                workDays = d
+                workStart = s
+                workEnd = e
+                showWorkHoursSheet = false
+            },
+            onDismiss = { showWorkHoursSheet = false },
+        )
+    }
+}
+
+private fun workHoursSubtitle(days: Set<String>, start: String, end: String): String {
+    val daysShort = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").filter { it in days }
+    return if (daysShort.isEmpty()) "Не задано" else "${daysShort.joinToString(" ")} · $start–$end"
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WorkHoursSheet(
+    initialDays: Set<String>,
+    initialStart: String,
+    initialEnd: String,
+    onSave: (Set<String>, String, String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var days by remember { mutableStateOf(initialDays) }
+    var start by remember { mutableStateOf(initialStart) }
+    var end by remember { mutableStateOf(initialEnd) }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = SweetHomeShapes.BottomSheet,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = SweetHomeSpacing.bottomSheetPaddingH,
+                vertical = SweetHomeSpacing.xl,
+            ),
+            verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+        ) {
+            Text(
+                "Рабочие часы",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                "В это время Dashboard будет показывать рабочий контекст.",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Text(
+                "ДНИ НЕДЕЛИ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").forEach { d ->
+                    val selected = d in days
+                    FilterChip(
+                        selected = selected,
+                        onClick = {
+                            days = if (selected) days - d else days + d
+                        },
+                        label = { Text(d, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+
+            Text(
+                "ВРЕМЯ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+                TimeSelectorButton(
+                    label = "Начало",
+                    value = start,
+                    onClick = { /* TODO: open M3 TimePicker */ },
+                    modifier = Modifier.weight(1f),
+                )
+                TimeSelectorButton(
+                    label = "Конец",
+                    value = end,
+                    onClick = { /* TODO: open M3 TimePicker */ },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            // Preview
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = SweetHomeShapes.Card,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+            ) {
+                Row(
+                    modifier = Modifier.padding(SweetHomeSpacing.xl),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.md),
+                ) {
+                    Icon(
+                        Icons.Outlined.Schedule,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Column {
+                        Text(
+                            "Предпросмотр",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            workHoursSubtitle(days, start, end),
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = SweetHomeShapes.Button,
+                ) { Text("Отмена") }
+                Button(
+                    onClick = { onSave(days, start, end) },
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = SweetHomeShapes.Button,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                ) { Text("Сохранить") }
+            }
+
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
+        }
+    }
+}
+
+@Composable
+private fun TimeSelectorButton(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier.height(56.dp),
+        shape = SweetHomeShapes.Button,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                label,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
+            )
+            Text(
+                value,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
         }
     }
 }

@@ -103,8 +103,8 @@ fun TemplateDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SweetHomeSpacing.md)
-                        .padding(top = SweetHomeSpacing.sm, bottom = SweetHomeSpacing.lg),
+                        .padding(horizontal = SweetHomeSpacing.xl)
+                        .padding(top = SweetHomeSpacing.base, bottom = SweetHomeSpacing.xxxl),
                 ) {
                     // Top action bar
                     Row(
@@ -112,7 +112,7 @@ fun TemplateDetailScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         IconBadge(emoji = "←", onClick = navigateBack)
-                        Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
                             detail?.let { d ->
                                 IconBadge(
                                     emoji = if (d.isFavorite) "★" else "☆",
@@ -122,7 +122,7 @@ fun TemplateDetailScreen(
                             // Publication / delete actions live in PublicationActionsBar below.
                         }
                     }
-                    Spacer(Modifier.height(SweetHomeSpacing.md))
+                    Spacer(Modifier.height(SweetHomeSpacing.xl))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -130,7 +130,7 @@ fun TemplateDetailScreen(
                                 .background(Color.White.copy(alpha = 0.18f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) { Text(emoji, fontSize = 28.sp) }
-                        Spacer(Modifier.size(SweetHomeSpacing.sm))
+                        Spacer(Modifier.size(SweetHomeSpacing.base))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 title,
@@ -150,7 +150,7 @@ fun TemplateDetailScreen(
                         }
                     }
                     detail?.description?.takeIf { it.isNotBlank() }?.let {
-                        Spacer(Modifier.height(SweetHomeSpacing.xs))
+                        Spacer(Modifier.height(SweetHomeSpacing.sm))
                         Text(
                             it,
                             fontSize = 14.sp,
@@ -179,11 +179,11 @@ fun TemplateDetailScreen(
                 }
             } else if (items.isEmpty()) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(SweetHomeSpacing.xl),
+                    modifier = Modifier.fillMaxWidth().padding(SweetHomeSpacing.xxxxl),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("📋", fontSize = 32.sp)
-                    Spacer(Modifier.height(SweetHomeSpacing.xs))
+                    Spacer(Modifier.height(SweetHomeSpacing.sm))
                     Text(
                         "В этом шаблоне нет задач",
                         fontSize = 13.sp,
@@ -194,15 +194,15 @@ fun TemplateDetailScreen(
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = SweetHomeSpacing.lg,
-                        vertical = SweetHomeSpacing.sm,
+                        horizontal = SweetHomeSpacing.xxxl,
+                        vertical = SweetHomeSpacing.base,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
                 ) {
                     items(items, key = { it.id }) { templateItem ->
                         TemplateItemCard(item = templateItem)
                     }
-                    item { Spacer(Modifier.height(SweetHomeSpacing.xxl)) }
+                    item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
                 }
             }
 
@@ -212,7 +212,7 @@ fun TemplateDetailScreen(
                     onClick = { showUseDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(SweetHomeSpacing.md)
+                        .padding(SweetHomeSpacing.xl)
                         .height(52.dp),
                     shape = RoundedCornerShape(16.dp),
                     color = accent,
@@ -312,19 +312,19 @@ private fun PublicationActionsBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.xs),
+            .padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.sm),
         shape = SweetHomeShapes.Card,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        Column(modifier = Modifier.padding(SweetHomeSpacing.sm)) {
+        Column(modifier = Modifier.padding(SweetHomeSpacing.base)) {
             Text(
                 label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(SweetHomeSpacing.xs))
-            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs)) {
+            Spacer(Modifier.height(SweetHomeSpacing.sm))
+            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
                 if (ctaLabel != null && ctaAction != null) {
                     TextButton(onClick = ctaAction, enabled = !isLoading) { Text(ctaLabel) }
                 }
@@ -345,7 +345,7 @@ private fun TemplateItemCard(item: TemplateListItem) {
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 0.5.dp,
     ) {
-        Column(modifier = Modifier.padding(SweetHomeSpacing.sm)) {
+        Column(modifier = Modifier.padding(SweetHomeSpacing.base)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 priorityEmoji(item.priority)?.let {
                     Text(it, fontSize = 14.sp)

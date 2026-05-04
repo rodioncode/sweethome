@@ -7,11 +7,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Task
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -109,6 +132,7 @@ fun MainScreen(
 
     var selectedTab by rememberSaveable { mutableStateOf(MainTab.DASHBOARD) }
     var showCreateGroupDialog by remember { mutableStateOf(false) }
+    var fabExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Pending cross-tab navigation. NavController.navigate() requires the target tab's NavHost
@@ -176,7 +200,7 @@ fun MainScreen(
                 NavigationBarItem(
                     selected = selectedTab == MainTab.DASHBOARD,
                     onClick = { selectedTab = MainTab.DASHBOARD },
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
                     label = { Text("Главная") },
                 )
                 NavigationBarItem(
@@ -207,9 +231,30 @@ fun MainScreen(
         },
         floatingActionButton = {
             val isInListDetail = listsBackStackEntry?.destination?.hasRoute(ListsDetail::class) == true
-            if (selectedTab == MainTab.LISTS && !isInListDetail) {
-                FloatingActionButton(onClick = { navigateToCreateList(null) }) {
-                    Icon(Icons.Default.Add, "Добавить список")
+            when {
+                selectedTab == MainTab.LISTS && !isInListDetail -> {
+                    FloatingActionButton(onClick = { navigateToCreateList(null) }) {
+                        Icon(Icons.Default.Add, "Добавить список")
+                    }
+                }
+                selectedTab == MainTab.DASHBOARD -> {
+                    DashboardFabSpeedDial(
+                        expanded = fabExpanded,
+                        onToggle = { fabExpanded = !fabExpanded },
+                        onAddTask = {
+                            fabExpanded = false
+                            // TODO: open quick add-task sheet (G-02 entry)
+                            navigateToCreateList(null)
+                        },
+                        onAddList = {
+                            fabExpanded = false
+                            navigateToCreateList(null)
+                        },
+                        onAddGoal = {
+                            fabExpanded = false
+                            navigateToGoals()
+                        },
+                    )
                 }
             }
         },
@@ -224,6 +269,7 @@ fun MainScreen(
                 onNavigateToGroups = { selectedTab = MainTab.GROUPS },
                 navigateToProfile = navigateToProfile,
                 navigateToGoals = navigateToGoals,
+                onNavigateToLists = { selectedTab = MainTab.LISTS },
             )
             MainTab.HOME -> FamilyContent(
                 contentPadding = paddingValues,
@@ -283,6 +329,80 @@ fun MainScreen(
                 showCreateGroupDialog = false
             },
         )
+    }
+}
+
+@Composable
+private fun DashboardFabSpeedDial(
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    onAddTask: () -> Unit,
+    onAddList: () -> Unit,
+    onAddGoal: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.End,
+        verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+    ) {
+        AnimatedVisibility(
+            visible = expanded,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { it }),
+            exit = fadeOut() + slideOutVertically(targetOffsetY = { it }),
+        ) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+            ) {
+                SpeedDialAction("Цель", Icons.Default.Flag, onAddGoal)
+                SpeedDialAction("Список", Icons.Default.PlaylistAdd, onAddList)
+                SpeedDialAction("Задача", Icons.Default.Task, onAddTask)
+            }
+        }
+        FloatingActionButton(
+            onClick = onToggle,
+            shape = CircleShape,
+        ) {
+            Icon(
+                if (expanded) Icons.Default.Close else Icons.Default.Add,
+                contentDescription = if (expanded) "Закрыть" else "Создать",
+            )
+        }
+    }
+}
+
+@Composable
+private fun SpeedDialAction(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.End,
+    ) {
+        androidx.compose.material3.Surface(
+            shape = SweetHomeShapes.PillLarge,
+            color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+            shadowElevation = 2.dp,
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.sm),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Spacer(Modifier.width(SweetHomeSpacing.base))
+        FloatingActionButton(
+            onClick = onClick,
+            modifier = Modifier.size(SweetHomeSpacing.iconButton + 8.dp),
+            shape = CircleShape,
+            containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
+            contentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+        }
     }
 }
 

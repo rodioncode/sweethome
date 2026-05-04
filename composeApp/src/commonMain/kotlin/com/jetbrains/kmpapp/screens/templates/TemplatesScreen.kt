@@ -69,20 +69,20 @@ fun TemplatesScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .padding(top = SweetHomeSpacing.sm),
+            .padding(top = SweetHomeSpacing.base),
     ) {
         Text(
             "Шаблоны",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.lg),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
         )
-        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Spacer(Modifier.height(SweetHomeSpacing.base))
         TemplatesTabsRow(selected = tab, onSelect = viewModel::setTab)
-        Spacer(Modifier.height(SweetHomeSpacing.xs))
-        ScopeFiltersRow(selected = scope, onSelect = viewModel::setScope)
         Spacer(Modifier.height(SweetHomeSpacing.sm))
+        ScopeFiltersRow(selected = scope, onSelect = viewModel::setScope)
+        Spacer(Modifier.height(SweetHomeSpacing.base))
 
         if (isLoading && templates.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -94,10 +94,10 @@ fun TemplatesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    horizontal = SweetHomeSpacing.lg,
-                    vertical = SweetHomeSpacing.xs,
+                    horizontal = SweetHomeSpacing.xxxl,
+                    vertical = SweetHomeSpacing.sm,
                 ),
-                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
             ) {
                 items(templates, key = { it.id }) { template ->
                     TemplateCard(
@@ -108,7 +108,7 @@ fun TemplatesScreen(
                         onToggleFavorite = { viewModel.toggleFavorite(template) },
                     )
                 }
-                item { Spacer(Modifier.height(SweetHomeSpacing.xxl)) }
+                item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
             }
         }
     }
@@ -122,8 +122,8 @@ private fun TemplatesTabsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.lg),
-        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+            .padding(horizontal = SweetHomeSpacing.xxxl),
+        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
     ) {
         TemplatesTab.entries.forEach { t ->
             TabPill(
@@ -155,7 +155,7 @@ private fun TabPill(
         else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box(
-            modifier = Modifier.padding(vertical = SweetHomeSpacing.xs),
+            modifier = Modifier.padding(vertical = SweetHomeSpacing.sm),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -175,8 +175,8 @@ private fun ScopeFiltersRow(
     onSelect: (String?) -> Unit,
 ) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = SweetHomeSpacing.lg),
-        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+        contentPadding = PaddingValues(horizontal = SweetHomeSpacing.xxxl),
+        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
     ) {
         items(scopeFilters, key = { it.key ?: "__all__" }) { filter ->
             val isSelected = selected == filter.key
@@ -189,7 +189,7 @@ private fun ScopeFiltersRow(
                 else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = SweetHomeSpacing.xxs),
+                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.xxs),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(filter.emoji, fontSize = 13.sp)
@@ -225,7 +225,7 @@ private fun TemplateCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.md),
+                .padding(SweetHomeSpacing.xl),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -237,7 +237,7 @@ private fun TemplateCard(
             ) {
                 Text(emoji, fontSize = 22.sp)
             }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Spacer(Modifier.width(SweetHomeSpacing.base))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -249,7 +249,7 @@ private fun TemplateCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    Spacer(Modifier.width(SweetHomeSpacing.xs))
+                    Spacer(Modifier.width(SweetHomeSpacing.sm))
                     visibilityBadge(template)?.let { badge ->
                         VisibilityChip(label = badge.first, color = badge.second)
                     }
@@ -272,7 +272,7 @@ private fun TemplateCard(
                     )
                 }
             }
-            Spacer(Modifier.width(SweetHomeSpacing.xs))
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
             Surface(
                 onClick = onToggleFavorite,
                 shape = CircleShape,
@@ -300,7 +300,7 @@ private fun VisibilityChip(label: String, color: Color) {
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xs, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 2.dp),
         )
     }
 }
@@ -318,7 +318,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(SweetHomeSpacing.xxl),
+            .padding(SweetHomeSpacing.huge),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -330,7 +330,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
             },
             fontSize = 40.sp,
         )
-        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Spacer(Modifier.height(SweetHomeSpacing.base))
         Text(
             text = when (tab) {
                 TemplatesTab.PUBLIC -> if (scope != null) "Нет публичных шаблонов в этой категории"
@@ -343,7 +343,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(SweetHomeSpacing.xs))
+        Spacer(Modifier.height(SweetHomeSpacing.sm))
         Text(
             text = when (tab) {
                 TemplatesTab.MINE -> "Откройте список → меню → «Сохранить как шаблон»"

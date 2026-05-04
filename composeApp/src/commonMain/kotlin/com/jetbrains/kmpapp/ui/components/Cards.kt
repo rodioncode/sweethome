@@ -153,7 +153,7 @@ fun SweetHomeTaskItem(
         shadowElevation = if (isChecked) 0.dp else 1.dp,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.md, vertical = SweetHomeSpacing.sm),
+            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.base),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
@@ -165,7 +165,7 @@ fun SweetHomeTaskItem(
                     checkmarkColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             )
-            Spacer(Modifier.width(SweetHomeSpacing.xs))
+            Spacer(Modifier.width(SweetHomeSpacing.sm))
             Column {
                 Text(
                     text = text,

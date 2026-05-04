@@ -174,8 +174,8 @@ fun SplashScreen(
                 onClick = onNavigateToLogin,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
+                    .height(56.dp),
+                shape = com.jetbrains.kmpapp.ui.SweetHomeShapes.Card,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
                     contentColor = PrimaryGreen,
@@ -192,8 +192,8 @@ fun SplashScreen(
                 onClick = onNavigateToRegister,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(16.dp),
+                    .height(56.dp),
+                shape = com.jetbrains.kmpapp.ui.SweetHomeShapes.Card,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color.White,
                 ),

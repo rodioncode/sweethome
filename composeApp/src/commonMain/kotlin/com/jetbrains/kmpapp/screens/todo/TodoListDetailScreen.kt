@@ -1576,7 +1576,7 @@ private fun ItemBottomSheet(
                         )
                     }
                 }
-                Spacer(Modifier.height(SweetHomeSpacing.lg))
+                Spacer(Modifier.height(SweetHomeSpacing.xxxl))
             }
         }
     }
@@ -1720,12 +1720,12 @@ private fun ShoppingDetailsSheet(
             if (qtyMeta.isNotBlank()) {
                 Text(qtyMeta, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Spacer(Modifier.height(SweetHomeSpacing.md))
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
 
             // Image
             s?.imageUrl?.takeIf { it.startsWith("http", ignoreCase = true) }?.let { url ->
                 ProductImagePreview(url = url)
-                Spacer(Modifier.height(SweetHomeSpacing.md))
+                Spacer(Modifier.height(SweetHomeSpacing.xl))
             }
 
             // Brand
@@ -1764,7 +1764,7 @@ private fun ShoppingDetailsSheet(
                 }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.md))
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
             Surface(
                 onClick = { onEdit(); close() },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
@@ -1780,7 +1780,7 @@ private fun ShoppingDetailsSheet(
                     )
                 }
             }
-            Spacer(Modifier.height(SweetHomeSpacing.md))
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
         }
     }
 }

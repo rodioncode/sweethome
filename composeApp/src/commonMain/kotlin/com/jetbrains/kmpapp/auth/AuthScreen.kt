@@ -45,6 +45,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.ui.LocalSemanticColors
+import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.SweetHomeSpacing
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -110,20 +113,20 @@ private fun LoginContent(
                     color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
-                .padding(horizontal = 24.dp, vertical = 40.dp),
+                .padding(horizontal = SweetHomeSpacing.xxxl, vertical = SweetHomeSpacing.xxxxl),
         ) {
             // Decorative circles
             Box(
                 modifier = Modifier
                     .size(160.dp)
                     .align(Alignment.TopEnd)
-                    .background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(50)),
+                    .background(Color.White.copy(alpha = 0.06f), SweetHomeShapes.Circle),
             )
             Box(
                 modifier = Modifier
-                    .size(100.dp)
+                    .size(96.dp)
                     .align(Alignment.TopEnd)
-                    .background(Color.White.copy(alpha = 0.08f), RoundedCornerShape(50)),
+                    .background(Color.White.copy(alpha = 0.08f), SweetHomeShapes.Circle),
             )
 
             Column(
@@ -131,14 +134,14 @@ private fun LoginContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("🏠", fontSize = 28.sp)
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(SweetHomeSpacing.sm))
                 Text(
                     text = "SweetHome",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(SweetHomeSpacing.xxs))
                 Text(
                     text = "Войдите в свой аккаунт",
                     fontSize = 14.sp,
@@ -151,8 +154,8 @@ private fun LoginContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 32.dp),
+                .padding(horizontal = SweetHomeSpacing.xxxl)
+                .padding(top = SweetHomeSpacing.xxxxl),
         ) {
             // Email field
             Text(
@@ -160,7 +163,7 @@ private fun LoginContent(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 6.dp),
+                modifier = Modifier.padding(bottom = SweetHomeSpacing.xs),
             )
             OutlinedTextField(
                 value = email,
@@ -169,7 +172,7 @@ private fun LoginContent(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = RoundedCornerShape(12.dp),
+                shape = SweetHomeShapes.Medium,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -178,7 +181,7 @@ private fun LoginContent(
                 ),
             )
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
 
             // Password field
             Text(
@@ -186,7 +189,7 @@ private fun LoginContent(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 6.dp),
+                modifier = Modifier.padding(bottom = SweetHomeSpacing.xs),
             )
             OutlinedTextField(
                 value = password,
@@ -196,7 +199,7 @@ private fun LoginContent(
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = RoundedCornerShape(12.dp),
+                shape = SweetHomeShapes.Medium,
                 trailingIcon = {
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Text(
@@ -216,11 +219,11 @@ private fun LoginContent(
                 text = "Минимум 8 символов",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp, start = 4.dp),
+                modifier = Modifier.padding(top = SweetHomeSpacing.xxs, start = SweetHomeSpacing.xxs),
             )
 
             if (uiState is AuthUiState.Error) {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(SweetHomeSpacing.sm))
                 Text(
                     text = uiState.message,
                     color = MaterialTheme.colorScheme.error,
@@ -229,15 +232,15 @@ private fun LoginContent(
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
 
             Button(
                 onClick = { onLogin(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(54.dp),
+                    .height(SweetHomeSpacing.huge),
                 enabled = uiState !is AuthUiState.Loading,
-                shape = RoundedCornerShape(16.dp),
+                shape = SweetHomeShapes.Card,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -245,7 +248,7 @@ private fun LoginContent(
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
+                        modifier = Modifier.size(SweetHomeSpacing.xxxl),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
@@ -254,7 +257,7 @@ private fun LoginContent(
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.base))
 
             TextButton(
                 onClick = onForgotPassword,
@@ -263,23 +266,25 @@ private fun LoginContent(
                 Text("Забыли пароль?", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.base))
 
             DividerWithText("или")
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.xl))
+
+            val semantic = LocalSemanticColors.current
 
             // Google
             Surface(
                 onClick = { /* coming soon */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
+                    .height(SweetHomeSpacing.huge),
+                shape = SweetHomeShapes.Button,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
-                    MaterialTheme.colorScheme.outlineVariant,
+                    semantic.oauthBorder,
                 ),
                 shadowElevation = 2.dp,
             ) {
@@ -289,7 +294,7 @@ private fun LoginContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(10.dp))
+                    Spacer(Modifier.width(SweetHomeSpacing.md))
                     Text(
                         "Войти через Google",
                         fontSize = 15.sp,
@@ -299,16 +304,16 @@ private fun LoginContent(
                 }
             }
 
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.base))
 
             // Apple
             Surface(
                 onClick = { /* coming soon */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = Color(0xFF1D1D1F),
+                    .height(SweetHomeSpacing.huge),
+                shape = SweetHomeShapes.Button,
+                color = semantic.oauthAppleBg,
                 shadowElevation = 3.dp,
             ) {
                 Row(
@@ -317,12 +322,12 @@ private fun LoginContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("🍎", fontSize = 18.sp)
-                    Spacer(Modifier.width(10.dp))
-                    Text("Войти через Apple", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Spacer(Modifier.width(SweetHomeSpacing.md))
+                    Text("Войти через Apple", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = semantic.oauthAppleText)
                 }
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxxl))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -359,7 +364,7 @@ private fun LoginContent(
                 )
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
         }
     }
     }
@@ -391,12 +396,12 @@ private fun GuestAuthenticatedContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(24.dp),
+            .padding(SweetHomeSpacing.xxxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text("Вы вошли как гость", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(SweetHomeSpacing.xxxl))
         Button(
             onClick = onLinkEmail,
             modifier = Modifier.fillMaxWidth(),
@@ -407,7 +412,7 @@ private fun GuestAuthenticatedContent(
         ) {
             Text("Привязать email и пароль")
         }
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(SweetHomeSpacing.xl))
         TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
             Text("Выйти", color = MaterialTheme.colorScheme.error)
         }
