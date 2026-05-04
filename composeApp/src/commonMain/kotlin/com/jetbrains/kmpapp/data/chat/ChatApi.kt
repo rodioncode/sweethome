@@ -9,9 +9,8 @@ interface ChatApi {
 
     /**
      * Поток новых сообщений + состояния соединения.
-     * Текущая реализация — long-poll каждые ~3с (контракт совместим с будущим SSE).
-     * TODO: переключить на Ktor SSE: install(SSE) на apiClient + sse("$baseUrl/workspaces/$id/chat/stream").
-     * WS (`/v1/workspaces/{id}/chat/ws`) — последующая итерация для двунаправленного канала.
+     * Реализация: WebSocket к `/v1/workspaces/{id}/chat/ws`. На обрыве — exponential backoff
+     * + REST polling, чтобы пользователь не висел без апдейтов до восстановления WS.
      */
     fun streamMessages(workspaceId: String): Flow<ChatStreamEvent>
 }

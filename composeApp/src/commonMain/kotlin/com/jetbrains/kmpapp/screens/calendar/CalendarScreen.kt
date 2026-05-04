@@ -16,16 +16,21 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,8 +67,7 @@ fun CalendarContent(
 
     var showFilters by remember { mutableStateOf(false) }
     var openEvent by remember { mutableStateOf<CalendarEvent?>(null) }
-    var showAssign by remember { mutableStateOf(false) }
-    val unscheduled by vm.unscheduledItems.collectAsStateWithLifecycle()
+    var showCreateTask by remember { mutableStateOf(false) }
     val lists by vm.lists.collectAsStateWithLifecycle()
 
     Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
@@ -86,17 +90,19 @@ fun CalendarContent(
             )
 
             when (view) {
-                CalendarView.MONTH -> MonthView(
+                CalendarView.MONTH -> MonthPager(
                     cursor = cursor,
                     selected = selected,
                     eventsByDate = eventsByDate,
+                    onCursorChange = vm::setCursor,
                     onSelect = vm::setSelected,
                     onOpenEvent = { openEvent = it },
                 )
-                CalendarView.WEEK -> WeekView(
+                CalendarView.WEEK -> WeekPager(
                     cursor = cursor,
                     selected = selected,
                     eventsByDate = eventsByDate,
+                    onCursorChange = vm::setCursor,
                     onSelect = vm::setSelected,
                     onOpenEvent = { openEvent = it },
                 )
@@ -108,24 +114,23 @@ fun CalendarContent(
             }
         }
 
-        // FAB для назначения даты выбранному дню
+        // FAB для создания новой задачи на выбранный день
         androidx.compose.material3.FloatingActionButton(
-            onClick = { showAssign = true },
+            onClick = { showCreateTask = true },
             modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
         ) {
             Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
     }
 
-    if (showAssign) {
-        AssignDateSheet(
+    if (showCreateTask) {
+        CreateCalendarTaskSheet(
             date = selected,
-            unscheduled = unscheduled,
             lists = lists,
-            onDismiss = { showAssign = false },
-            onAssign = { itemId, hour, minute ->
-                vm.assignDate(itemId, selected, hour, minute)
-                showAssign = false
+            onDismiss = { showCreateTask = false },
+            onCreate = { listId, title, note ->
+                vm.createItemForList(listId, title, selected, note)
+                showCreateTask = false
             },
         )
     }
@@ -226,6 +231,100 @@ private fun IconBtn(label: String, onClick: () -> Unit) {
         Box(contentAlignment = Alignment.Center) {
             Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
         }
+    }
+}
+
+private const val PAGER_INITIAL = 1000
+
+private fun monthsBetween(a: LocalDate, b: LocalDate): Int =
+    (b.year - a.year) * 12 + (b.monthNumber - a.monthNumber)
+
+@Composable
+private fun MonthPager(
+    cursor: LocalDate,
+    selected: LocalDate,
+    eventsByDate: Map<LocalDate, List<CalendarEvent>>,
+    onCursorChange: (LocalDate) -> Unit,
+    onSelect: (LocalDate) -> Unit,
+    onOpenEvent: (CalendarEvent) -> Unit,
+) {
+    val baseMonth = remember { LocalDate(cursor.year, cursor.month, 1) }
+    val pagerState = rememberPagerState(initialPage = PAGER_INITIAL) { Int.MAX_VALUE }
+
+    // External cursor changes (кнопки ‹›/Сегодня) — анимируем pager к нужному месяцу.
+    LaunchedEffect(cursor) {
+        val targetPage = PAGER_INITIAL + monthsBetween(baseMonth, cursor)
+        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    // Свайп пользователя — обновляем cursor.
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                val delta = page - PAGER_INITIAL
+                val newCursor = baseMonth.plus(delta, DateTimeUnit.MONTH)
+                if (newCursor != cursor) onCursorChange(newCursor)
+            }
+    }
+
+    HorizontalPager(state = pagerState) { page ->
+        val pageMonth = baseMonth.plus(page - PAGER_INITIAL, DateTimeUnit.MONTH)
+        MonthView(
+            cursor = pageMonth,
+            selected = selected,
+            eventsByDate = eventsByDate,
+            onSelect = onSelect,
+            onOpenEvent = onOpenEvent,
+        )
+    }
+}
+
+@Composable
+private fun WeekPager(
+    cursor: LocalDate,
+    selected: LocalDate,
+    eventsByDate: Map<LocalDate, List<CalendarEvent>>,
+    onCursorChange: (LocalDate) -> Unit,
+    onSelect: (LocalDate) -> Unit,
+    onOpenEvent: (CalendarEvent) -> Unit,
+) {
+    val baseWeek = remember {
+        val dow = (cursor.dayOfWeek.ordinal) % 7
+        cursor.minus(dow, DateTimeUnit.DAY)
+    }
+    val pagerState = rememberPagerState(initialPage = PAGER_INITIAL) { Int.MAX_VALUE }
+
+    LaunchedEffect(cursor) {
+        val cursorWeekStart = cursor.minus((cursor.dayOfWeek.ordinal) % 7, DateTimeUnit.DAY)
+        val daysDelta = cursorWeekStart.toEpochDays() - baseWeek.toEpochDays()
+        val targetPage = PAGER_INITIAL + (daysDelta / 7).toInt()
+        if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                val delta = page - PAGER_INITIAL
+                val newCursor = baseWeek.plus(delta * 7L, DateTimeUnit.DAY)
+                if (newCursor != cursor) onCursorChange(newCursor)
+            }
+    }
+
+    HorizontalPager(state = pagerState) { page ->
+        val weekStart = baseWeek.plus((page - PAGER_INITIAL) * 7L, DateTimeUnit.DAY)
+        WeekView(
+            cursor = weekStart,
+            selected = selected,
+            eventsByDate = eventsByDate,
+            onSelect = onSelect,
+            onOpenEvent = onOpenEvent,
+        )
     }
 }
 
@@ -482,7 +581,7 @@ private fun sourceLabel(s: EventSource): String = when (s) {
 private fun eventColor(ev: CalendarEvent): Color = when (ev.priority) {
     "high" -> MaterialTheme.colorScheme.error
     "medium" -> Color(0xFFE8A87C)
-    "low" -> MaterialTheme.colorScheme.primary
-    else -> MaterialTheme.colorScheme.outline
+    "low" -> MaterialTheme.colorScheme.tertiary
+    else -> MaterialTheme.colorScheme.primary
 }
 

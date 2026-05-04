@@ -45,9 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.BackgroundWarm
-import com.jetbrains.kmpapp.ui.DividerColor
-import com.jetbrains.kmpapp.ui.PrimaryGreen
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -98,7 +95,7 @@ private fun LoginContent(
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
 
-    Scaffold(containerColor = BackgroundWarm) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -110,7 +107,7 @@ private fun LoginContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(
-                    color = PrimaryGreen,
+                    color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
                 .padding(horizontal = 24.dp, vertical = 40.dp),
@@ -168,16 +165,16 @@ private fun LoginContent(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it; onClearError() },
-                placeholder = { Text("your@email.com", color = Color(0xFFBDBDBD)) },
+                placeholder = { Text("your@email.com", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryGreen,
-                    unfocusedBorderColor = DividerColor,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
 
@@ -194,7 +191,7 @@ private fun LoginContent(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it; onClearError() },
-                placeholder = { Text("••••••••", color = Color(0xFFBDBDBD)) },
+                placeholder = { Text("••••••••", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
@@ -209,10 +206,10 @@ private fun LoginContent(
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryGreen,
-                    unfocusedBorderColor = DividerColor,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
             Text(
@@ -241,12 +238,15 @@ private fun LoginContent(
                     .height(54.dp),
                 enabled = uiState !is AuthUiState.Loading,
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
                 } else {
@@ -276,8 +276,11 @@ private fun LoginContent(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, Color(0xFFDADCE0)),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(
+                    1.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant,
+                ),
                 shadowElevation = 2.dp,
             ) {
                 Row(
@@ -285,9 +288,14 @@ private fun LoginContent(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                    Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.width(10.dp))
-                    Text("Войти через Google", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1D1D1F))
+                    Text(
+                        "Войти через Google",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
 
@@ -334,7 +342,7 @@ private fun LoginContent(
                         text = "Зарегистрироваться",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        color = PrimaryGreen,
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -363,13 +371,13 @@ internal fun DividerWithText(text: String) {
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
+        HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
         Text(
             text = "  $text  ",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        HorizontalDivider(modifier = Modifier.weight(1f), color = DividerColor)
+        HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -378,7 +386,7 @@ private fun GuestAuthenticatedContent(
     onLinkEmail: () -> Unit,
     onLogout: () -> Unit,
 ) {
-    Scaffold(containerColor = BackgroundWarm) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -392,7 +400,10 @@ private fun GuestAuthenticatedContent(
         Button(
             onClick = onLinkEmail,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
         ) {
             Text("Привязать email и пароль")
         }

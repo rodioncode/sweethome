@@ -30,9 +30,138 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedTextField
 import com.jetbrains.kmpapp.data.calendar.CalendarEvent
 import com.jetbrains.kmpapp.data.calendar.EventSource
 import com.jetbrains.kmpapp.data.lists.TodoList
+import kotlinx.datetime.LocalDate
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CreateCalendarTaskSheet(
+    date: LocalDate,
+    lists: List<TodoList>,
+    onDismiss: () -> Unit,
+    onCreate: (listId: String, title: String, note: String?) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var title by remember { mutableStateOf("") }
+    var note by remember { mutableStateOf("") }
+    var selectedListId by remember(lists) { mutableStateOf(lists.firstOrNull()?.id ?: "") }
+    var listMenuExpanded by remember { mutableStateOf(false) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "Новая задача",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                "На ${date.dayOfMonth}.${date.monthNumber.toString().padStart(2, '0')}.${date.year}",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (lists.isEmpty()) {
+                Text(
+                    "Нет доступных списков. Сначала создайте список.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.error,
+                )
+                return@Column
+            }
+
+            ExposedDropdownMenuBox(
+                expanded = listMenuExpanded,
+                onExpandedChange = { listMenuExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = lists.find { it.id == selectedListId }?.title ?: "Выберите список",
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("Список") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = listMenuExpanded)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    shape = RoundedCornerShape(12.dp),
+                )
+                ExposedDropdownMenu(
+                    expanded = listMenuExpanded,
+                    onDismissRequest = { listMenuExpanded = false },
+                ) {
+                    lists.forEach { list ->
+                        DropdownMenuItem(
+                            text = { Text(list.title) },
+                            onClick = {
+                                selectedListId = list.id
+                                listMenuExpanded = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Название *") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            )
+
+            OutlinedTextField(
+                value = note,
+                onValueChange = { note = it },
+                label = { Text("Заметка") },
+                maxLines = 3,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+            )
+
+            Surface(
+                onClick = {
+                    if (title.isNotBlank() && selectedListId.isNotBlank()) {
+                        onCreate(selectedListId, title, note.takeIf { it.isNotBlank() })
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = if (title.isNotBlank()) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        "Создать",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+            ) { Text("Отмена") }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

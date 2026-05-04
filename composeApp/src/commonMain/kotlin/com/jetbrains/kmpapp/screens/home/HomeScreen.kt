@@ -90,7 +90,7 @@ fun HomeContent(
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    val nameToShow = displayName ?: userId?.take(8)
+                    val nameToShow = displayName?.takeIf { it.isNotBlank() }
                     nameToShow?.let {
                         Text(
                             text = it,
@@ -114,8 +114,8 @@ fun HomeContent(
                     color = MaterialTheme.colorScheme.primary,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        val initial = displayName?.firstOrNull()?.uppercase()
-                            ?: userId?.firstOrNull()?.uppercase() ?: "?"
+                        val initial = displayName?.takeIf { it.isNotBlank() }
+                            ?.firstOrNull()?.uppercase() ?: "·"
                         Text(
                             text = initial,
                             fontSize = 16.sp,
@@ -334,7 +334,7 @@ private fun ContextPill(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.fillMaxWidth(),
         shape = SweetHomeShapes.Chip,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
@@ -347,12 +347,14 @@ private fun ContextPill(
                 emoji = "🏠",
                 selected = selected == DashboardContext.PERSONAL,
                 onClick = { onSelect(DashboardContext.PERSONAL) },
+                modifier = Modifier.weight(1f),
             )
             ContextPillSegment(
                 label = "Работа",
                 emoji = "💼",
                 selected = selected == DashboardContext.WORK,
                 onClick = { onSelect(DashboardContext.WORK) },
+                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -364,9 +366,11 @@ private fun ContextPillSegment(
     emoji: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         onClick = onClick,
+        modifier = modifier,
         shape = SweetHomeShapes.Chip,
         color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
     ) {

@@ -128,8 +128,8 @@ fun ProfileContent(
                                 .border(3.dp, Color.White.copy(alpha = 0.4f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            val displayName = profile?.displayName ?: userId ?: ""
-                            val initial = displayName.firstOrNull()?.uppercase() ?: "?"
+                            val displayName = profile?.displayName?.takeIf { it.isNotBlank() } ?: ""
+                            val initial = displayName.firstOrNull()?.uppercase() ?: "·"
                             Text(
                                 initial,
                                 fontSize = 28.sp,
@@ -139,7 +139,8 @@ fun ProfileContent(
                         }
                         Column {
                             Text(
-                                if (isGuest) "Гостевой аккаунт" else (profile?.displayName ?: userId ?: "Пользователь"),
+                                if (isGuest) "Гостевой аккаунт"
+                                else (profile?.displayName?.takeIf { it.isNotBlank() } ?: "Пользователь"),
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary,

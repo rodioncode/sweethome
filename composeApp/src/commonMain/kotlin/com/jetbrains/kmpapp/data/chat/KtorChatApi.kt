@@ -3,13 +3,15 @@ package com.jetbrains.kmpapp.data.chat
 import com.jetbrains.kmpapp.auth.ApiEnvelope
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
-import io.ktor.client.plugins.sse.sse
+import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
+import io.ktor.websocket.Frame
+import io.ktor.websocket.readText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -45,9 +47,16 @@ class KtorChatApi(
         Unit
     }
 
+    /**
+     * Поток сообщений через WebSocket (`/v1/workspaces/{id}/chat/ws`).
+     * Стартовый снапшот забираем REST-запросом, дальше слушаем WS-фреймы и аккумулируем.
+     * При обрыве соединения — exponential backoff + REST polling, пока WS не восстановится.
+     */
     override fun streamMessages(workspaceId: String): Flow<ChatStreamEvent> = flow {
         val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
+        val wsUrl = wsUrlFor(workspaceId)
         var backoffMs = 1_000L
+
         while (true) {
             emit(ChatStreamEvent.Connecting)
             // Стартовый снапшот через REST.
@@ -56,11 +65,11 @@ class KtorChatApi(
             emit(ChatStreamEvent.Snapshot(accumulated.toList()))
 
             try {
-                apiClient.sse(urlString = "$baseUrl/workspaces/$workspaceId/chat/stream") {
-                    incoming.collect { event ->
-                        val data = event.data ?: return@collect
-                        // Пропускаем heartbeat (event начинается с ":") — Ktor SSE plugin фильтрует их сам.
-                        val msg = runCatching { json.decodeFromString<ChatMessage>(data) }.getOrNull() ?: return@collect
+                apiClient.webSocket(urlString = wsUrl) {
+                    for (frame in incoming) {
+                        val text = (frame as? Frame.Text)?.readText() ?: continue
+                        val msg = runCatching { json.decodeFromString<ChatMessage>(text) }.getOrNull()
+                            ?: continue
                         val idx = accumulated.indexOfFirst { it.id == msg.id }
                         if (idx >= 0) accumulated[idx] = msg else accumulated += msg
                         emit(ChatStreamEvent.Snapshot(accumulated.toList()))
@@ -88,6 +97,16 @@ class KtorChatApi(
                 backoffMs = (backoffMs * 2).coerceAtMost(30_000L)
             }
         }
+    }
+
+    /** Превращает http(s) baseUrl в ws(s) URL для chat-WebSocket эндпоинта. */
+    private fun wsUrlFor(workspaceId: String): String {
+        val wsBase = when {
+            baseUrl.startsWith("https://") -> "wss://" + baseUrl.removePrefix("https://")
+            baseUrl.startsWith("http://") -> "ws://" + baseUrl.removePrefix("http://")
+            else -> baseUrl
+        }
+        return "$wsBase/workspaces/$workspaceId/chat/ws"
     }
 }
 
