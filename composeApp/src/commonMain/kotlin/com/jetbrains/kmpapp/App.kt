@@ -38,7 +38,7 @@ import com.jetbrains.kmpapp.screens.settings.SettingsScreen
 import com.jetbrains.kmpapp.screens.spaces.JoinByCodeScreen
 import com.jetbrains.kmpapp.screens.todo.CreateListScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
-import com.jetbrains.kmpapp.ui.SweetHomeTheme
+import com.jetbrains.kmpapp.ui.CozyTheme
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -119,10 +119,25 @@ object PasswordResetRequestDestination
 @Serializable
 data class PasswordResetConfirmDestination(val token: String = "")
 
+@Serializable
+object OnboardingDestination
+
+@Serializable
+object PetCardDestination
+
+@Serializable
+object PetChooseDestination
+
+@Serializable
+object AddTaskDestination
+
+@Serializable
+object MenuWeekDestination
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
-    SweetHomeTheme {
+    CozyTheme {
         Surface {
             val navController: NavHostController = rememberNavController()
             val authRepository: AuthRepository = koinInject()
@@ -423,6 +438,43 @@ fun App() {
                         chatTitle = dest.title,
                         memberCount = dest.memberCount,
                         navigateBack = { navController.popBackStack() },
+                    )
+                }
+                composable<OnboardingDestination> {
+                    com.jetbrains.kmpapp.screens.onboarding.OnboardingScreen(
+                        onComplete = {
+                            navController.navigate(ListDestination) {
+                                popUpTo(OnboardingDestination) { inclusive = true }
+                            }
+                        },
+                    )
+                }
+                composable<PetCardDestination> {
+                    com.jetbrains.kmpapp.screens.pet.PetCardScreen(
+                        pet = null,
+                        onBack = { navController.popBackStack() },
+                        onWardrobe = { },
+                    )
+                }
+                composable<PetChooseDestination> {
+                    com.jetbrains.kmpapp.screens.pet.PetChooseScreen(
+                        onBack = { navController.popBackStack() },
+                        onConfirm = { _, _ ->
+                            navController.popBackStack()
+                        },
+                    )
+                }
+                composable<AddTaskDestination> {
+                    com.jetbrains.kmpapp.screens.tasks.AddTaskScreen(
+                        onBack = { navController.popBackStack() },
+                        onCreate = { navController.popBackStack() },
+                    )
+                }
+                composable<MenuWeekDestination> {
+                    com.jetbrains.kmpapp.screens.menu.MenuWeekScreen(
+                        state = com.jetbrains.kmpapp.screens.menu.MenuWeekState(),
+                        onIntent = {},
+                        onBack = { navController.popBackStack() },
                     )
                 }
             }

@@ -89,7 +89,9 @@ import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.suggestions.ChoreTemplate
 import com.jetbrains.kmpapp.data.templates.TaskTemplate
 import com.jetbrains.kmpapp.data.templates.TaskTemplateDetail
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -611,14 +613,14 @@ private fun TodoItemRow(
         modifier = modifier
             .fillMaxWidth()
             .alpha(if (item.isDone) 0.55f else 1f),
-        shape = RoundedCornerShape(14.dp),
+        shape = LocalCozyShapes.current.button,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = if (item.isDone) 0.dp else 1.dp,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(14.dp)),
+                .border(1.dp, MaterialTheme.colorScheme.outline, LocalCozyShapes.current.button),
         ) {
             Row(
                 modifier = Modifier
@@ -633,7 +635,7 @@ private fun TodoItemRow(
                         .size(24.dp)
                         .clip(CircleShape)
                         .background(if (item.isDone) listColor else Color.Transparent)
-                        .border(2.dp, if (item.isDone) listColor else Color(0xFFC9C9C9), CircleShape)
+                        .border(2.dp, if (item.isDone) listColor else MaterialTheme.colorScheme.outlineVariant, CircleShape)
                         .clickable { onToggle() },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -721,7 +723,7 @@ private fun TodoItemRow(
                     Icon(
                         Icons.Default.Star,
                         contentDescription = null,
-                        tint = Color(0xFFFFA726),
+                        tint = LocalCozyExtraColors.current.ochre,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -741,7 +743,7 @@ private fun TodoItemRow(
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Удалить",
-                        tint = Color(0xFFBDBDBD),
+                        tint = MaterialTheme.colorScheme.outline,
                         modifier = Modifier.size(16.dp),
                     )
                 }
@@ -966,11 +968,12 @@ private fun parseDateOrNull(dateStr: String): LocalDate? = try {
     LocalDate.parse(dateStr.take(10))
 } catch (_: Exception) { null }
 
+@Composable
 private fun choreStatusColor(daysRemaining: Int): Color = when {
-    daysRemaining < 0 -> Color(0xFFD32F2F)
-    daysRemaining <= 1 -> Color(0xFFF57C00)
-    daysRemaining <= 3 -> Color(0xFFFBC02D)
-    else -> Color(0xFF388E3C)
+    daysRemaining < 0 -> MaterialTheme.colorScheme.error
+    daysRemaining <= 1 -> LocalCozyExtraColors.current.coral
+    daysRemaining <= 3 -> LocalCozyExtraColors.current.ochre
+    else -> MaterialTheme.colorScheme.primary
 }
 
 private fun millisToDateString(millis: Long): String {
@@ -1113,7 +1116,7 @@ private fun ItemBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = LocalCozyShapes.current.sheet,
     ) {
         // Handle bar already rendered by ModalBottomSheet
         Row(
@@ -1215,7 +1218,7 @@ private fun ItemBottomSheet(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(bottom = 8.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.primaryContainer,
                     ) {
                         Row(
@@ -1250,7 +1253,7 @@ private fun ItemBottomSheet(
                     placeholder = { Text("Введите название...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                 )
             }
 
@@ -1266,7 +1269,7 @@ private fun ItemBottomSheet(
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             singleLine = true,
                             modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                         val units = listOf("шт", "л", "мл", "кг", "г", "уп", "пач")
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1285,7 +1288,7 @@ private fun ItemBottomSheet(
                     Surface(
                         onClick = { detailsSectionExpanded = !detailsSectionExpanded },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Row(
@@ -1317,7 +1320,7 @@ private fun ItemBottomSheet(
                             placeholder = { Text("Nordic, Coca-Cola…") },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                     }
                     item {
@@ -1329,7 +1332,7 @@ private fun ItemBottomSheet(
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                     }
                     item {
@@ -1341,7 +1344,7 @@ private fun ItemBottomSheet(
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
+                            shape = MaterialTheme.shapes.small,
                         )
                         if (imageUrl.startsWith("http", ignoreCase = true)) {
                             Spacer(Modifier.height(8.dp))
@@ -1415,7 +1418,7 @@ private fun ItemBottomSheet(
                     placeholder = { Text("Дополнительно...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                     maxLines = 3,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                 )
             }
 
@@ -1464,7 +1467,7 @@ private fun ItemBottomSheet(
                         placeholder = { Text("Например: 50 ⭐ или поход в кино") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                     )
                 }
             }
@@ -1564,7 +1567,7 @@ private fun ItemBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = LocalCozyShapes.current.avatarTile,
                     color = listColor,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -1576,7 +1579,7 @@ private fun ItemBottomSheet(
                         )
                     }
                 }
-                Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+                Spacer(Modifier.height(LocalCozySpacing.current.xxl))
             }
         }
     }
@@ -1671,7 +1674,7 @@ private fun ProductImagePreview(url: String) {
         modifier = Modifier
             .fillMaxWidth()
             .height(180.dp)
-            .clip(RoundedCornerShape(12.dp))
+            .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentScale = androidx.compose.ui.layout.ContentScale.Crop,
     )
@@ -1720,12 +1723,12 @@ private fun ShoppingDetailsSheet(
             if (qtyMeta.isNotBlank()) {
                 Text(qtyMeta, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
 
             // Image
             s?.imageUrl?.takeIf { it.startsWith("http", ignoreCase = true) }?.let { url ->
                 ProductImagePreview(url = url)
-                Spacer(Modifier.height(SweetHomeSpacing.xl))
+                Spacer(Modifier.height(LocalCozySpacing.current.lg))
             }
 
             // Brand
@@ -1739,7 +1742,7 @@ private fun ShoppingDetailsSheet(
                 Surface(
                     onClick = { if (isClickable) uriHandler.openUri(url) },
                     modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = LocalCozyShapes.current.chip,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Row(
@@ -1764,11 +1767,11 @@ private fun ShoppingDetailsSheet(
                 }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
             Surface(
                 onClick = { onEdit(); close() },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
                 color = listColor,
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -1780,7 +1783,7 @@ private fun ShoppingDetailsSheet(
                     )
                 }
             }
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
         }
     }
 }

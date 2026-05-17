@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
 
 private data class ListTypeOption(
@@ -248,7 +249,7 @@ private fun Step1TypePicker(
             Surface(
                 onClick = { onSelect(option) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = LocalCozyShapes.current.avatarTile,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
@@ -268,7 +269,7 @@ private fun Step1TypePicker(
                             .size(44.dp)
                             .background(
                                 MaterialTheme.colorScheme.surfaceVariant,
-                                RoundedCornerShape(12.dp),
+                                MaterialTheme.shapes.small,
                             ),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -344,7 +345,7 @@ private fun Step2Configure(
                 },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
             )
         }
 
@@ -362,7 +363,7 @@ private fun Step2Configure(
                 },
                 maxLines = 2,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
             )
         }
 
@@ -424,7 +425,7 @@ private fun Step2Configure(
                         Surface(
                             onClick = { onIconChange(if (isSelected) null else emoji) },
                             modifier = Modifier.size(40.dp),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = LocalCozyShapes.current.chip,
                             color = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                             else MaterialTheme.colorScheme.surfaceVariant,
                             border = if (isSelected) {
@@ -471,7 +472,7 @@ private fun Step2Configure(
         // Preview card
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
+            shape = LocalCozyShapes.current.button,
             color = MaterialTheme.colorScheme.surface,
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
@@ -513,7 +514,7 @@ private fun Step2Configure(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp),
-            shape = RoundedCornerShape(16.dp),
+            shape = LocalCozyShapes.current.avatarTile,
             color = if (title.isNotBlank()) selectedColor else MaterialTheme.colorScheme.outline,
         ) {
             Box(contentAlignment = Alignment.Center) {

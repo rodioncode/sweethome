@@ -36,8 +36,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.templates.ListTemplate
 import com.jetbrains.kmpapp.data.templates.TemplateVisibility
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import org.koin.compose.viewmodel.koinViewModel
@@ -69,20 +70,20 @@ fun TemplatesScreen(
         modifier = modifier
             .fillMaxSize()
             .padding(contentPadding)
-            .padding(top = SweetHomeSpacing.base),
+            .padding(top = LocalCozySpacing.current.sm),
     ) {
         Text(
             "Шаблоны",
             fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
         )
-        Spacer(Modifier.height(SweetHomeSpacing.base))
+        Spacer(Modifier.height(LocalCozySpacing.current.sm))
         TemplatesTabsRow(selected = tab, onSelect = viewModel::setTab)
-        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Spacer(Modifier.height(LocalCozySpacing.current.xs))
         ScopeFiltersRow(selected = scope, onSelect = viewModel::setScope)
-        Spacer(Modifier.height(SweetHomeSpacing.base))
+        Spacer(Modifier.height(LocalCozySpacing.current.sm))
 
         if (isLoading && templates.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -94,10 +95,10 @@ fun TemplatesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    horizontal = SweetHomeSpacing.xxxl,
-                    vertical = SweetHomeSpacing.sm,
+                    horizontal = LocalCozySpacing.current.xxl,
+                    vertical = LocalCozySpacing.current.xs,
                 ),
-                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+                verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
             ) {
                 items(templates, key = { it.id }) { template ->
                     TemplateCard(
@@ -108,7 +109,7 @@ fun TemplatesScreen(
                         onToggleFavorite = { viewModel.toggleFavorite(template) },
                     )
                 }
-                item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
+                item { Spacer(Modifier.height(LocalCozySpacing.current.huge)) }
             }
         }
     }
@@ -122,8 +123,8 @@ private fun TemplatesTabsRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.xxxl),
-        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+            .padding(horizontal = LocalCozySpacing.current.xxl),
+        horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
     ) {
         TemplatesTab.entries.forEach { t ->
             TabPill(
@@ -150,12 +151,12 @@ private fun TabPill(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = if (selected) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box(
-            modifier = Modifier.padding(vertical = SweetHomeSpacing.sm),
+            modifier = Modifier.padding(vertical = LocalCozySpacing.current.xs),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -175,21 +176,21 @@ private fun ScopeFiltersRow(
     onSelect: (String?) -> Unit,
 ) {
     LazyRow(
-        contentPadding = PaddingValues(horizontal = SweetHomeSpacing.xxxl),
-        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+        contentPadding = PaddingValues(horizontal = LocalCozySpacing.current.xxl),
+        horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
     ) {
         items(scopeFilters, key = { it.key ?: "__all__" }) { filter ->
             val isSelected = selected == filter.key
             Surface(
                 onClick = { onSelect(filter.key) },
-                shape = SweetHomeShapes.Chip,
+                shape = LocalCozyShapes.current.chip,
                 color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
                 else MaterialTheme.colorScheme.surface,
                 border = if (isSelected) null
                 else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.xxs),
+                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.sm, vertical = LocalCozySpacing.current.xxs),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(filter.emoji, fontSize = 13.sp)
@@ -218,14 +219,14 @@ private fun TemplateCard(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 1.dp,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.xl),
+                .padding(LocalCozySpacing.current.lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -237,7 +238,7 @@ private fun TemplateCard(
             ) {
                 Text(emoji, fontSize = 22.sp)
             }
-            Spacer(Modifier.width(SweetHomeSpacing.base))
+            Spacer(Modifier.width(LocalCozySpacing.current.sm))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -249,7 +250,7 @@ private fun TemplateCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    Spacer(Modifier.width(SweetHomeSpacing.sm))
+                    Spacer(Modifier.width(LocalCozySpacing.current.xs))
                     visibilityBadge(template)?.let { badge ->
                         VisibilityChip(label = badge.first, color = badge.second)
                     }
@@ -272,7 +273,7 @@ private fun TemplateCard(
                     )
                 }
             }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Spacer(Modifier.width(LocalCozySpacing.current.xs))
             Surface(
                 onClick = onToggleFavorite,
                 shape = CircleShape,
@@ -283,7 +284,7 @@ private fun TemplateCard(
                     Text(
                         text = if (template.isFavorite) "★" else "☆",
                         fontSize = 20.sp,
-                        color = if (template.isFavorite) Color(0xFFFFA726)
+                        color = if (template.isFavorite) LocalCozyExtraColors.current.ochre
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -294,23 +295,27 @@ private fun TemplateCard(
 
 @Composable
 private fun VisibilityChip(label: String, color: Color) {
-    Surface(shape = SweetHomeShapes.Chip, color = color.copy(alpha = 0.14f)) {
+    Surface(shape = LocalCozyShapes.current.chip, color = color.copy(alpha = 0.14f)) {
         Text(
             text = label,
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xs, vertical = 2.dp),
         )
     }
 }
 
-private fun visibilityBadge(t: ListTemplate): Pair<String, Color>? = when {
-    t.visibility == TemplateVisibility.PENDING -> "⏳ Pending" to Color(0xFFFFA726)
-    t.userId != null && !t.isSystem && t.visibility == TemplateVisibility.PRIVATE ->
-        "✦ Моё" to Color(0xFF5B7C5A)
-    t.isSystem -> "Системный" to Color(0xFF7A7A7A)
-    else -> null
+@Composable
+private fun visibilityBadge(t: ListTemplate): Pair<String, Color>? {
+    val extras = LocalCozyExtraColors.current
+    return when {
+        t.visibility == TemplateVisibility.PENDING -> "⏳ Pending" to extras.ochre
+        t.userId != null && !t.isSystem && t.visibility == TemplateVisibility.PRIVATE ->
+            "✦ Моё" to extras.success
+        t.isSystem -> "Системный" to MaterialTheme.colorScheme.onSurfaceVariant
+        else -> null
+    }
 }
 
 @Composable
@@ -318,7 +323,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(SweetHomeSpacing.huge),
+            .padding(LocalCozySpacing.current.huge),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -330,7 +335,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
             },
             fontSize = 40.sp,
         )
-        Spacer(Modifier.height(SweetHomeSpacing.base))
+        Spacer(Modifier.height(LocalCozySpacing.current.sm))
         Text(
             text = when (tab) {
                 TemplatesTab.PUBLIC -> if (scope != null) "Нет публичных шаблонов в этой категории"
@@ -343,7 +348,7 @@ private fun EmptyState(tab: TemplatesTab, scope: String?) {
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
         )
-        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Spacer(Modifier.height(LocalCozySpacing.current.xs))
         Text(
             text = when (tab) {
                 TemplatesTab.MINE -> "Откройте список → меню → «Сохранить как шаблон»"

@@ -13,9 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.ErrorRed
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 
 @Composable
 fun SweetHomePrimaryButton(
@@ -28,7 +26,7 @@ fun SweetHomePrimaryButton(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         enabled = enabled,
-        shape = SweetHomeShapes.Medium,
+        shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -51,7 +49,7 @@ fun SweetHomeSecondaryButton(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         enabled = enabled,
-        shape = SweetHomeShapes.Medium,
+        shape = MaterialTheme.shapes.small,
         border = BorderStroke(1.5.dp, if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
         colors = ButtonDefaults.outlinedButtonColors(
             contentColor = MaterialTheme.colorScheme.primary,
@@ -71,7 +69,7 @@ fun SweetHomeTextButton(
     TextButton(
         onClick = onClick,
         modifier = modifier.height(48.dp),
-        shape = SweetHomeShapes.Medium,
+        shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.primary,
         ),
@@ -91,7 +89,7 @@ fun SweetHomeDangerButton(
         onClick = onClick,
         modifier = modifier.height(48.dp),
         enabled = enabled,
-        shape = SweetHomeShapes.Medium,
+        shape = MaterialTheme.shapes.small,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.error,
             contentColor = MaterialTheme.colorScheme.onError,

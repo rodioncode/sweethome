@@ -15,8 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.MaterialTheme
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 @Composable
 fun SweetHomeFab(
@@ -46,7 +46,7 @@ fun SweetHomeExtendedFab(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         containerColor = MaterialTheme.colorScheme.primary,
         contentColor = MaterialTheme.colorScheme.onPrimary,
         elevation = FloatingActionButtonDefaults.elevation(
@@ -54,11 +54,11 @@ fun SweetHomeExtendedFab(
         ),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Spacer(Modifier.width(SweetHomeSpacing.xl))
+            Spacer(Modifier.width(LocalCozySpacing.current.lg))
             Text("+", fontSize = 22.sp)
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Spacer(Modifier.width(LocalCozySpacing.current.xs))
             Text(text, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.width(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.width(LocalCozySpacing.current.xxl))
         }
     }
 }

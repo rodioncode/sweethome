@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -40,7 +40,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -100,7 +100,7 @@ fun ProfileContent(
                         )
                         Surface(
                             onClick = { viewModel.logout() },
-                            shape = RoundedCornerShape(10.dp),
+                            shape = MaterialTheme.shapes.small,
                             color = Color.White.copy(alpha = 0.15f),
                         ) {
                             Text(
@@ -157,7 +157,7 @@ fun ProfileContent(
                                 Surface(
                                     onClick = navigateToLinkEmail,
                                     modifier = Modifier.padding(top = 8.dp),
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = LocalCozyShapes.current.chip,
                                     color = Color.White.copy(alpha = 0.15f),
                                 ) {
                                     Text(
@@ -172,7 +172,7 @@ fun ProfileContent(
                                 Surface(
                                     onClick = navigateToSettings,
                                     modifier = Modifier.padding(top = 8.dp),
-                                    shape = RoundedCornerShape(8.dp),
+                                    shape = LocalCozyShapes.current.chip,
                                     color = Color.White.copy(alpha = 0.15f),
                                 ) {
                                     Text(
@@ -227,15 +227,15 @@ fun ProfileContent(
 
         // --- Settings section ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
             SectionLabel("НАСТРОЙКИ")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xl),
-                shape = RoundedCornerShape(16.dp),
+                    .padding(horizontal = LocalCozySpacing.current.lg),
+                shape = LocalCozyShapes.current.avatarTile,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
@@ -271,7 +271,7 @@ fun ProfileContent(
 
         // --- Telegram ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
             SectionLabel("TELEGRAM")
         }
         item {
@@ -284,15 +284,15 @@ fun ProfileContent(
 
         // --- My spaces ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
             SectionLabel("МОИ ПРОСТРАНСТВА")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xl),
-                shape = RoundedCornerShape(16.dp),
+                    .padding(horizontal = LocalCozySpacing.current.lg),
+                shape = LocalCozyShapes.current.avatarTile,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
@@ -326,15 +326,15 @@ fun ProfileContent(
 
         // --- Activity ---
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
             SectionLabel("АКТИВНОСТЬ")
         }
         item {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xl),
-                shape = RoundedCornerShape(16.dp),
+                    .padding(horizontal = LocalCozySpacing.current.lg),
+                shape = LocalCozyShapes.current.avatarTile,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             ) {
@@ -356,7 +356,7 @@ fun ProfileContent(
         }
 
         item {
-            Spacer(Modifier.height(SweetHomeSpacing.xxxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxxl))
             DangerZone(
                 onDelete = { showDeleteDialog = true },
             )
@@ -394,7 +394,7 @@ fun ProfileContent(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+                    verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
                 ) {
                     androidx.compose.material3.CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.error,
@@ -418,8 +418,8 @@ fun ProfileContent(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
-                    modifier = Modifier.padding(SweetHomeSpacing.xxxl),
+                    verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
+                    modifier = Modifier.padding(LocalCozySpacing.current.xxl),
                 ) {
                     Box(
                         modifier = Modifier
@@ -473,12 +473,12 @@ fun ProfileContent(
 
 @Composable
 private fun DangerZone(onDelete: () -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl)) {
+    Column(modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg)) {
         SectionLabel("ОПАСНАЯ ЗОНА")
         Surface(
             onClick = onDelete,
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
+            shape = LocalCozyShapes.current.button,
             color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
         ) {
@@ -536,7 +536,7 @@ private fun SectionLabel(text: String) {
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         letterSpacing = 0.5.sp,
-        modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl, vertical = 0.dp).padding(bottom = 10.dp),
+        modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg, vertical = 0.dp).padding(bottom = 10.dp),
     )
 }
 
@@ -570,8 +570,8 @@ private fun TelegramSection(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.xl),
-        shape = RoundedCornerShape(16.dp),
+            .padding(horizontal = LocalCozySpacing.current.lg),
+        shape = LocalCozyShapes.current.avatarTile,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
@@ -591,7 +591,7 @@ private fun TelegramSection(
                 Surface(
                     onClick = onUnlink,
                     modifier = Modifier.align(Alignment.End),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
                 ) {
                     Text(
@@ -616,7 +616,7 @@ private fun TelegramSection(
                 }
                 Surface(
                     onClick = onLink,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.primary,
                 ) {
                     Text(
@@ -689,7 +689,7 @@ private fun TelegramLinkSheet(
                     if (expired) onRetry() else uriHandler.openUri(deeplink)
                 },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.primary,
             ) {
                 Text(
@@ -705,7 +705,7 @@ private fun TelegramLinkSheet(
                 Surface(
                     onClick = onCheckNow,
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surface,
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {

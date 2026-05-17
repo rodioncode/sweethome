@@ -26,32 +26,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.GroupMember
-import com.jetbrains.kmpapp.ui.ListColors
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
-private val MEMBER_PALETTE_LIGHT = listOf(
-    ListColors.CoralLight,
-    ListColors.SkyLight,
-    ListColors.MintLight,
-    ListColors.LavenderLight,
-    ListColors.AmberLight,
-    ListColors.RoseLight,
-    ListColors.SlateLight,
-)
-
-private val MEMBER_PALETTE_DARK = listOf(
-    ListColors.CoralDark,
-    ListColors.SkyDark,
-    ListColors.MintDark,
-    ListColors.LavenderDark,
-    ListColors.AmberDark,
-    ListColors.RoseDark,
-    ListColors.SlateDark,
-)
-
+@Composable
 fun memberColorFor(userId: String, isDark: Boolean = false): Color {
-    val palette = if (isDark) MEMBER_PALETTE_DARK else MEMBER_PALETTE_LIGHT
+    val extras = LocalCozyExtraColors.current
+    val palette = listOf(
+        extras.coral,
+        extras.lavenderSoft,
+        extras.success,
+        extras.lavender,
+        extras.ochre,
+        extras.coralSoft,
+        extras.ochreSoft,
+    )
     val idx = userId.hashCode().and(0x7fffffff) % palette.size
     return palette[idx]
 }
@@ -71,13 +61,13 @@ fun AssigneeChip(
         Surface(
             onClick = onClick,
             modifier = modifier.height(28.dp),
-            shape = SweetHomeShapes.Button,
+            shape = LocalCozyShapes.current.button,
             color = MaterialTheme.colorScheme.surfaceVariant,
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm),
+                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xs),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xxs),
+                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xxs),
             ) {
                 Icon(
                     Icons.Outlined.Person,
@@ -100,11 +90,11 @@ fun AssigneeChip(
         Surface(
             onClick = onClick,
             modifier = modifier.height(28.dp),
-            shape = SweetHomeShapes.Button,
+            shape = LocalCozyShapes.current.button,
             color = MaterialTheme.colorScheme.primaryContainer,
         ) {
             Row(
-                modifier = Modifier.padding(start = SweetHomeSpacing.xxs, end = SweetHomeSpacing.sm),
+                modifier = Modifier.padding(start = LocalCozySpacing.current.xxs, end = LocalCozySpacing.current.xs),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
@@ -121,7 +111,7 @@ fun AssigneeChip(
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.xs))
+                Spacer(Modifier.width(LocalCozySpacing.current.xs))
                 Text(
                     text = name,
                     fontSize = 13.sp,
@@ -149,9 +139,9 @@ fun MemberPickerRow(
     Row(
         modifier = modifier
             .clickable(onClick = onClick)
-            .padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.base),
+            .padding(horizontal = LocalCozySpacing.current.lg, vertical = LocalCozySpacing.current.sm),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+        horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
     ) {
         Box(
             modifier = Modifier

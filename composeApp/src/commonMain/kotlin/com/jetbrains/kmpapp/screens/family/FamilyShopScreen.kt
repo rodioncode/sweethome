@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -39,9 +38,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.gamification.Prize
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
-
-private val shopGradient = Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(0xFFD4956B)))
 
 @Composable
 fun FamilyShopScreen(
@@ -73,7 +72,7 @@ fun FamilyShopScreen(
     Scaffold(snackbarHost = { SnackbarHost(snackbar) }, containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             // Header with gradient
-            Box(modifier = Modifier.fillMaxWidth().background(shopGradient)) {
+            Box(modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(LocalCozyExtraColors.current.coral, LocalCozyExtraColors.current.coralSoft)))) {
                 Text(
                     "🛍",
                     fontSize = 80.sp,
@@ -191,10 +190,11 @@ private fun PrizeCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val shapes = LocalCozyShapes.current
     val canAfford = myBalance >= prize.price
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = shapes.button,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
@@ -231,7 +231,7 @@ private fun PrizeCard(
                 Spacer(Modifier.weight(1f))
                 Surface(
                     onClick = if (canAfford) onRedeem else ({}),
-                    shape = RoundedCornerShape(50),
+                    shape = shapes.pill,
                     color = if (canAfford) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Text(

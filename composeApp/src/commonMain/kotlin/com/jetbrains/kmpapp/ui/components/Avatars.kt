@@ -14,8 +14,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreen
+import androidx.compose.material3.MaterialTheme
 
 enum class AvatarSize(val sizeDp: Dp, val fontSize: TextUnit) {
     Large(56.dp, 20.sp),
@@ -29,8 +28,8 @@ fun SweetHomeAvatar(
     initials: String,
     modifier: Modifier = Modifier,
     size: AvatarSize = AvatarSize.Medium,
-    backgroundColor: Color = PrimaryGreen,
-    contentColor: Color = OnPrimaryWhite,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
 ) {
     Surface(
         modifier = modifier.size(size.sizeDp),

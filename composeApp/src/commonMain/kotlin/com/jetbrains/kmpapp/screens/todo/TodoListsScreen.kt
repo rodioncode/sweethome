@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
@@ -41,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.lists.TodoList
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
@@ -259,7 +259,7 @@ private fun TemplatesBanner(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = LocalCozyShapes.current.button,
         color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Row(
@@ -366,7 +366,7 @@ private fun EmptyTodoListsContent(
             )
             Surface(
                 onClick = onCreateList,
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.height(44.dp),
             ) {

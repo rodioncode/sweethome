@@ -11,8 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 @Composable
 fun SweetHomeTextField(
@@ -32,7 +32,7 @@ fun SweetHomeTextField(
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = SweetHomeSpacing.xxs),
+            modifier = Modifier.padding(bottom = LocalCozySpacing.current.xxs),
         )
         OutlinedTextField(
             value = value,
@@ -44,7 +44,7 @@ fun SweetHomeTextField(
             isError = isError,
             singleLine = singleLine,
             enabled = enabled,
-            shape = SweetHomeShapes.Medium,
+            shape = MaterialTheme.shapes.small,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -61,7 +61,7 @@ fun SweetHomeTextField(
                 text = errorMessage,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(top = SweetHomeSpacing.xxs),
+                modifier = Modifier.padding(top = LocalCozySpacing.current.xxs),
             )
         }
     }

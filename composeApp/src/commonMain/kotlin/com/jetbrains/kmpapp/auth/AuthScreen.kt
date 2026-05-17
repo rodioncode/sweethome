@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -45,9 +46,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.LocalSemanticColors
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -113,20 +114,20 @@ private fun LoginContent(
                     color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp),
                 )
-                .padding(horizontal = SweetHomeSpacing.xxxl, vertical = SweetHomeSpacing.xxxxl),
+                .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxxl),
         ) {
             // Decorative circles
             Box(
                 modifier = Modifier
                     .size(160.dp)
                     .align(Alignment.TopEnd)
-                    .background(Color.White.copy(alpha = 0.06f), SweetHomeShapes.Circle),
+                    .background(Color.White.copy(alpha = 0.06f), CircleShape),
             )
             Box(
                 modifier = Modifier
                     .size(96.dp)
                     .align(Alignment.TopEnd)
-                    .background(Color.White.copy(alpha = 0.08f), SweetHomeShapes.Circle),
+                    .background(Color.White.copy(alpha = 0.08f), CircleShape),
             )
 
             Column(
@@ -134,14 +135,14 @@ private fun LoginContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text("🏠", fontSize = 28.sp)
-                Spacer(Modifier.height(SweetHomeSpacing.sm))
+                Spacer(Modifier.height(LocalCozySpacing.current.xs))
                 Text(
                     text = "SweetHome",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                 )
-                Spacer(Modifier.height(SweetHomeSpacing.xxs))
+                Spacer(Modifier.height(LocalCozySpacing.current.xxs))
                 Text(
                     text = "Войдите в свой аккаунт",
                     fontSize = 14.sp,
@@ -154,8 +155,8 @@ private fun LoginContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SweetHomeSpacing.xxxl)
-                .padding(top = SweetHomeSpacing.xxxxl),
+                .padding(horizontal = LocalCozySpacing.current.xxl)
+                .padding(top = LocalCozySpacing.current.xxxl),
         ) {
             // Email field
             Text(
@@ -163,7 +164,7 @@ private fun LoginContent(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = SweetHomeSpacing.xs),
+                modifier = Modifier.padding(bottom = LocalCozySpacing.current.xs),
             )
             OutlinedTextField(
                 value = email,
@@ -172,7 +173,7 @@ private fun LoginContent(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                shape = SweetHomeShapes.Medium,
+                shape = MaterialTheme.shapes.small,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -181,7 +182,7 @@ private fun LoginContent(
                 ),
             )
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
 
             // Password field
             Text(
@@ -189,7 +190,7 @@ private fun LoginContent(
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = SweetHomeSpacing.xs),
+                modifier = Modifier.padding(bottom = LocalCozySpacing.current.xs),
             )
             OutlinedTextField(
                 value = password,
@@ -199,7 +200,7 @@ private fun LoginContent(
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                shape = SweetHomeShapes.Medium,
+                shape = MaterialTheme.shapes.small,
                 trailingIcon = {
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Text(
@@ -219,11 +220,11 @@ private fun LoginContent(
                 text = "Минимум 8 символов",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = SweetHomeSpacing.xxs, start = SweetHomeSpacing.xxs),
+                modifier = Modifier.padding(top = LocalCozySpacing.current.xxs, start = LocalCozySpacing.current.xxs),
             )
 
             if (uiState is AuthUiState.Error) {
-                Spacer(Modifier.height(SweetHomeSpacing.sm))
+                Spacer(Modifier.height(LocalCozySpacing.current.xs))
                 Text(
                     text = uiState.message,
                     color = MaterialTheme.colorScheme.error,
@@ -232,15 +233,15 @@ private fun LoginContent(
                 )
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
 
             Button(
                 onClick = { onLogin(email, password) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(SweetHomeSpacing.huge),
+                    .height(LocalCozySpacing.current.huge),
                 enabled = uiState !is AuthUiState.Loading,
-                shape = SweetHomeShapes.Card,
+                shape = LocalCozyShapes.current.card,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -248,7 +249,7 @@ private fun LoginContent(
             ) {
                 if (uiState is AuthUiState.Loading) {
                     CircularProgressIndicator(
-                        modifier = Modifier.size(SweetHomeSpacing.xxxl),
+                        modifier = Modifier.size(LocalCozySpacing.current.xxl),
                         color = MaterialTheme.colorScheme.onPrimary,
                         strokeWidth = 2.dp,
                     )
@@ -257,7 +258,7 @@ private fun LoginContent(
                 }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Spacer(Modifier.height(LocalCozySpacing.current.sm))
 
             TextButton(
                 onClick = onForgotPassword,
@@ -266,25 +267,23 @@ private fun LoginContent(
                 Text("Забыли пароль?", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Spacer(Modifier.height(LocalCozySpacing.current.sm))
 
             DividerWithText("или")
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
-
-            val semantic = LocalSemanticColors.current
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
 
             // Google
             Surface(
                 onClick = { /* coming soon */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(SweetHomeSpacing.huge),
-                shape = SweetHomeShapes.Button,
+                    .height(LocalCozySpacing.current.huge),
+                shape = LocalCozyShapes.current.button,
                 color = MaterialTheme.colorScheme.surface,
                 border = androidx.compose.foundation.BorderStroke(
                     1.5.dp,
-                    semantic.oauthBorder,
+                    MaterialTheme.colorScheme.outlineVariant,
                 ),
                 shadowElevation = 2.dp,
             ) {
@@ -294,7 +293,7 @@ private fun LoginContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("G", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Spacer(Modifier.width(SweetHomeSpacing.md))
+                    Spacer(Modifier.width(LocalCozySpacing.current.sm))
                     Text(
                         "Войти через Google",
                         fontSize = 15.sp,
@@ -304,16 +303,16 @@ private fun LoginContent(
                 }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Spacer(Modifier.height(LocalCozySpacing.current.sm))
 
             // Apple
             Surface(
                 onClick = { /* coming soon */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(SweetHomeSpacing.huge),
-                shape = SweetHomeShapes.Button,
-                color = semantic.oauthAppleBg,
+                    .height(LocalCozySpacing.current.huge),
+                shape = LocalCozyShapes.current.button,
+                color = Color(0xFF1D1D1F),
                 shadowElevation = 3.dp,
             ) {
                 Row(
@@ -322,12 +321,12 @@ private fun LoginContent(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("🍎", fontSize = 18.sp)
-                    Spacer(Modifier.width(SweetHomeSpacing.md))
-                    Text("Войти через Apple", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = semantic.oauthAppleText)
+                    Spacer(Modifier.width(LocalCozySpacing.current.sm))
+                    Text("Войти через Apple", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xxxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxxl))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -364,7 +363,7 @@ private fun LoginContent(
                 )
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
         }
     }
     }
@@ -396,12 +395,12 @@ private fun GuestAuthenticatedContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(SweetHomeSpacing.xxxl),
+            .padding(LocalCozySpacing.current.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         Text("Вы вошли как гость", style = MaterialTheme.typography.titleLarge)
-        Spacer(Modifier.height(SweetHomeSpacing.xxxl))
+        Spacer(Modifier.height(LocalCozySpacing.current.xxl))
         Button(
             onClick = onLinkEmail,
             modifier = Modifier.fillMaxWidth(),
@@ -412,7 +411,7 @@ private fun GuestAuthenticatedContent(
         ) {
             Text("Привязать email и пароль")
         }
-        Spacer(Modifier.height(SweetHomeSpacing.xl))
+        Spacer(Modifier.height(LocalCozySpacing.current.lg))
         TextButton(onClick = onLogout, modifier = Modifier.fillMaxWidth()) {
             Text("Выйти", color = MaterialTheme.colorScheme.error)
         }

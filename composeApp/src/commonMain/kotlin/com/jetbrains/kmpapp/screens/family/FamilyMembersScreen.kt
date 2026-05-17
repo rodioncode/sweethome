@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 
 private data class FamilyMember(
     val id: String,
@@ -118,8 +120,8 @@ fun FamilyMembersScreen(
                 Surface(
                     onClick = { showInviteSheet = true },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFE8F5E8),
+                    shape = MaterialTheme.shapes.small,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                 ) {
                     Row(
@@ -132,7 +134,7 @@ fun FamilyMembersScreen(
                             "🔗 Пригласить: FAMILY42",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFF3D5C3C),
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                         )
                         Text(
@@ -157,7 +159,7 @@ fun FamilyMembersScreen(
                 Surface(
                     onClick = { showInviteSheet = true },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = LocalCozyShapes.current.button,
                     color = MaterialTheme.colorScheme.primary,
                     shadowElevation = 3.dp,
                 ) {
@@ -171,7 +173,7 @@ fun FamilyMembersScreen(
                             "+ Пригласить участника",
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
                 }
@@ -194,7 +196,7 @@ fun FamilyMembersScreen(
 private fun MemberCard(member: FamilyMember) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = LocalCozyShapes.current.button,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
@@ -248,7 +250,7 @@ private fun MemberCard(member: FamilyMember) {
             }
 
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = LocalCozyShapes.current.chip,
                 color = member.roleBg,
             ) {
                 Text(
@@ -294,7 +296,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
         // Big code display
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = LocalCozyShapes.current.avatarTile,
             color = MaterialTheme.colorScheme.surfaceVariant,
             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         ) {
@@ -326,7 +328,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
             Surface(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
                 color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 Box(
@@ -341,7 +343,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
             Surface(
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
                 color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(
@@ -350,7 +352,7 @@ private fun InviteCodeSheet(onDismiss: () -> Unit) {
                         .padding(vertical = 14.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Поделиться", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Поделиться", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }
         }

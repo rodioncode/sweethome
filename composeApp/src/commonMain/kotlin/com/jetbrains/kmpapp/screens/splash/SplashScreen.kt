@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
@@ -36,8 +35,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.PrimaryGreenDark
+import androidx.compose.material3.MaterialTheme
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import kotlinx.coroutines.delay
 
 @Composable
@@ -73,13 +73,13 @@ fun SplashScreen(
         label = "splash_offset",
     )
 
-    Scaffold(containerColor = PrimaryGreen) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.primary) { paddingValues ->
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(PrimaryGreen, PrimaryGreenDark),
+                    colors = listOf(MaterialTheme.colorScheme.primary, LocalCozyExtraColors.current.primaryLight),
                 )
             ),
     ) {
@@ -104,14 +104,14 @@ fun SplashScreen(
                 .size(300.dp)
                 .offset(x = (-60).dp, y = 100.dp)
                 .align(Alignment.BottomStart)
-                .background(PrimaryGreenDark.copy(alpha = 0.5f), CircleShape),
+                .background(LocalCozyExtraColors.current.primaryLight.copy(alpha = 0.5f), CircleShape),
         )
         Box(
             modifier = Modifier
                 .size(200.dp)
                 .offset(x = (-80).dp, y = (-80).dp)
                 .align(Alignment.BottomStart)
-                .background(PrimaryGreenDark.copy(alpha = 0.4f), CircleShape),
+                .background(LocalCozyExtraColors.current.primaryLight.copy(alpha = 0.4f), CircleShape),
         )
 
         // Logo + title — center
@@ -175,10 +175,10 @@ fun SplashScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = com.jetbrains.kmpapp.ui.SweetHomeShapes.Card,
+                shape = LocalCozyShapes.current.card,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
-                    contentColor = PrimaryGreen,
+                    contentColor = MaterialTheme.colorScheme.primary,
                 ),
             ) {
                 Text(
@@ -193,7 +193,7 @@ fun SplashScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = com.jetbrains.kmpapp.ui.SweetHomeShapes.Card,
+                shape = LocalCozyShapes.current.card,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = Color.White,
                 ),

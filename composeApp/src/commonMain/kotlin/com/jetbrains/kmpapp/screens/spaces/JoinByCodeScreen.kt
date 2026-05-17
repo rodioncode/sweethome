@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -55,6 +54,7 @@ import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.InvalidInviteException
 import com.jetbrains.kmpapp.data.groups.InviteExpiredException
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -194,7 +194,7 @@ fun JoinByCodeScreen(
             OutlinedButton(
                 onClick = { /* TODO: QR scanner */ },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text("📷 Сканировать QR-код")
             }
@@ -207,7 +207,7 @@ fun JoinByCodeScreen(
                 enabled = !isLoading && code.length == CODE_LENGTH,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -272,9 +272,9 @@ private fun CodeInput(
                             color = if (isFocused) MaterialTheme.colorScheme.primary
                             else if (char.isNotEmpty()) MaterialTheme.colorScheme.outline
                             else MaterialTheme.colorScheme.outlineVariant,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = LocalCozyShapes.current.chip,
                         ),
-                    shape = RoundedCornerShape(8.dp),
+                    shape = LocalCozyShapes.current.chip,
                     color = MaterialTheme.colorScheme.surface,
                     onClick = { focusRequester.requestFocus() },
                 ) {
