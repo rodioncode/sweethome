@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -36,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.chat.ChatMessage
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -149,7 +149,7 @@ fun ChatScreen(
             ) {
                 Surface(
                     modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(22.dp),
+                    shape = LocalCozyShapes.current.pill,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
                 ) {
@@ -193,8 +193,9 @@ fun ChatScreen(
 
 @Composable
 private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
+    val shapes = LocalCozyShapes.current
     val initial = msg.senderName.firstOrNull()?.uppercase() ?: "?"
-    val senderColor = com.jetbrains.kmpapp.ui.LocalSemanticColors.current.info
+    val senderColor = MaterialTheme.colorScheme.tertiary
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -228,12 +229,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
             }
 
             Surface(
-                shape = RoundedCornerShape(
-                    topStart = 18.dp,
-                    topEnd = 18.dp,
-                    bottomStart = if (isMe) 18.dp else 4.dp,
-                    bottomEnd = if (isMe) 4.dp else 18.dp,
-                ),
+                shape = if (isMe) shapes.chatBubbleMine else shapes.chatBubbleTheirs,
                 color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                 border = if (!isMe) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
                 shadowElevation = 1.dp,

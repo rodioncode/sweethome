@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.animation.AnimatedVisibility
@@ -12,38 +11,41 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Dashboard
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Task
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyElevation
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyBottomNav
+import com.jetbrains.kmpapp.ui.components.CozyTab
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +72,9 @@ import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.groups.GroupsContent
 import com.jetbrains.kmpapp.screens.groups.GroupsUiEvent
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
+import com.jetbrains.kmpapp.screens.dashboard.DashboardContent
+import com.jetbrains.kmpapp.screens.dashboard.DashboardIntent
+import com.jetbrains.kmpapp.screens.dashboard.DashboardViewModel
 import com.jetbrains.kmpapp.screens.home.HomeContent
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListsContent
@@ -79,7 +84,23 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { DASHBOARD, HOME, LISTS, CALENDAR, GROUPS }
+enum class MainTab { HOME, LISTS, FAMILY, CALENDAR, PROFILE }
+
+private fun CozyTab.toMainTab(): MainTab = when (this) {
+    CozyTab.HOME     -> MainTab.HOME
+    CozyTab.LISTS    -> MainTab.LISTS
+    CozyTab.FAMILY   -> MainTab.FAMILY
+    CozyTab.CALENDAR -> MainTab.CALENDAR
+    CozyTab.PROFILE  -> MainTab.PROFILE
+}
+
+private fun MainTab.toCozyTab(): CozyTab = when (this) {
+    MainTab.HOME     -> CozyTab.HOME
+    MainTab.LISTS    -> CozyTab.LISTS
+    MainTab.FAMILY   -> CozyTab.FAMILY
+    MainTab.CALENDAR -> CozyTab.CALENDAR
+    MainTab.PROFILE  -> CozyTab.PROFILE
+}
 
 @Serializable private object ListsRoot
 @Serializable private data class ListsDetail(val listId: String)
@@ -130,7 +151,7 @@ fun MainScreen(
     val groupsError by groupsViewModel.error.collectAsStateWithLifecycle()
     val isGuest by groupsViewModel.isGuest.collectAsStateWithLifecycle()
 
-    var selectedTab by rememberSaveable { mutableStateOf(MainTab.DASHBOARD) }
+    var selectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     var showCreateGroupDialog by remember { mutableStateOf(false) }
     var fabExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -182,7 +203,7 @@ fun MainScreen(
             when (event) {
                 is GroupsUiEvent.NavigateToGroup -> {
                     pendingGroupsRoute = GroupsDetail(event.groupId, event.groupName)
-                    selectedTab = MainTab.GROUPS
+                    selectedTab = MainTab.FAMILY
                 }
             }
         }
@@ -190,60 +211,39 @@ fun MainScreen(
 
     LaunchedEffect(pendingInviteToken) {
         pendingInviteToken?.let {
-            selectedTab = MainTab.GROUPS
+            selectedTab = MainTab.FAMILY
         }
     }
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.DASHBOARD,
-                    onClick = { selectedTab = MainTab.DASHBOARD },
-                    icon = { Icon(Icons.Default.Dashboard, contentDescription = null) },
-                    label = { Text("Главная") },
-                )
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.HOME,
-                    onClick = { selectedTab = MainTab.HOME },
-                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
-                    label = { Text("Мой дом") },
-                )
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.LISTS,
-                    onClick = { selectedTab = MainTab.LISTS },
-                    icon = { Icon(Icons.Default.List, contentDescription = null) },
-                    label = { Text("Списки") },
-                )
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.CALENDAR,
-                    onClick = { selectedTab = MainTab.CALENDAR },
-                    icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-                    label = { Text("Календарь") },
-                )
-                NavigationBarItem(
-                    selected = selectedTab == MainTab.GROUPS,
-                    onClick = { selectedTab = MainTab.GROUPS },
-                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    label = { Text("Группы") },
-                )
-            }
+            CozyBottomNav(
+                active = selectedTab.toCozyTab(),
+                onTabSelected = { selectedTab = it.toMainTab() },
+            )
         },
         floatingActionButton = {
             val isInListDetail = listsBackStackEntry?.destination?.hasRoute(ListsDetail::class) == true
             when {
                 selectedTab == MainTab.LISTS && !isInListDetail -> {
-                    FloatingActionButton(onClick = { navigateToCreateList(null) }) {
-                        Icon(Icons.Default.Add, "Добавить список")
+                    Box(
+                        modifier = Modifier
+                            .size(60.dp)
+                            .shadow(LocalCozyElevation.current.fab, CircleShape)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable { navigateToCreateList(null) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("+", color = MaterialTheme.colorScheme.onPrimary, fontSize = 28.sp, fontWeight = FontWeight.Light)
                     }
                 }
-                selectedTab == MainTab.DASHBOARD -> {
+                selectedTab == MainTab.HOME -> {
                     DashboardFabSpeedDial(
                         expanded = fabExpanded,
                         onToggle = { fabExpanded = !fabExpanded },
                         onAddTask = {
                             fabExpanded = false
-                            // TODO: open quick add-task sheet (G-02 entry)
                             navigateToCreateList(null)
                         },
                         onAddList = {
@@ -261,21 +261,28 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         when (selectedTab) {
-            MainTab.DASHBOARD -> HomeContent(
-                contentPadding = paddingValues,
-                navigateToListDetail = navigateToListDetail,
-                onCreateList = { navigateToCreateList(null) },
-                onNavigateToHome = { selectedTab = MainTab.HOME },
-                onNavigateToGroups = { selectedTab = MainTab.GROUPS },
-                navigateToProfile = navigateToProfile,
-                navigateToGoals = navigateToGoals,
-                onNavigateToLists = { selectedTab = MainTab.LISTS },
-            )
-            MainTab.HOME -> FamilyContent(
+            MainTab.HOME -> {
+                val dashVm = koinViewModel<DashboardViewModel>()
+                val dashState by dashVm.state.collectAsStateWithLifecycle()
+                DashboardContent(
+                    state = dashState,
+                    onIntent = { intent ->
+                        when (intent) {
+                            is DashboardIntent.OpenTask -> navigateToListDetail(intent.taskId)
+                            is DashboardIntent.Add -> navigateToCreateList(null)
+                            is DashboardIntent.OpenPet -> {}
+                            is DashboardIntent.NavTab -> {}
+                            else -> dashVm.onIntent(intent)
+                        }
+                    },
+                    contentPadding = paddingValues,
+                )
+            }
+            MainTab.FAMILY -> FamilyContent(
                 contentPadding = paddingValues,
                 onSpaceClick = { groupId, name ->
                     pendingGroupsRoute = GroupsDetail(groupId, name)
-                    selectedTab = MainTab.GROUPS
+                    selectedTab = MainTab.FAMILY
                 },
                 onListClick = { listId ->
                     pendingListsRoute = ListsDetail(listId)
@@ -303,21 +310,12 @@ fun MainScreen(
                     selectedTab = MainTab.LISTS
                 },
             )
-            MainTab.GROUPS -> GroupsTabNavHost(
-                navController = groupsNavController,
-                paddingValues = paddingValues,
-                groupSpaces = groupSpaces,
-                isGuest = isGuest,
-                navigateToLinkEmail = navigateToLinkEmail,
-                navigateToJoinByCode = navigateToJoinByCode,
-                onCreateGroup = if (!isGuest) ({ showCreateGroupDialog = true }) else null,
-                navigateToListDetail = { listId ->
-                    pendingListsRoute = ListsDetail(listId)
-                    selectedTab = MainTab.LISTS
-                },
-                navigateToChat = navigateToChat,
-                navigateToCreateList = navigateToCreateList,
-            )
+            MainTab.PROFILE -> {
+                com.jetbrains.kmpapp.screens.profile.ProfileContent(
+                    navigateToLinkEmail = navigateToLinkEmail,
+                    navigateToTemplates = navigateToTemplates,
+                )
+            }
         }
     }
 
@@ -342,7 +340,7 @@ private fun DashboardFabSpeedDial(
 ) {
     Column(
         horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+        verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
     ) {
         AnimatedVisibility(
             visible = expanded,
@@ -351,7 +349,7 @@ private fun DashboardFabSpeedDial(
         ) {
             Column(
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+                verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
             ) {
                 SpeedDialAction("Цель", Icons.Default.Flag, onAddGoal)
                 SpeedDialAction("Список", Icons.Default.PlaylistAdd, onAddList)
@@ -381,22 +379,22 @@ private fun SpeedDialAction(
         horizontalArrangement = Arrangement.End,
     ) {
         androidx.compose.material3.Surface(
-            shape = SweetHomeShapes.PillLarge,
+            shape = LocalCozyShapes.current.pill,
             color = androidx.compose.material3.MaterialTheme.colorScheme.surface,
             shadowElevation = 2.dp,
         ) {
             Text(
                 text = label,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.sm),
+                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.sm, vertical = LocalCozySpacing.current.xs),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Bold,
                 color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
             )
         }
-        Spacer(Modifier.width(SweetHomeSpacing.base))
+        Spacer(Modifier.width(LocalCozySpacing.current.sm))
         FloatingActionButton(
             onClick = onClick,
-            modifier = Modifier.size(SweetHomeSpacing.iconButton + 8.dp),
+            modifier = Modifier.size(36.dp + 8.dp),
             shape = CircleShape,
             containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
             contentColor = androidx.compose.material3.MaterialTheme.colorScheme.primary,

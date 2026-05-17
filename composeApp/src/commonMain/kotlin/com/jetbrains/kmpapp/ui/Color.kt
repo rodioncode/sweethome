@@ -1,156 +1,225 @@
 package com.jetbrains.kmpapp.ui
 
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 
-// ──────────────────────────────────────────────────────────────────
-// LIGHT — surfaces, brand, text
-// ──────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+// Cozy palette — direct mapping from cozy-shared.jsx tokens.
+// Light + Dark are NOT mirror images — dark uses lifted sage, warmer
+// dark neutrals, container colors that work on dark surfaces.
+// ─────────────────────────────────────────────────────────────────────
 
-val PrimaryGreen          = Color(0xFF5B7C5A)
-val PrimaryGreenLight     = Color(0xFF8FAE8B)
-val PrimaryGreenDark      = Color(0xFF3D5C3C)
-val PrimaryContainer      = Color(0xFFEDF5ED)
-val OnPrimaryContainer    = Color(0xFF3D5C3C)
+// ── Light ─────────────────────────────────────────────────────────────
+private val LightBg              = Color(0xFFFAF7F2)
+private val LightBgWarm          = Color(0xFFF3EDE2)
+private val LightSurface         = Color(0xFFFFFFFF)
+private val LightSurfaceSoft     = Color(0xFFF8F4ED)
+private val LightSurfaceVariant  = Color(0xFFEFE9DD)
+private val LightOnBg            = Color(0xFF2A2622)
+private val LightOnBgSec         = Color(0xFF6B645A)
+private val LightOnBgTer         = Color(0xFFA89F92)
+private val LightPrimary         = Color(0xFF4A6B49)
+private val LightPrimaryLight    = Color(0xFF7A9A78)
+private val LightPrimaryContainer= Color(0xFFDFE8DD)
+private val LightOnPrimary       = Color(0xFFFFFFFF)
+private val LightCoral           = Color(0xFFD67A5B)
+private val LightCoralSoft       = Color(0xFFFCE6DC)
+private val LightOchre           = Color(0xFFC49A3F)
+private val LightOchreSoft       = Color(0xFFFBF1D8)
+private val LightLavender        = Color(0xFF8B7CA8)
+private val LightLavenderSoft    = Color(0xFFECE6F4)
+private val LightSuccess         = Color(0xFF5B8856)
+private val LightError           = Color(0xFFC24F45)
+private val LightOutline         = Color(0xFFE8E1D3)
+private val LightOutlineStrong   = Color(0xFFD4CCBA)
 
-val SecondaryPeach        = Color(0xFFE8A87C)
-val SecondaryPeachLight   = Color(0xFFF2C9A8)
-val OnSecondaryContainer  = Color(0xFF8A5E40)
-val AccentTerracotta      = Color(0xFFD4956B)
+// ── Dark ──────────────────────────────────────────────────────────────
+private val DarkBg               = Color(0xFF1A1C18)
+private val DarkBgWarm           = Color(0xFF22241F)
+private val DarkSurface          = Color(0xFF23251F)
+private val DarkSurfaceSoft      = Color(0xFF1F211C)
+private val DarkSurfaceVariant   = Color(0xFF2D2F28)
+private val DarkOnBg             = Color(0xFFEDE7DC)
+private val DarkOnBgSec          = Color(0xFFA8A294)
+private val DarkOnBgTer          = Color(0xFF6B6558)
+private val DarkPrimary          = Color(0xFF9CB89A)
+private val DarkPrimaryLight     = Color(0xFFB5CDB3)
+private val DarkPrimaryContainer = Color(0xFF2F4530)
+private val DarkOnPrimary        = Color(0xFF0F1A0F)
+private val DarkCoral            = Color(0xFFE89878)
+private val DarkCoralSoft        = Color(0xFF3D2A20)
+private val DarkOchre            = Color(0xFFD9B566)
+private val DarkOchreSoft        = Color(0xFF3A2E14)
+private val DarkLavender         = Color(0xFFB0A0CC)
+private val DarkLavenderSoft     = Color(0xFF2E2738)
+private val DarkSuccess          = Color(0xFF7AAD75)
+private val DarkError            = Color(0xFFE6776C)
+private val DarkOutline          = Color(0xFF3A3C34)
+private val DarkOutlineStrong    = Color(0xFF4D4F44)
 
-val BackgroundWarm        = Color(0xFFFBF7F4)
-val SurfaceWhite          = Color(0xFFFFFFFF)
-val SurfaceVariantCream   = Color(0xFFF5EDE6)
+// ─────────────────────────────────────────────────────────────────────
+// Material 3 ColorScheme mapping.
+// ─────────────────────────────────────────────────────────────────────
 
-val TextPrimary           = Color(0xFF2C2C2C)
-val TextSecondary         = Color(0xFF7A7A7A)
-val TextTertiary          = Color(0xFFBDBDBD)
+internal val cozyLightScheme: ColorScheme = lightColorScheme(
+    primary             = LightPrimary,
+    onPrimary           = LightOnPrimary,
+    primaryContainer    = LightPrimaryContainer,
+    onPrimaryContainer  = LightPrimary,
+    secondary           = LightCoral,
+    onSecondary         = LightOnPrimary,
+    secondaryContainer  = LightCoralSoft,
+    onSecondaryContainer= Color(0xFF6A3520),
+    tertiary            = LightLavender,
+    onTertiary          = LightOnPrimary,
+    tertiaryContainer   = LightLavenderSoft,
+    onTertiaryContainer = Color(0xFF3F345A),
+    background          = LightBg,
+    onBackground        = LightOnBg,
+    surface             = LightSurface,
+    onSurface           = LightOnBg,
+    surfaceVariant      = LightSurfaceVariant,
+    onSurfaceVariant    = LightOnBgSec,
+    outline             = LightOutlineStrong,
+    outlineVariant      = LightOutline,
+    error               = LightError,
+    onError             = LightOnPrimary,
+)
 
-val ErrorRed              = Color(0xFFD4574E)
-val DividerColor          = Color(0xFFE8E0D8)
-val OutlineVariantLight   = Color(0xFFC9C9C9)
+internal val cozyDarkScheme: ColorScheme = darkColorScheme(
+    primary             = DarkPrimary,
+    onPrimary           = DarkOnPrimary,
+    primaryContainer    = DarkPrimaryContainer,
+    onPrimaryContainer  = DarkPrimaryLight,
+    secondary           = DarkCoral,
+    onSecondary         = DarkOnPrimary,
+    secondaryContainer  = DarkCoralSoft,
+    onSecondaryContainer= DarkCoral,
+    tertiary            = DarkLavender,
+    onTertiary          = DarkOnPrimary,
+    tertiaryContainer   = DarkLavenderSoft,
+    onTertiaryContainer = DarkLavender,
+    background          = DarkBg,
+    onBackground        = DarkOnBg,
+    surface             = DarkSurface,
+    onSurface           = DarkOnBg,
+    surfaceVariant      = DarkSurfaceVariant,
+    onSurfaceVariant    = DarkOnBgSec,
+    outline             = DarkOutlineStrong,
+    outlineVariant      = DarkOutline,
+    error               = DarkError,
+    onError             = DarkOnPrimary,
+)
 
-// Backward-compat alias — used by legacy components.
-val OnPrimaryWhite        = SurfaceWhite
+// ─────────────────────────────────────────────────────────────────────
+// Cozy-specific accents that don't fit Material 3.
+// Access via LocalCozyExtraColors.current.<token>.
+// ─────────────────────────────────────────────────────────────────────
 
-// Semantic containers (badges, banners, row highlights)
-val ErrorContainerLight    = Color(0xFFFDECEA)
-val WarningContainerLight  = Color(0xFFFDF3EC)
-val SuccessContainerLight  = Color(0xFFE8F5E8)
-val InfoContainerLight     = Color(0xFFE3F2FD)
-val GoldContainerLight     = Color(0xFFFFFDE7)
-val NeutralContainerLight  = Color(0xFFF5F5F5)
+@Immutable
+data class CozyExtraColors(
+    val bgWarm: Color,
+    val surfaceSoft: Color,
+    val textTer: Color,
+    val ochre: Color,
+    val ochreSoft: Color,
+    val coral: Color,
+    val coralSoft: Color,
+    val lavender: Color,
+    val lavenderSoft: Color,
+    val primaryLight: Color,
+    val success: Color,
+    val outlineSoft: Color,
+)
 
-// Goal / leaderboard accents
-val GoldLight             = Color(0xFFFFA726)
+internal val cozyLightExtras = CozyExtraColors(
+    bgWarm        = LightBgWarm,
+    surfaceSoft   = LightSurfaceSoft,
+    textTer       = LightOnBgTer,
+    ochre         = LightOchre,
+    ochreSoft     = LightOchreSoft,
+    coral         = LightCoral,
+    coralSoft     = LightCoralSoft,
+    lavender      = LightLavender,
+    lavenderSoft  = LightLavenderSoft,
+    primaryLight  = LightPrimaryLight,
+    success       = LightSuccess,
+    outlineSoft   = LightOutline,
+)
 
-// Info accent (used through SemanticColors.info)
-val InfoBlueLight         = Color(0xFF42A5F5)
+internal val cozyDarkExtras = CozyExtraColors(
+    bgWarm        = DarkBgWarm,
+    surfaceSoft   = DarkSurfaceSoft,
+    textTer       = DarkOnBgTer,
+    ochre         = DarkOchre,
+    ochreSoft     = DarkOchreSoft,
+    coral         = DarkCoral,
+    coralSoft     = DarkCoralSoft,
+    lavender      = DarkLavender,
+    lavenderSoft  = DarkLavenderSoft,
+    primaryLight  = DarkPrimaryLight,
+    success       = DarkSuccess,
+    outlineSoft   = DarkOutline,
+)
 
-// OAuth surfaces (light defaults; flipped in dark via SemanticColors)
-val OauthAppleBgLight     = Color(0xFF1D1D1F)
-val OauthAppleTextLight   = Color(0xFFFFFFFF)
-val OauthBorderLight      = Color(0xFFDADCE0)
+val LocalCozyExtraColors = staticCompositionLocalOf { cozyLightExtras }
 
-// ──────────────────────────────────────────────────────────────────
-// DARK — calmer, neutral charcoal surfaces + deep sage
-// ──────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+// Kid Mode palette — separate from Material 3.
+// ─────────────────────────────────────────────────────────────────────
 
-val DarkPrimary           = Color(0xFF4C6C4B)
-val DarkPrimaryLight      = Color(0xFF6B8A6A)
-val DarkPrimaryDark       = Color(0xFF3D5C3C)
-val DarkPrimaryContainer  = Color(0xFF243024)
-val DarkOnPrimaryContainer = Color(0xFFB5D2B3)
+@Immutable
+data class KidColors(
+    val sky: Color, val skyDeep: Color,
+    val sun: Color, val sunDeep: Color,
+    val apple: Color, val appleDeep: Color,
+    val grass: Color, val grassDeep: Color,
+    val candy: Color, val candyDeep: Color,
+    val ink: Color,
+    val inkSec: Color,
+    val inkTer: Color,
+    val cream: Color,
+    val paper: Color,
+    val warm: Color,
+    val line: Color,
+)
 
-val DarkSecondary         = Color(0xFFA87553)
-val DarkSecondaryDark     = Color(0xFF8A5E40)
+val kidColors = KidColors(
+    sky       = Color(0xFFA6CEE8), skyDeep   = Color(0xFF7BB0D4),
+    sun       = Color(0xFFFFCB47), sunDeep   = Color(0xFFE5AB2A),
+    apple     = Color(0xFFF58E73), appleDeep = Color(0xFFD67057),
+    grass     = Color(0xFF8EC07D), grassDeep = Color(0xFF6FA15F),
+    candy     = Color(0xFFF5A8C7), candyDeep = Color(0xFFD78AAA),
+    ink       = Color(0xFF3A322A),
+    inkSec    = Color(0xFF6B6055),
+    inkTer    = Color(0xFFA89D90),
+    cream     = Color(0xFFFFFBF2),
+    paper     = Color(0xFFFFFFFF),
+    warm      = Color(0xFFFBF4E8),
+    line      = Color(0xFFE5DDC9),
+)
 
-val DarkBackground        = Color(0xFF1C1D1F)
-val DarkSurface           = Color(0xFF26282A)
-val DarkSurfaceVariant    = Color(0xFF2F3134)
-val DarkOutline           = Color(0xFF34373A)
-val DarkOutlineVariant    = Color(0xFF42464A)
+val LocalKidColors = staticCompositionLocalOf { kidColors }
 
-val DarkOnBackground      = Color(0xFFE6E7E5)
-val DarkOnSurfaceVariant  = Color(0xFF9A9C99)
-val DarkTextTertiary      = Color(0xFF6A6C6A)
+val LocalIsKidMode = staticCompositionLocalOf { false }
 
-val DarkError             = Color(0xFFA84D44)
-val DarkSuccess           = Color(0xFF4C6C4B)
-val DarkWarning           = Color(0xFFA87553)
-val DarkGold              = Color(0xFFA88A4A)
-
-val DarkErrorContainer    = Color(0xFF3A2422)
-val DarkWarningContainer  = Color(0xFF3A2E24)
-val DarkSuccessContainer  = Color(0xFF243024)
-val DarkInfoContainer     = Color(0xFF1F2A38)
-val DarkGoldContainer     = Color(0xFF332C1A)
-val DarkNeutralContainer  = Color(0xFF2A2A2C)
-
-val InfoBlueDark          = Color(0xFF5894C2)
-
-val OauthAppleBgDark      = Color(0xFFFFFFFF)
-val OauthAppleTextDark    = Color(0xFF1D1D1F)
-val OauthBorderDark       = Color(0xFF3A413B)
-
-// ──────────────────────────────────────────────────────────────────
-// LIST COLORS — applied to list icon/avatar only, never to UI surfaces.
-// ──────────────────────────────────────────────────────────────────
-
-object ListColors {
-    val CoralLight    = Color(0xFFFF7043)
-    val SkyLight      = Color(0xFF42A5F5)
-    val MintLight     = Color(0xFF66BB6A)
-    val LavenderLight = Color(0xFFAB47BC)
-    val AmberLight    = Color(0xFFFFA726)
-    val RoseLight     = Color(0xFFEC407A)
-    val SlateLight    = Color(0xFF78909C)
-
-    val CoralDark     = Color(0xFFD27155)
-    val SkyDark       = Color(0xFF5894C2)
-    val MintDark      = Color(0xFF6BA46E)
-    val LavenderDark  = Color(0xFF9758A4)
-    val AmberDark     = Color(0xFFD49642)
-    val RoseDark      = Color(0xFFC25578)
-    val SlateDark     = Color(0xFF778896)
-}
-
-// Backward-compat aliases for callers that still reference the old flat names.
-val ListColorCoral        = ListColors.CoralLight
-val ListColorSky          = ListColors.SkyLight
-val ListColorMint         = ListColors.MintLight
-val ListColorLavender     = ListColors.LavenderLight
-val ListColorAmber        = ListColors.AmberLight
-val ListColorRose         = ListColors.RoseLight
-val ListColorSlate        = ListColors.SlateLight
-val ListColorCoralDark    = ListColors.CoralDark
-val ListColorSkyDark      = ListColors.SkyDark
-val ListColorMintDark     = ListColors.MintDark
-val ListColorLavenderDark = ListColors.LavenderDark
-val ListColorAmberDark    = ListColors.AmberDark
-val ListColorRoseDark     = ListColors.RoseDark
-val ListColorSlateDark    = ListColors.SlateDark
-
-// ──────────────────────────────────────────────────────────────────
-// PRIORITY — semantic, not in M3 ColorScheme
-// ──────────────────────────────────────────────────────────────────
-
-val PriorityHigh   = Color(0xFFEF5350)
-val PriorityMedium = Color(0xFFFFA726)
-val PriorityLow    = Color(0xFF66BB6A)
-
-// ──────────────────────────────────────────────────────────────────
-// Helpers (kept from prior API — used widely)
-// ──────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+// Backward-compat: list type → color mapping (uses new Cozy accents)
+// ─────────────────────────────────────────────────────────────────────
 
 fun listColorForType(type: String, isDark: Boolean = false): Color = when (type) {
-    "shopping"      -> if (isDark) ListColors.CoralDark    else ListColors.CoralLight
-    "home_chores"   -> if (isDark) ListColors.MintDark     else ListColors.MintLight
-    "general_todos" -> if (isDark) ListColors.SkyDark      else ListColors.SkyLight
-    "study"         -> if (isDark) ListColors.AmberDark    else ListColors.AmberLight
-    "travel"        -> if (isDark) ListColors.SkyDark      else ListColors.SkyLight
-    "wishlist"      -> if (isDark) ListColors.RoseDark     else ListColors.RoseLight
-    "media"         -> if (isDark) ListColors.LavenderDark else ListColors.LavenderLight
-    else            -> if (isDark) ListColors.SlateDark    else ListColors.SlateLight
+    "shopping"      -> if (isDark) DarkCoral       else LightCoral
+    "home_chores"   -> if (isDark) DarkSuccess     else LightSuccess
+    "general_todos" -> if (isDark) DarkPrimary     else LightPrimary
+    "study"         -> if (isDark) DarkOchre       else LightOchre
+    "travel"        -> if (isDark) DarkPrimaryLight else LightPrimaryLight
+    "wishlist"      -> if (isDark) DarkLavender    else LightLavender
+    "media"         -> if (isDark) DarkLavender    else LightLavender
+    else            -> if (isDark) DarkOnBgSec     else LightOnBgSec
 }
 
 fun listEmojiForType(type: String): String = when (type) {
@@ -164,7 +233,7 @@ fun listEmojiForType(type: String): String = when (type) {
     else            -> "📋"
 }
 
-fun String.toComposeColor(fallback: Color = PrimaryGreen): Color {
+fun String.toComposeColor(fallback: Color = LightPrimary): Color {
     val hex = removePrefix("#")
     if (hex.length != 6) return fallback
     val r = hex.substring(0, 2).toIntOrNull(16) ?: return fallback

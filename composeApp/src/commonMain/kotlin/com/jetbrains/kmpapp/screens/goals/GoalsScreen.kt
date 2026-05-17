@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -40,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.goals.Goal
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
 
 enum class GoalFilter(val label: String) {
@@ -146,13 +146,14 @@ fun GoalsScreen(
 
 @Composable
 private fun GoalCard(goal: Goal, onClick: () -> Unit) {
+    val shapes = LocalCozyShapes.current
     val total = goal.steps.size
     val done = goal.steps.count { it.isDone }
     val progress = if (total == 0) (if (goal.isDone) 1f else 0f) else done.toFloat() / total
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = shapes.button,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {

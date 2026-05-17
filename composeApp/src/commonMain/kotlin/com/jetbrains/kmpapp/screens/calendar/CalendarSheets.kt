@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -30,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
@@ -98,7 +98,7 @@ fun CreateCalendarTaskSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(MenuAnchorType.PrimaryNotEditable),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.small,
                 )
                 ExposedDropdownMenu(
                     expanded = listMenuExpanded,
@@ -122,7 +122,7 @@ fun CreateCalendarTaskSheet(
                 label = { Text("Название *") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             )
 
             OutlinedTextField(
@@ -131,7 +131,7 @@ fun CreateCalendarTaskSheet(
                 label = { Text("Заметка") },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
             )
 
             Surface(
@@ -141,7 +141,7 @@ fun CreateCalendarTaskSheet(
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = RoundedCornerShape(14.dp),
+                shape = LocalCozyShapes.current.button,
                 color = if (title.isNotBlank()) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outline,
             ) {
@@ -195,7 +195,7 @@ fun EventDetailSheet(
             Surface(
                 onClick = onOpenItem,
                 modifier = Modifier.fillMaxWidth().height(44.dp),
-                shape = RoundedCornerShape(12.dp),
+                shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -272,7 +272,7 @@ private fun SectionLabel(text: String) {
 private fun Toggle(label: String, active: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(50),
+        shape = LocalCozyShapes.current.pill,
         color = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Text(
@@ -287,7 +287,7 @@ private fun Toggle(label: String, active: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun Tag(text: String) {
-    Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+    Surface(shape = LocalCozyShapes.current.pill, color = MaterialTheme.colorScheme.surfaceVariant) {
         Text(text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
@@ -382,7 +382,7 @@ fun AssignDateSheet(
                                 }
                             },
                             modifier = Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            shape = RoundedCornerShape(10.dp),
+                            shape = LocalCozyShapes.current.chip,
                             color = MaterialTheme.colorScheme.surface,
                             border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         ) {

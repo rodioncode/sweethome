@@ -30,8 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 enum class CalendarVisibility(val label: String) {
     ALL("Все события"),
@@ -64,15 +64,15 @@ fun ShareCalendarSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = SweetHomeShapes.BottomSheet,
+        shape = LocalCozyShapes.current.sheet,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = SweetHomeSpacing.bottomSheetPaddingH,
-                vertical = SweetHomeSpacing.xl,
+                horizontal = LocalCozySpacing.current.xxl,
+                vertical = LocalCozySpacing.current.lg,
             ),
-            verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
         ) {
             Text(
                 "Поделиться календарём",
@@ -127,7 +127,7 @@ fun ShareCalendarSheet(
                     onCheckedChange = { notifyChanges = it },
                     colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
                 )
-                Spacer(Modifier.padding(SweetHomeSpacing.xxs))
+                Spacer(Modifier.padding(LocalCozySpacing.current.xxs))
                 Text("Уведомлять при изменениях", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
             }
             Row(
@@ -139,22 +139,22 @@ fun ShareCalendarSheet(
                     onCheckedChange = { notifyEvents = it },
                     colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
                 )
-                Spacer(Modifier.padding(SweetHomeSpacing.xxs))
+                Spacer(Modifier.padding(LocalCozySpacing.current.xxs))
                 Text("Напоминать о событиях семьи", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = SweetHomeShapes.Button,
+                    shape = LocalCozyShapes.current.button,
                 ) { Text("Отмена") }
                 Button(
                     onClick = {
                         onSave(CalendarShareConfig(visibility, notifyChanges, notifyEvents))
                     },
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = SweetHomeShapes.Button,
+                    shape = LocalCozyShapes.current.button,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -162,7 +162,7 @@ fun ShareCalendarSheet(
                 ) { Text("Сохранить", fontWeight = FontWeight.Bold) }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
         }
     }
 }

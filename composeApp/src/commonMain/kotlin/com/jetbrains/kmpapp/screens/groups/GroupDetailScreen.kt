@@ -62,6 +62,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.groups.GroupMember
 import com.jetbrains.kmpapp.data.groups.Invite
 import com.jetbrains.kmpapp.data.lists.TodoList
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -250,7 +252,7 @@ fun GroupDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                     ) {
@@ -323,7 +325,7 @@ fun GroupDetailScreen(
                     Surface(
                         onClick = { if (isOwner) showWorkHoursDialog = true },
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = LocalCozyShapes.current.button,
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
@@ -361,7 +363,7 @@ fun GroupDetailScreen(
                     Surface(
                         onClick = { showMembersSheet = true },
                         modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = LocalCozyShapes.current.button,
                         color = MaterialTheme.colorScheme.surfaceVariant,
                         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {
@@ -375,7 +377,7 @@ fun GroupDetailScreen(
                             if (g != null) navigateToChat(g.id, g.title, members.size)
                         },
                         modifier = Modifier.weight(1f).height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = LocalCozyShapes.current.button,
                         color = MaterialTheme.colorScheme.primary,
                     ) {
                         Box(contentAlignment = Alignment.Center) {
@@ -414,7 +416,7 @@ fun GroupDetailScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = MaterialTheme.shapes.small,
                         color = MaterialTheme.colorScheme.surfaceVariant,
                     ) {
                         Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -518,12 +520,13 @@ fun GroupDetailScreen(
 
 @Composable
 private fun MemberAvatar(displayName: String, modifier: Modifier = Modifier) {
+    val extras = LocalCozyExtraColors.current
     val colors = listOf(
-        com.jetbrains.kmpapp.ui.PrimaryGreen,
-        com.jetbrains.kmpapp.ui.ListColors.SkyLight,
-        com.jetbrains.kmpapp.ui.ListColors.CoralLight,
-        com.jetbrains.kmpapp.ui.ListColors.LavenderLight,
-        com.jetbrains.kmpapp.ui.ListColors.AmberLight,
+        MaterialTheme.colorScheme.primary,
+        extras.lavenderSoft,
+        extras.coral,
+        extras.lavender,
+        extras.ochre,
     )
     val color = colors[displayName.hashCode().and(0x7FFFFFFF) % colors.size]
     Box(
@@ -599,7 +602,7 @@ private fun GroupListCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 5.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = LocalCozyShapes.current.button,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
@@ -614,7 +617,7 @@ private fun GroupListCard(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(listColor.copy(alpha = 0.13f), RoundedCornerShape(12.dp)),
+                    .background(listColor.copy(alpha = 0.13f), MaterialTheme.shapes.small),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(listIcon, fontSize = 22.sp)
@@ -797,7 +800,7 @@ private fun TimeChip(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.small,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer
         else MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(

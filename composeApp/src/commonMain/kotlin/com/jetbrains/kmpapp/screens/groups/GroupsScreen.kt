@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -34,6 +33,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.EmptyHero
 
 @Composable
 internal fun GroupsContent(
@@ -46,6 +47,7 @@ internal fun GroupsContent(
     onCreateGroup: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val shapes = LocalCozyShapes.current
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -63,7 +65,7 @@ internal fun GroupsContent(
                 Surface(
                     onClick = navigateToLinkEmail,
                     modifier = Modifier.weight(1f).height(36.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = shapes.chip,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -79,7 +81,7 @@ internal fun GroupsContent(
                 Surface(
                     onClick = navigateToJoinByCode,
                     modifier = Modifier.height(36.dp),
-                    shape = RoundedCornerShape(10.dp),
+                    shape = shapes.chip,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                 ) {
                     Box(
@@ -118,8 +120,8 @@ internal fun GroupsContent(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("👥", fontSize = 48.sp)
-                Spacer(Modifier.height(12.dp))
+                EmptyHero(emoji = "👨‍👩‍👧", decor = listOf("💬", "🏠", "❤️", "🌟"))
+                Spacer(Modifier.height(16.dp))
                 Text(
                     "Нет групп",
                     fontSize = 18.sp,
@@ -179,7 +181,7 @@ private fun GroupCard(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = LocalCozyShapes.current.avatarTile,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
@@ -194,7 +196,7 @@ private fun GroupCard(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(wsIconBg, RoundedCornerShape(14.dp)),
+                    .background(wsIconBg, LocalCozyShapes.current.button),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(wsIcon, fontSize = 22.sp)
@@ -214,7 +216,7 @@ private fun GroupCard(
                 }
             }
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = LocalCozyShapes.current.chip,
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
             ) {
                 Text(
@@ -242,7 +244,7 @@ internal fun CreateGroupDialog(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = LocalCozyShapes.current.sheet,
     ) {
         Column(
             modifier = Modifier
@@ -272,7 +274,7 @@ internal fun CreateGroupDialog(
                         onConfirm(groupName.ifBlank { defaultName }, type)
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = LocalCozyShapes.current.button,
                     color = MaterialTheme.colorScheme.surfaceVariant,
                     border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 ) {
@@ -286,7 +288,7 @@ internal fun CreateGroupDialog(
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
-                                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp)),
+                                .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.small),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(icon, fontSize = 22.sp)

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -44,8 +43,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.templates.ListTemplateDetail
 import com.jetbrains.kmpapp.data.templates.TemplateListItem
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import kotlinx.coroutines.launch
@@ -103,8 +102,8 @@ fun TemplateDetailScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SweetHomeSpacing.xl)
-                        .padding(top = SweetHomeSpacing.base, bottom = SweetHomeSpacing.xxxl),
+                        .padding(horizontal = LocalCozySpacing.current.lg)
+                        .padding(top = LocalCozySpacing.current.sm, bottom = LocalCozySpacing.current.xxl),
                 ) {
                     // Top action bar
                     Row(
@@ -112,7 +111,7 @@ fun TemplateDetailScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         IconBadge(emoji = "←", onClick = navigateBack)
-                        Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                             detail?.let { d ->
                                 IconBadge(
                                     emoji = if (d.isFavorite) "★" else "☆",
@@ -122,7 +121,7 @@ fun TemplateDetailScreen(
                             // Publication / delete actions live in PublicationActionsBar below.
                         }
                     }
-                    Spacer(Modifier.height(SweetHomeSpacing.xl))
+                    Spacer(Modifier.height(LocalCozySpacing.current.lg))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Box(
                             modifier = Modifier
@@ -130,7 +129,7 @@ fun TemplateDetailScreen(
                                 .background(Color.White.copy(alpha = 0.18f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) { Text(emoji, fontSize = 28.sp) }
-                        Spacer(Modifier.size(SweetHomeSpacing.base))
+                        Spacer(Modifier.size(LocalCozySpacing.current.sm))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 title,
@@ -150,7 +149,7 @@ fun TemplateDetailScreen(
                         }
                     }
                     detail?.description?.takeIf { it.isNotBlank() }?.let {
-                        Spacer(Modifier.height(SweetHomeSpacing.sm))
+                        Spacer(Modifier.height(LocalCozySpacing.current.xs))
                         Text(
                             it,
                             fontSize = 14.sp,
@@ -179,11 +178,11 @@ fun TemplateDetailScreen(
                 }
             } else if (items.isEmpty()) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(SweetHomeSpacing.xxxxl),
+                    modifier = Modifier.fillMaxWidth().padding(LocalCozySpacing.current.xxxl),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text("📋", fontSize = 32.sp)
-                    Spacer(Modifier.height(SweetHomeSpacing.sm))
+                    Spacer(Modifier.height(LocalCozySpacing.current.xs))
                     Text(
                         "В этом шаблоне нет задач",
                         fontSize = 13.sp,
@@ -194,15 +193,15 @@ fun TemplateDetailScreen(
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                        horizontal = SweetHomeSpacing.xxxl,
-                        vertical = SweetHomeSpacing.base,
+                        horizontal = LocalCozySpacing.current.xxl,
+                        vertical = LocalCozySpacing.current.sm,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
                 ) {
                     items(items, key = { it.id }) { templateItem ->
                         TemplateItemCard(item = templateItem)
                     }
-                    item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
+                    item { Spacer(Modifier.height(LocalCozySpacing.current.huge)) }
                 }
             }
 
@@ -212,9 +211,9 @@ fun TemplateDetailScreen(
                     onClick = { showUseDialog = true },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(SweetHomeSpacing.xl)
+                        .padding(LocalCozySpacing.current.lg)
                         .height(52.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = LocalCozyShapes.current.avatarTile,
                     color = accent,
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -312,19 +311,19 @@ private fun PublicationActionsBar(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.sm),
-        shape = SweetHomeShapes.Card,
+            .padding(horizontal = LocalCozySpacing.current.lg, vertical = LocalCozySpacing.current.xs),
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
-        Column(modifier = Modifier.padding(SweetHomeSpacing.base)) {
+        Column(modifier = Modifier.padding(LocalCozySpacing.current.sm)) {
             Text(
                 label,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(SweetHomeSpacing.sm))
-            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+            Spacer(Modifier.height(LocalCozySpacing.current.xs))
+            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 if (ctaLabel != null && ctaAction != null) {
                     TextButton(onClick = ctaAction, enabled = !isLoading) { Text(ctaLabel) }
                 }
@@ -341,11 +340,11 @@ private fun PublicationActionsBar(
 private fun TemplateItemCard(item: TemplateListItem) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 0.5.dp,
     ) {
-        Column(modifier = Modifier.padding(SweetHomeSpacing.base)) {
+        Column(modifier = Modifier.padding(LocalCozySpacing.current.sm)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 priorityEmoji(item.priority)?.let {
                     Text(it, fontSize = 14.sp)

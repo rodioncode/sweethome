@@ -43,8 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 /**
  * Простая модель рецепта (G-10). Реальный репозиторий рецептов появится позже —
@@ -88,15 +88,15 @@ fun RecipePickerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = SweetHomeShapes.BottomSheet,
+        shape = LocalCozyShapes.current.sheet,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = SweetHomeSpacing.bottomSheetPaddingH,
-                vertical = SweetHomeSpacing.xl,
+                horizontal = LocalCozySpacing.current.xxl,
+                vertical = LocalCozySpacing.current.lg,
             ),
-            verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
         ) {
             Text(
                 "Выбрать рецепт",
@@ -113,7 +113,7 @@ fun RecipePickerSheet(
                 leadingIcon = {
                     Icon(Icons.Outlined.Search, contentDescription = null, modifier = Modifier.size(20.dp))
                 },
-                shape = SweetHomeShapes.Medium,
+                shape = MaterialTheme.shapes.small,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline,
@@ -121,7 +121,7 @@ fun RecipePickerSheet(
                 singleLine = true,
             )
 
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 items(cuisines) { c ->
                     FilterChip(
                         selected = c == selectedCuisine,
@@ -136,7 +136,7 @@ fun RecipePickerSheet(
             }
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
                 modifier = Modifier.height(360.dp),
             ) {
                 items(filtered, key = { it.id }) { recipe ->
@@ -156,14 +156,14 @@ fun RecipePickerSheet(
                 },
                 enabled = selectedRecipeId != null,
                 modifier = Modifier.fillMaxWidth().height(48.dp),
-                shape = SweetHomeShapes.Button,
+                shape = LocalCozyShapes.current.button,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             ) { Text("Добавить в список", fontWeight = FontWeight.Bold) }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
         }
     }
 }
@@ -177,24 +177,24 @@ private fun RecipeRow(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         color = if (selected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
-            modifier = Modifier.padding(SweetHomeSpacing.base),
+            modifier = Modifier.padding(LocalCozySpacing.current.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(SweetHomeSpacing.avatarHero)
-                    .clip(SweetHomeShapes.Medium)
+                    .size(72.dp)
+                    .clip(MaterialTheme.shapes.small)
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(recipe.emoji, fontSize = 32.sp)
             }
-            Spacer(Modifier.width(SweetHomeSpacing.md))
+            Spacer(Modifier.width(LocalCozySpacing.current.sm))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     recipe.title,
@@ -202,12 +202,12 @@ private fun RecipeRow(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.height(SweetHomeSpacing.xxs))
-                Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+                Spacer(Modifier.height(LocalCozySpacing.current.xxs))
+                Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                     MetaChip("⏱ ${recipe.durationLabel}")
                     MetaChip("👨‍🍳 ${recipe.difficultyLabel}")
                 }
-                Spacer(Modifier.height(SweetHomeSpacing.xxs))
+                Spacer(Modifier.height(LocalCozySpacing.current.xxs))
                 Text(
                     "${recipe.ingredients.size} ингредиентов",
                     fontSize = 12.sp,
@@ -226,7 +226,7 @@ private fun RecipeRow(
 @Composable
 private fun MetaChip(text: String) {
     Surface(
-        shape = SweetHomeShapes.Pill,
+        shape = LocalCozyShapes.current.pill,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Text(
@@ -234,7 +234,7 @@ private fun MetaChip(text: String) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xs, vertical = 2.dp),
         )
     }
 }

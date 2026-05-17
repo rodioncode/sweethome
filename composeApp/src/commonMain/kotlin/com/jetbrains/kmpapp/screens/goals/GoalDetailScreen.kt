@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.goals.GoalStep
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -120,7 +120,7 @@ fun GoalDetailScreen(
                 item {
                     Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text("Шаги", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                        Surface(onClick = { addingStep = true }, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
+                        Surface(onClick = { addingStep = true }, shape = LocalCozyShapes.current.pill, color = MaterialTheme.colorScheme.primary) {
                             Text("+ Шаг", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
@@ -182,7 +182,7 @@ fun GoalDetailScreen(
 private fun StepRow(step: GoalStep, onToggle: () -> Unit, onDelete: () -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(10.dp),
+        shape = LocalCozyShapes.current.chip,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {

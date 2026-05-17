@@ -1,160 +1,66 @@
 package com.jetbrains.kmpapp.ui
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-/**
- * SweetHome typography — 12 levels.
- *
- * Font: FontFamily.Default (system Roboto on Android, SF on iOS).
- * Weights: 400 / 600 / 700 only — never 500/800/900.
- */
+// ─────────────────────────────────────────────────────────────────────
+// Typography.
+// Adult mode: Inter Display (M3-compatible).
+// Kid mode: Fredoka — bundled separately, see [LocalKidTypography].
+// Until fonts are bundled, FontFamily.Default is used.
+// ─────────────────────────────────────────────────────────────────────
 
-private val Sans = FontFamily.Default
+private val InterDisplay = FontFamily.Default  // TODO(art): swap to Inter Tight when font assets added
+private val Fredoka      = FontFamily.Default  // TODO(art): swap to Fredoka
 
-// ── Display & headings ────────────────────────────────────────────
+internal val cozyTypography = Typography(
+    displayLarge   = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 40.sp, lineHeight = 44.sp, letterSpacing = (-1).sp),
+    displayMedium  = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 32.sp, lineHeight = 36.sp, letterSpacing = (-0.5).sp),
+    displaySmall   = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 26.sp, lineHeight = 30.sp, letterSpacing = (-0.5).sp),
 
-val Display = TextStyle(
-    fontFamily = Sans,
-    fontSize = 36.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 44.sp,
-    letterSpacing = 8.sp,
+    headlineLarge  = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.5).sp),
+    headlineMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 22.sp, lineHeight = 26.sp),
+    headlineSmall  = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 18.sp, lineHeight = 22.sp),
+
+    titleLarge     = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 17.sp, lineHeight = 22.sp),
+    titleMedium    = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.SemiBold,fontSize = 15.sp, lineHeight = 20.sp),
+    titleSmall     = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.SemiBold,fontSize = 13.sp, lineHeight = 18.sp),
+
+    bodyLarge      = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Normal,  fontSize = 15.sp, lineHeight = 22.sp),
+    bodyMedium     = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Normal,  fontSize = 14.sp, lineHeight = 20.sp),
+    bodySmall      = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Normal,  fontSize = 13.sp, lineHeight = 18.sp),
+
+    labelLarge     = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.SemiBold,fontSize = 13.sp, lineHeight = 16.sp),
+    labelMedium    = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.SemiBold,fontSize = 12.sp, lineHeight = 16.sp),
+    labelSmall     = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold,    fontSize = 11.sp, lineHeight = 14.sp, letterSpacing = 1.2.sp),
 )
 
-val Heading1 = TextStyle(
-    fontFamily = Sans,
-    fontSize = 28.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 34.sp,
+// ─────────────────────────────────────────────────────────────────────
+// Kid mode typography — Fredoka, slightly larger, less letter-spacing.
+// ─────────────────────────────────────────────────────────────────────
+
+@Immutable
+data class KidTypography(
+    val display:   TextStyle,
+    val heading:   TextStyle,
+    val title:     TextStyle,
+    val body:      TextStyle,
+    val caption:   TextStyle,
+    val button:    TextStyle,
 )
 
-val Heading2 = TextStyle(
-    fontFamily = Sans,
-    fontSize = 22.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 28.sp,
+val kidTypography = KidTypography(
+    display = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Bold,     fontSize = 40.sp, lineHeight = 44.sp, letterSpacing = (-1).sp),
+    heading = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Bold,     fontSize = 26.sp, lineHeight = 30.sp, letterSpacing = (-0.5).sp),
+    title   = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, lineHeight = 22.sp),
+    body    = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Medium,   fontSize = 15.sp, lineHeight = 22.sp),
+    caption = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.SemiBold, fontSize = 12.sp, lineHeight = 16.sp),
+    button  = TextStyle(fontFamily = Fredoka, fontWeight = FontWeight.Bold,     fontSize = 18.sp, lineHeight = 22.sp, letterSpacing = 0.2.sp),
 )
 
-val Heading3 = TextStyle(
-    fontFamily = Sans,
-    fontSize = 20.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 26.sp,
-)
-
-val TitleLarge = TextStyle(
-    fontFamily = Sans,
-    fontSize = 18.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 24.sp,
-)
-
-val Subtitle = TextStyle(
-    fontFamily = Sans,
-    fontSize = 17.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 22.sp,
-)
-
-val TitleMedium = TextStyle(
-    fontFamily = Sans,
-    fontSize = 16.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 22.sp,
-)
-
-// ── Body ──────────────────────────────────────────────────────────
-
-val Body = TextStyle(
-    fontFamily = Sans,
-    fontSize = 15.sp,
-    fontWeight = FontWeight.Normal,
-    lineHeight = 22.sp,
-)
-
-val BodyMedium = TextStyle(
-    fontFamily = Sans,
-    fontSize = 14.sp,
-    fontWeight = FontWeight.Normal,
-    lineHeight = 20.sp,
-)
-
-val BodySmall = TextStyle(
-    fontFamily = Sans,
-    fontSize = 13.sp,
-    fontWeight = FontWeight.Normal,
-    lineHeight = 18.sp,
-)
-
-val Caption = TextStyle(
-    fontFamily = Sans,
-    fontSize = 12.sp,
-    fontWeight = FontWeight.Normal,
-    lineHeight = 16.sp,
-)
-
-val CaptionSmall = TextStyle(
-    fontFamily = Sans,
-    fontSize = 11.sp,
-    fontWeight = FontWeight.Bold,
-    lineHeight = 14.sp,
-    letterSpacing = 0.5.sp,
-)
-
-val Micro = TextStyle(
-    fontFamily = Sans,
-    fontSize = 10.sp,
-    fontWeight = FontWeight.Normal,
-    lineHeight = 14.sp,
-)
-
-/**
- * Backward-compat namespace for callers that read styles via [SweetHomeTypography.Heading1] etc.
- * Prefer the top-level vals in new code.
- */
-object SweetHomeTypography {
-    val Display = com.jetbrains.kmpapp.ui.Display
-    val Heading1 = com.jetbrains.kmpapp.ui.Heading1
-    val Heading2 = com.jetbrains.kmpapp.ui.Heading2
-    val Heading3 = com.jetbrains.kmpapp.ui.Heading3
-    val TitleLarge = com.jetbrains.kmpapp.ui.TitleLarge
-    val Subtitle = com.jetbrains.kmpapp.ui.Subtitle
-    val TitleMedium = com.jetbrains.kmpapp.ui.TitleMedium
-    val Body = com.jetbrains.kmpapp.ui.Body
-    val BodyMedium = com.jetbrains.kmpapp.ui.BodyMedium
-    val BodySmall = com.jetbrains.kmpapp.ui.BodySmall
-    val Caption = com.jetbrains.kmpapp.ui.Caption
-    val CaptionSmall = com.jetbrains.kmpapp.ui.CaptionSmall
-    val Micro = com.jetbrains.kmpapp.ui.Micro
-}
-
-// ── M3 Typography mapping ─────────────────────────────────────────
-
-val SweetHomeM3Typography = Typography(
-    displayLarge   = Display,
-    displayMedium  = Heading1,
-    displaySmall   = Heading2,
-
-    headlineLarge  = Heading1,
-    headlineMedium = Heading2,
-    headlineSmall  = Heading3,
-
-    titleLarge     = TitleLarge,
-    titleMedium    = TitleMedium,
-    titleSmall     = Subtitle,
-
-    bodyLarge      = Body,
-    bodyMedium     = BodyMedium,
-    bodySmall      = BodySmall,
-
-    labelLarge     = TitleMedium.copy(fontSize = 14.sp), // buttons
-    labelMedium    = Caption,
-    labelSmall     = CaptionSmall,
-)
-
-/** Legacy alias — used by [Theme]. */
-val AppTypography = SweetHomeM3Typography
+val LocalKidTypography = staticCompositionLocalOf { kidTypography }

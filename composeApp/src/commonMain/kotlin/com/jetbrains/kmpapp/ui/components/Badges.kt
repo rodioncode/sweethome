@@ -15,11 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material3.MaterialTheme
-import com.jetbrains.kmpapp.ui.ErrorRed
-import com.jetbrains.kmpapp.ui.OnPrimaryWhite
-import com.jetbrains.kmpapp.ui.PrimaryGreenDark
-import com.jetbrains.kmpapp.ui.SecondaryPeach
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 
 @Composable
 fun SweetHomeNotificationBadge(
@@ -28,7 +25,7 @@ fun SweetHomeNotificationBadge(
 ) {
     Surface(
         modifier = modifier.defaultMinSize(minWidth = 24.dp, minHeight = 24.dp),
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = MaterialTheme.colorScheme.primary,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
@@ -46,11 +43,11 @@ fun SweetHomeNotificationBadge(
 fun SweetHomeCounterBadge(
     count: Int,
     modifier: Modifier = Modifier,
-    color: Color = SecondaryPeach,
+    color: Color = MaterialTheme.colorScheme.secondary,
 ) {
     Surface(
         modifier = modifier.defaultMinSize(minWidth = 24.dp, minHeight = 24.dp),
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = color,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
@@ -58,7 +55,7 @@ fun SweetHomeCounterBadge(
                 text = count.toString(),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = OnPrimaryWhite,
+                color = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }
@@ -71,15 +68,15 @@ fun SweetHomeNewBadge(
 ) {
     Surface(
         modifier = modifier,
-        shape = SweetHomeShapes.Chip,
-        color = PrimaryGreenDark,
+        shape = LocalCozyShapes.current.chip,
+        color = LocalCozyExtraColors.current.success,
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)) {
             Text(
                 text = text,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = OnPrimaryWhite,
+                color = MaterialTheme.colorScheme.onPrimary,
             )
         }
     }
@@ -92,6 +89,6 @@ fun SweetHomeOnlineDot(
     Surface(
         modifier = modifier.size(12.dp),
         shape = CircleShape,
-        color = ErrorRed,
+        color = MaterialTheme.colorScheme.error,
     ) {}
 }

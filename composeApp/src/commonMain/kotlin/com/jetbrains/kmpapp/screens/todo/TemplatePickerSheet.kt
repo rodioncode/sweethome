@@ -39,8 +39,9 @@ import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.lists.TodoItem
 import com.jetbrains.kmpapp.data.templates.TaskTemplate
 import com.jetbrains.kmpapp.data.templates.TemplateVisibility
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import kotlinx.coroutines.launch
 
@@ -89,21 +90,21 @@ internal fun TemplatePickerSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = SweetHomeSpacing.xxxl, vertical = SweetHomeSpacing.sm),
+                .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xs),
         ) {
             Text(
                 text = "Из шаблона",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(vertical = SweetHomeSpacing.sm),
+                modifier = Modifier.padding(vertical = LocalCozySpacing.current.xs),
             )
             // Tabs
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = SweetHomeSpacing.sm),
-                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm),
+                    .padding(vertical = LocalCozySpacing.current.xs),
+                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
             ) {
                 PickerTab.entries.forEach { t ->
                     val count = when (t) {
@@ -119,7 +120,7 @@ internal fun TemplatePickerSheet(
                     )
                 }
             }
-            Spacer(Modifier.height(SweetHomeSpacing.sm))
+            Spacer(Modifier.height(LocalCozySpacing.current.xs))
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -152,7 +153,7 @@ internal fun TemplatePickerSheet(
                     )
                 }
             }
-            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Spacer(Modifier.height(LocalCozySpacing.current.sm))
         }
     }
 }
@@ -167,11 +168,11 @@ private fun PickerTabChip(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Box(
-            modifier = Modifier.padding(vertical = SweetHomeSpacing.sm),
+            modifier = Modifier.padding(vertical = LocalCozySpacing.current.xs),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -198,7 +199,7 @@ private fun TemplatesList(
         )
         return
     }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
         items(templates, key = { it.id }) { template ->
             TemplateRow(
                 emoji = listEmojiForType(template.scope.ifBlank { listType }),
@@ -222,7 +223,7 @@ private fun ItemsList(
         EmptyPickerState(emoji = "✨", message = emptyMessage)
         return
     }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
         items(items, key = { it.id }) { item ->
             val parts = buildList {
                 item.shopping?.let { s ->
@@ -257,13 +258,13 @@ private fun TemplateRow(
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.base),
+                .padding(LocalCozySpacing.current.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -275,7 +276,7 @@ private fun TemplateRow(
             ) {
                 Text(text = emoji, fontSize = 18.sp)
             }
-            Spacer(Modifier.width(SweetHomeSpacing.base))
+            Spacer(Modifier.width(LocalCozySpacing.current.sm))
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -288,11 +289,11 @@ private fun TemplateRow(
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     visibilityBadge?.let { badge ->
-                        Spacer(Modifier.width(SweetHomeSpacing.sm))
+                        Spacer(Modifier.width(LocalCozySpacing.current.xs))
                         VisibilityChip(badge = badge)
                     }
                     if (isFavorite && visibilityBadge == null) {
-                        Spacer(Modifier.width(SweetHomeSpacing.sm))
+                        Spacer(Modifier.width(LocalCozySpacing.current.xs))
                         Text("⭐", fontSize = 12.sp)
                     }
                 }
@@ -306,7 +307,7 @@ private fun TemplateRow(
                     )
                 }
             }
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Spacer(Modifier.width(LocalCozySpacing.current.xs))
             Text(
                 text = "→",
                 fontSize = 18.sp,
@@ -321,11 +322,11 @@ private fun EmptyPickerState(emoji: String, message: String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(SweetHomeSpacing.xxxxl),
+            .padding(LocalCozySpacing.current.xxxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(emoji, fontSize = 32.sp)
-        Spacer(Modifier.height(SweetHomeSpacing.sm))
+        Spacer(Modifier.height(LocalCozySpacing.current.xs))
         Text(
             text = message,
             fontSize = 13.sp,
@@ -334,9 +335,9 @@ private fun EmptyPickerState(emoji: String, message: String) {
     }
 }
 
-private enum class VisibilityBadge(val label: String, val color: Color) {
-    MINE("✦ Моё", Color(0xFF5B7C5A)),
-    PENDING("⏳ Pending", Color(0xFFFFA726)),
+private enum class VisibilityBadge(val label: String) {
+    MINE("✦ Моё"),
+    PENDING("⏳ Pending"),
 }
 
 private fun visibilityBadge(t: TaskTemplate): VisibilityBadge? = when {
@@ -347,16 +348,21 @@ private fun visibilityBadge(t: TaskTemplate): VisibilityBadge? = when {
 
 @Composable
 private fun VisibilityChip(badge: VisibilityBadge) {
+    val extras = LocalCozyExtraColors.current
+    val badgeColor = when (badge) {
+        VisibilityBadge.MINE -> extras.success
+        VisibilityBadge.PENDING -> extras.ochre
+    }
     Surface(
-        shape = SweetHomeShapes.Chip,
-        color = badge.color.copy(alpha = 0.14f),
+        shape = LocalCozyShapes.current.chip,
+        color = badgeColor.copy(alpha = 0.14f),
     ) {
         Text(
             text = badge.label,
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
-            color = badge.color,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 2.dp),
+            color = badgeColor,
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xs, vertical = 2.dp),
         )
     }
 }

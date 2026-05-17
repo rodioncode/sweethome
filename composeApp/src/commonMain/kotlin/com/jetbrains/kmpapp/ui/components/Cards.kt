@@ -33,10 +33,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.PrimaryGreen
-import com.jetbrains.kmpapp.ui.SurfaceVariantCream
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 @Composable
 fun SweetHomeListCard(
@@ -44,7 +42,7 @@ fun SweetHomeListCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: String? = null,
-    listColor: Color = PrimaryGreen,
+    listColor: Color = MaterialTheme.colorScheme.primary,
     doneCount: Int? = null,
     totalCount: Int? = null,
     categoryLabel: String? = null,
@@ -53,7 +51,7 @@ fun SweetHomeListCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = 1.dp,
@@ -71,7 +69,7 @@ fun SweetHomeListCard(
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                    .padding(horizontal = LocalCozySpacing.current.sm, vertical = LocalCozySpacing.current.sm),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -147,13 +145,13 @@ fun SweetHomeTaskItem(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
         shadowElevation = if (isChecked) 0.dp else 1.dp,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.base),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg, vertical = LocalCozySpacing.current.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Checkbox(
@@ -165,7 +163,7 @@ fun SweetHomeTaskItem(
                     checkmarkColor = MaterialTheme.colorScheme.onPrimary,
                 ),
             )
-            Spacer(Modifier.width(SweetHomeSpacing.sm))
+            Spacer(Modifier.width(LocalCozySpacing.current.xs))
             Column {
                 Text(
                     text = text,

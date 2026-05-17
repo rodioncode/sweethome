@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -38,11 +37,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.jetbrains.kmpapp.ui.PriorityHigh
-import com.jetbrains.kmpapp.ui.PriorityLow
-import com.jetbrains.kmpapp.ui.PriorityMedium
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
@@ -77,15 +74,15 @@ fun HomeContent(
         modifier = modifier
             .fillMaxSize()
             .padding(contentPadding),
-        contentPadding = PaddingValues(vertical = SweetHomeSpacing.xl),
-        verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+        contentPadding = PaddingValues(vertical = LocalCozySpacing.current.lg),
+        verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
     ) {
         // --- Header: greeting + avatar ---
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xxxl),
+                    .padding(horizontal = LocalCozySpacing.current.xxl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -137,7 +134,7 @@ fun HomeContent(
             ContextPill(
                 selected = context,
                 onSelect = viewModel::setContext,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
             )
         }
 
@@ -146,21 +143,21 @@ fun HomeContent(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xxxl)
+                    .padding(horizontal = LocalCozySpacing.current.xxl)
                     .shadow(
                         elevation = 8.dp,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = MaterialTheme.shapes.small,
                         ambientColor = Color.Black.copy(alpha = 0.08f),
                         spotColor = Color.Black.copy(alpha = 0.08f),
                     ),
-                shape = RoundedCornerShape(10.dp),
+                shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(44.dp)
-                        .padding(horizontal = SweetHomeSpacing.xl),
+                        .padding(horizontal = LocalCozySpacing.current.lg),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
@@ -174,17 +171,17 @@ fun HomeContent(
 
         // --- Quick actions ---
         item {
-            Column(modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl)) {
+            Column(modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl)) {
                 Text(
                     text = "Быстрые действия",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(bottom = SweetHomeSpacing.base),
+                    modifier = Modifier.padding(bottom = LocalCozySpacing.current.sm),
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.base),
+                    horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
                 ) {
                     QuickActionCard(
                         emoji = "📝",
@@ -221,14 +218,14 @@ fun HomeContent(
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
             )
         }
         if (todayTasks.isEmpty()) {
             item {
                 TodayEmptyState(
                     context = context,
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
                 )
             }
         } else {
@@ -236,7 +233,7 @@ fun HomeContent(
                 TodayTaskCard(
                     task = task,
                     onClick = { navigateToListDetail(task.listId) },
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
                 )
             }
         }
@@ -246,7 +243,7 @@ fun HomeContent(
             GoalsWidget(
                 goal = nearestGoal,
                 onClick = navigateToGoals,
-                modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
             )
         }
 
@@ -255,7 +252,7 @@ fun HomeContent(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xxxl),
+                    .padding(horizontal = LocalCozySpacing.current.xxl),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
@@ -281,15 +278,15 @@ fun HomeContent(
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = SweetHomeSpacing.xxxl),
-                    shape = SweetHomeShapes.Card,
+                        .padding(horizontal = LocalCozySpacing.current.xxl),
+                    shape = LocalCozyShapes.current.card,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(SweetHomeSpacing.xxxl),
+                            .padding(LocalCozySpacing.current.xxl),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
@@ -298,7 +295,7 @@ fun HomeContent(
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        Spacer(Modifier.height(SweetHomeSpacing.xxs))
+                        Spacer(Modifier.height(LocalCozySpacing.current.xxs))
                         Text(
                             text = "Создайте первый список дел",
                             fontSize = 13.sp,
@@ -314,7 +311,7 @@ fun HomeContent(
                 SweetHomeListCard(
                     title = list.title,
                     onClick = { navigateToListDetail(list.id) },
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
                     icon = list.icon ?: listEmojiForType(list.type),
                     listColor = color,
                     doneCount = list.doneCount,
@@ -334,12 +331,12 @@ fun HomeContent(
                 FamilyPulseCard(
                     pulse = pulse,
                     onClick = onNavigateToHome,
-                    modifier = Modifier.padding(horizontal = SweetHomeSpacing.xxxl),
+                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
                 )
             }
         }
 
-        item { Spacer(Modifier.height(SweetHomeSpacing.huge)) }
+        item { Spacer(Modifier.height(LocalCozySpacing.current.huge)) }
     }
 }
 
@@ -353,14 +350,14 @@ private fun FamilyPulseCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.xl),
+                .padding(LocalCozySpacing.current.lg),
         ) {
             Text(
                 text = "В семье «${pulse.workspaceTitle}»".uppercase(),
@@ -369,7 +366,7 @@ private fun FamilyPulseCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 0.5.sp,
             )
-            Spacer(Modifier.height(SweetHomeSpacing.base))
+            Spacer(Modifier.height(LocalCozySpacing.current.sm))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 // Avatar stack with overlap
                 Box(modifier = Modifier.height(32.dp).width((20 * pulse.memberInitials.size + 12).dp.coerceAtLeast(32.dp))) {
@@ -392,7 +389,7 @@ private fun FamilyPulseCard(
                         }
                     }
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Spacer(Modifier.width(LocalCozySpacing.current.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Выполнено: «${pulse.lastActionTitle}»",
@@ -420,11 +417,11 @@ private fun ContextPill(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.PillLarge,
+        shape = LocalCozyShapes.current.pill,
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Row(
-            modifier = Modifier.padding(SweetHomeSpacing.xxs),
+            modifier = Modifier.padding(LocalCozySpacing.current.xxs),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             ContextPillSegment(
@@ -463,16 +460,16 @@ private fun ContextPillSegment(
     Surface(
         onClick = onClick,
         modifier = modifier,
-        shape = SweetHomeShapes.PillLarge,
+        shape = LocalCozyShapes.current.pill,
         color = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.base, vertical = SweetHomeSpacing.sm),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.sm, vertical = LocalCozySpacing.current.xs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
             Text(text = emoji, fontSize = 14.sp)
-            Spacer(Modifier.width(SweetHomeSpacing.xxs))
+            Spacer(Modifier.width(LocalCozySpacing.current.xxs))
             Text(
                 text = label,
                 fontSize = 13.sp,
@@ -495,7 +492,7 @@ private fun TodayTaskCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -517,19 +514,19 @@ private fun TodayTaskCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = SweetHomeSpacing.xl, vertical = SweetHomeSpacing.base),
+                    .padding(horizontal = LocalCozySpacing.current.lg, vertical = LocalCozySpacing.current.sm),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier = Modifier
-                        .size(SweetHomeSpacing.iconButton)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .background(accent.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(text = task.listIcon, fontSize = 18.sp)
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Spacer(Modifier.width(LocalCozySpacing.current.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         priorityDot(task.priority)?.let { dotColor ->
@@ -539,7 +536,7 @@ private fun TodayTaskCard(
                                     .clip(CircleShape)
                                     .background(dotColor),
                             )
-                            Spacer(Modifier.width(SweetHomeSpacing.xxs))
+                            Spacer(Modifier.width(LocalCozySpacing.current.xxs))
                         }
                         Text(
                             text = task.title,
@@ -558,7 +555,7 @@ private fun TodayTaskCard(
                         maxLines = 1,
                     )
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Spacer(Modifier.width(LocalCozySpacing.current.sm))
                 DueBadge(label = task.dueLabel, isOverdue = task.isOverdue)
             }
         }
@@ -570,7 +567,7 @@ private fun DueBadge(label: String, isOverdue: Boolean) {
     val bg = if (isOverdue) MaterialTheme.colorScheme.errorContainer else MaterialTheme.colorScheme.surfaceVariant
     val fg = if (isOverdue) MaterialTheme.colorScheme.onErrorContainer else MaterialTheme.colorScheme.onSurfaceVariant
     Surface(
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = bg,
     ) {
         Text(
@@ -578,7 +575,7 @@ private fun DueBadge(label: String, isOverdue: Boolean) {
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = fg,
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.sm, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xs, vertical = 4.dp),
         )
     }
 }
@@ -590,25 +587,25 @@ private fun TodayEmptyState(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.xxxl),
+                .padding(LocalCozySpacing.current.xxl),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(text = "🎉", fontSize = 28.sp)
-            Spacer(Modifier.height(SweetHomeSpacing.sm))
+            Spacer(Modifier.height(LocalCozySpacing.current.xs))
             Text(
                 text = "На сегодня всё чисто",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.height(SweetHomeSpacing.xxs))
+            Spacer(Modifier.height(LocalCozySpacing.current.xxs))
             Text(
                 text = when (context) {
                     DashboardContext.PERSONAL -> "Нет задач с дедлайном на сегодня в личном пространстве"
@@ -632,14 +629,14 @@ private fun GoalsWidget(
         modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(SweetHomeSpacing.xl),
+                .padding(LocalCozySpacing.current.lg),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -651,7 +648,7 @@ private fun GoalsWidget(
                 ) {
                     Text(text = "🎯", fontSize = 22.sp)
                 }
-                Spacer(Modifier.width(SweetHomeSpacing.base))
+                Spacer(Modifier.width(LocalCozySpacing.current.sm))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (goal == null) "Цели" else goal.title,
@@ -688,13 +685,13 @@ private fun GoalsWidget(
             }
             // Прогресс-бар по шагам, если они есть
             if (goal != null && goal.totalSteps > 0) {
-                Spacer(Modifier.height(SweetHomeSpacing.sm))
+                Spacer(Modifier.height(LocalCozySpacing.current.xs))
                 val progress = goal.doneSteps.toFloat() / goal.totalSteps.toFloat()
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
-                        .clip(SweetHomeShapes.Chip)
+                        .clip(LocalCozyShapes.current.chip)
                         .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.18f)),
                 ) {
                     Box(
@@ -722,19 +719,19 @@ private fun QuickActionCard(
         modifier = modifier
             .height(90.dp)
             .clickable(onClick = onClick),
-        shape = SweetHomeShapes.Card,
+        shape = LocalCozyShapes.current.card,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(SweetHomeSpacing.sm),
+                .padding(LocalCozySpacing.current.xs),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             Text(text = emoji, fontSize = 26.sp)
-            Spacer(Modifier.height(SweetHomeSpacing.sm))
+            Spacer(Modifier.height(LocalCozySpacing.current.xs))
             Text(
                 text = label,
                 fontSize = 12.sp,
@@ -745,10 +742,11 @@ private fun QuickActionCard(
     }
 }
 
+@Composable
 private fun priorityDot(priority: String?): Color? = when (priority) {
-    "high" -> PriorityHigh
-    "medium" -> PriorityMedium
-    "low" -> PriorityLow
+    "high" -> MaterialTheme.colorScheme.error
+    "medium" -> LocalCozyExtraColors.current.ochre
+    "low" -> LocalCozyExtraColors.current.success
     else -> null
 }
 

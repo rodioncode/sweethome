@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.lists.TodoItem
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -121,10 +121,11 @@ private fun CenteredMessage(text: String, padding: androidx.compose.foundation.l
 
 @Composable
 private fun WishItemCard(item: TodoItem, onClaim: () -> Unit) {
+    val shapes = LocalCozyShapes.current
     val isClaimed = item.wishlist?.isClaimed == true
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = shapes.button,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
@@ -144,11 +145,11 @@ private fun WishItemCard(item: TodoItem, onClaim: () -> Unit) {
                 item.wishlist?.price?.let { Text("$it ₽", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             if (isClaimed) {
-                Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                Surface(shape = shapes.pill, color = MaterialTheme.colorScheme.surfaceVariant) {
                     Text("Занято", modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Surface(onClick = onClaim, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary) {
+                Surface(onClick = onClaim, shape = shapes.pill, color = MaterialTheme.colorScheme.primary) {
                     Text("Забронировать", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
                 }
             }

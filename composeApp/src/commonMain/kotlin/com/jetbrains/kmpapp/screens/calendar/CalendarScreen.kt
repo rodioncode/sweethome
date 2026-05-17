@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.calendar.CalendarEvent
 import com.jetbrains.kmpapp.data.calendar.EventSource
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -187,7 +188,7 @@ private fun CalendarHeader(
                 )
                 IconBtn("›", onNext)
                 Spacer(Modifier.width(6.dp))
-                Surface(onClick = onToday, shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.surfaceVariant) {
+                Surface(onClick = onToday, shape = LocalCozyShapes.current.pill, color = MaterialTheme.colorScheme.surfaceVariant) {
                     Text("Сегодня", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                 }
                 Spacer(Modifier.width(6.dp))
@@ -212,7 +213,7 @@ private fun CalendarHeader(
                     val active = view == v
                     Surface(
                         onClick = { onSetView(v) },
-                        shape = RoundedCornerShape(50),
+                        shape = LocalCozyShapes.current.pill,
                         color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier.padding(end = 6.dp),
                     ) {
@@ -365,7 +366,7 @@ private fun MonthView(
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primaryContainer
                                     else MaterialTheme.colorScheme.surface,
-                                    RoundedCornerShape(8.dp),
+                                    LocalCozyShapes.current.chip,
                                 )
                                 .clickable { onSelect(date) }
                                 .padding(4.dp),
@@ -446,7 +447,7 @@ private fun WeekView(
                         .background(
                             if (isSelected) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surface,
-                            RoundedCornerShape(10.dp),
+                            LocalCozyShapes.current.chip,
                         )
                         .clickable { onSelect(day) }
                         .padding(vertical = 8.dp, horizontal = 4.dp),
@@ -539,7 +540,7 @@ private fun EventChip(ev: CalendarEvent, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(10.dp),
+        shape = LocalCozyShapes.current.chip,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
@@ -580,7 +581,7 @@ private fun sourceLabel(s: EventSource): String = when (s) {
 @androidx.compose.runtime.Composable
 private fun eventColor(ev: CalendarEvent): Color = when (ev.priority) {
     "high" -> MaterialTheme.colorScheme.error
-    "medium" -> Color(0xFFE8A87C)
+    "medium" -> LocalCozyExtraColors.current.coral
     "low" -> MaterialTheme.colorScheme.tertiary
     else -> MaterialTheme.colorScheme.primary
 }

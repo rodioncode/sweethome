@@ -38,8 +38,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,7 +54,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
-import com.jetbrains.kmpapp.ui.SecondaryPeach
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -103,7 +103,7 @@ fun SettingsScreen(
                 HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
                 SettingsToggleRow(
                     emoji = "✉️",
-                    emojiBgColor = SecondaryPeach.copy(alpha = 0.2f),
+                    emojiBgColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                     title = "Email-уведомления",
                     subtitle = "Сводки и важные события",
                     checked = notifyEmail,
@@ -115,7 +115,7 @@ fun SettingsScreen(
             SettingsSection(title = "Внешний вид") {
                 SettingsToggleRow(
                     emoji = "🌙",
-                    emojiBgColor = Color(0xFF6366F1).copy(alpha = 0.15f),
+                    emojiBgColor = LocalCozyExtraColors.current.lavender.copy(alpha = 0.15f),
                     title = "Тёмная тема",
                     subtitle = if (darkTheme) "Сейчас: Тёмная" else "Сейчас: Светлая",
                     checked = darkTheme,
@@ -232,15 +232,15 @@ private fun WorkHoursSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        shape = SweetHomeShapes.BottomSheet,
+        shape = LocalCozyShapes.current.sheet,
         containerColor = MaterialTheme.colorScheme.surface,
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = SweetHomeSpacing.bottomSheetPaddingH,
-                vertical = SweetHomeSpacing.xl,
+                horizontal = LocalCozySpacing.current.xxl,
+                vertical = LocalCozySpacing.current.lg,
             ),
-            verticalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
         ) {
             Text(
                 "Рабочие часы",
@@ -262,7 +262,7 @@ private fun WorkHoursSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.xs),
+                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").forEach { d ->
@@ -289,7 +289,7 @@ private fun WorkHoursSheet(
                 letterSpacing = 0.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 TimeSelectorButton(
                     label = "Начало",
                     value = start,
@@ -307,13 +307,13 @@ private fun WorkHoursSheet(
             // Preview
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = SweetHomeShapes.Card,
+                shape = LocalCozyShapes.current.card,
                 color = MaterialTheme.colorScheme.surfaceVariant,
             ) {
                 Row(
-                    modifier = Modifier.padding(SweetHomeSpacing.xl),
+                    modifier = Modifier.padding(LocalCozySpacing.current.lg),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.md),
+                    horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
                 ) {
                     Icon(
                         Icons.Outlined.Schedule,
@@ -337,16 +337,16 @@ private fun WorkHoursSheet(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(SweetHomeSpacing.sm)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 OutlinedButton(
                     onClick = onDismiss,
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = SweetHomeShapes.Button,
+                    shape = LocalCozyShapes.current.button,
                 ) { Text("Отмена") }
                 Button(
                     onClick = { onSave(days, start, end) },
                     modifier = Modifier.weight(1f).height(48.dp),
-                    shape = SweetHomeShapes.Button,
+                    shape = LocalCozyShapes.current.button,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -354,7 +354,7 @@ private fun WorkHoursSheet(
                 ) { Text("Сохранить") }
             }
 
-            Spacer(Modifier.height(SweetHomeSpacing.xl))
+            Spacer(Modifier.height(LocalCozySpacing.current.lg))
         }
     }
 }
@@ -369,7 +369,7 @@ private fun TimeSelectorButton(
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.height(56.dp),
-        shape = SweetHomeShapes.Button,
+        shape = LocalCozyShapes.current.button,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(

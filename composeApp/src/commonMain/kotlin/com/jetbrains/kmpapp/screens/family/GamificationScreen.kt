@@ -45,15 +45,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.achievements.Achievement
 import com.jetbrains.kmpapp.data.gamification.LeaderboardEntry
 import com.jetbrains.kmpapp.data.gamification.Transaction
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import org.koin.compose.viewmodel.koinViewModel
 
 private val rankEmoji = listOf("🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣")
-private val avatarPalette = listOf(
-    Color(0xFF5B7C5A), Color(0xFF42A5F5), Color(0xFFFF7043),
-    Color(0xFFAB47BC), Color(0xFFFFA726), Color(0xFF26A69A),
-)
+@Composable
+private fun avatarPalette(): List<Color> {
+    val extras = LocalCozyExtraColors.current
+    return listOf(
+        extras.success, extras.lavenderSoft, extras.coral,
+        extras.lavender, extras.ochre, extras.coralSoft,
+    )
+}
 
-private fun colorFor(seed: String): Color = avatarPalette[(seed.hashCode().and(0x7FFFFFFF)) % avatarPalette.size]
+@Composable
+private fun colorFor(seed: String): Color {
+    val palette = avatarPalette()
+    return palette[(seed.hashCode().and(0x7FFFFFFF)) % palette.size]
+}
 private fun initialsOf(name: String?, fallback: String): String =
     (name ?: fallback).split(" ", limit = 2).map { it.firstOrNull()?.toString().orEmpty() }.joinToString("").uppercase().take(2).ifBlank { "?" }
 
@@ -147,15 +157,15 @@ fun GamificationScreen(
                     Surface(
                         onClick = navigateToShop,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = LocalCozyShapes.current.button,
                         color = Color.Transparent,
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
-                                    Brush.linearGradient(listOf(Color(0xFFE8A87C), Color(0xFFD4956B))),
-                                    RoundedCornerShape(14.dp),
+                                    Brush.linearGradient(listOf(LocalCozyExtraColors.current.coral, LocalCozyExtraColors.current.coralSoft)),
+                                    LocalCozyShapes.current.button,
                                 )
                                 .padding(vertical = 14.dp),
                             contentAlignment = Alignment.Center,
@@ -211,9 +221,9 @@ private fun Podium(top: List<LeaderboardEntry>, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PodiumSlot(second, 2, podiumHeight = 60, podiumColor = Color(0xFFE8E8E8), avatarSize = 56, avatarBorderColor = Color(0xFFC0C0C0), modifier = Modifier.weight(1f))
-        PodiumSlot(first, 1, podiumHeight = 80, podiumColor = null, avatarSize = 68, avatarBorderColor = Color(0xFFFFD700), modifier = Modifier.weight(1f))
-        PodiumSlot(third, 3, podiumHeight = 44, podiumColor = Color(0xFFCD7F32), avatarSize = 56, avatarBorderColor = Color(0xFFCD7F32), modifier = Modifier.weight(1f))
+        PodiumSlot(second, 2, podiumHeight = 60, podiumColor = MaterialTheme.colorScheme.outlineVariant, avatarSize = 56, avatarBorderColor = MaterialTheme.colorScheme.outline, modifier = Modifier.weight(1f))
+        PodiumSlot(first, 1, podiumHeight = 80, podiumColor = null, avatarSize = 68, avatarBorderColor = LocalCozyExtraColors.current.ochre, modifier = Modifier.weight(1f))
+        PodiumSlot(third, 3, podiumHeight = 44, podiumColor = LocalCozyExtraColors.current.coral, avatarSize = 56, avatarBorderColor = LocalCozyExtraColors.current.coral, modifier = Modifier.weight(1f))
     }
 }
 
@@ -252,7 +262,7 @@ private fun PodiumSlot(
                 .then(
                     if (podiumColor != null) Modifier.background(podiumColor, RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
                     else Modifier.background(
-                        Brush.verticalGradient(listOf(Color(0xFFFFD700), Color(0xFFFFA000))),
+                        Brush.verticalGradient(listOf(LocalCozyExtraColors.current.ochre, LocalCozyExtraColors.current.coral)),
                         RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
                     ),
                 ),
@@ -268,9 +278,9 @@ private fun LeaderboardRow(entry: LeaderboardEntry, rank: Int, currencyIcon: Str
     val isFirst = rank == 1
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-        shape = RoundedCornerShape(14.dp),
-        color = if (isFirst) Color(0xFFFFFDE7) else MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, if (isFirst) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline),
+        shape = LocalCozyShapes.current.button,
+        color = if (isFirst) LocalCozyExtraColors.current.ochre.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, if (isFirst) LocalCozyExtraColors.current.ochre else MaterialTheme.colorScheme.outline),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -304,7 +314,7 @@ private fun TransactionRow(tx: Transaction, currencyIcon: String, displayNameOf:
     val positive = tx.amount > 0
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 3.dp),
-        shape = RoundedCornerShape(10.dp),
+        shape = LocalCozyShapes.current.chip,
         color = MaterialTheme.colorScheme.surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
@@ -386,7 +396,7 @@ private fun EditCurrencyDialog(
                 val previewName = name.trim().ifBlank { initialName }
                 val previewIcon = icon.trim().ifBlank { initialIcon }
                 Surface(
-                    shape = RoundedCornerShape(10.dp),
+                    shape = LocalCozyShapes.current.chip,
                     color = MaterialTheme.colorScheme.primaryContainer,
                 ) {
                     Text(
@@ -423,7 +433,7 @@ private fun AchievementsGrid(catalog: List<Achievement>, earned: Set<String>) {
 private fun AchievementCard(ach: Achievement, unlocked: Boolean, modifier: Modifier = Modifier) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
+        shape = LocalCozyShapes.current.button,
         color = if (unlocked) MaterialTheme.colorScheme.surface else MaterialTheme.colorScheme.surfaceVariant,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,

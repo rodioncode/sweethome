@@ -21,8 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.jetbrains.kmpapp.ui.SweetHomeShapes
-import com.jetbrains.kmpapp.ui.SweetHomeSpacing
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
 
 @Composable
 fun SweetHomeChip(
@@ -35,12 +35,12 @@ fun SweetHomeChip(
     Surface(
         onClick = onClick,
         modifier = modifier.height(36.dp),
-        shape = SweetHomeShapes.Chip,
+        shape = LocalCozyShapes.current.chip,
         color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface,
         border = if (selected) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = SweetHomeSpacing.xl),
+            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (dotColor != null && !selected) {
@@ -50,7 +50,7 @@ fun SweetHomeChip(
                         .clip(CircleShape)
                         .background(dotColor),
                 )
-                Spacer(Modifier.width(SweetHomeSpacing.xxs))
+                Spacer(Modifier.width(LocalCozySpacing.current.xxs))
             }
             Text(
                 text = label,
