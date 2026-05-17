@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -20,33 +19,29 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import com.jetbrains.kmpapp.ui.components.CozyAvatar
-import com.jetbrains.kmpapp.ui.components.CozyBottomNav
 import com.jetbrains.kmpapp.ui.components.CozyCard
-import com.jetbrains.kmpapp.ui.components.CozyTab
 import com.jetbrains.kmpapp.ui.components.pet.PetAvatar
 import com.jetbrains.kmpapp.ui.models.Palette
 import com.jetbrains.kmpapp.ui.models.Task
 
 @Composable
-fun DashboardScreen(
+fun DashboardContent(
     state: DashboardState,
     onIntent: (DashboardIntent) -> Unit,
+    contentPadding: PaddingValues = PaddingValues(0.dp),
     modifier: Modifier = Modifier,
 ) {
     val extras = LocalCozyExtraColors.current
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .padding(contentPadding)
+            .verticalScroll(rememberScrollState())
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(bottom = 84.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
             // 1. Greeting
             Row(
                 modifier = Modifier
@@ -85,7 +80,7 @@ fun DashboardScreen(
             Row(
                 modifier = Modifier
                     .padding(start = 24.dp, top = 20.dp)
-                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant, LocalCozyShapes.current.cardLarge)
                     .padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
             ) {
@@ -93,7 +88,7 @@ fun DashboardScreen(
                     val sel = ctx == state.context
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(18.dp))
+                            .clip(LocalCozyShapes.current.card)
                             .background(if (sel) MaterialTheme.colorScheme.primary else Color.Transparent)
                             .clickable { onIntent(DashboardIntent.SwitchContext(ctx)) }
                             .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -152,29 +147,6 @@ fun DashboardScreen(
             }
 
             Spacer(Modifier.height(80.dp))
-        }
-
-        // 7. FAB
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 24.dp, bottom = 100.dp)
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
-                .clickable { onIntent(DashboardIntent.Add) },
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(text = "+", color = MaterialTheme.colorScheme.onPrimary,
-                fontSize = 28.sp, fontWeight = FontWeight.Light)
-        }
-
-        // 8. Bottom nav
-        CozyBottomNav(
-            active = CozyTab.HOME,
-            onTabSelected = { onIntent(DashboardIntent.NavTab(it)) },
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
     }
 }
 
@@ -278,14 +250,14 @@ private fun LevelBar(progress: Float, accent: Color, modifier: Modifier = Modifi
     Box(
         modifier = modifier
             .height(5.dp)
-            .clip(RoundedCornerShape(3.dp))
+            .clip(LocalCozyShapes.current.pill)
             .background(MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Box(
             modifier = Modifier
                 .fillMaxHeight()
                 .fillMaxWidth(progress.coerceIn(0f, 1f))
-                .clip(RoundedCornerShape(3.dp))
+                .clip(LocalCozyShapes.current.pill)
                 .background(accent)
         )
     }

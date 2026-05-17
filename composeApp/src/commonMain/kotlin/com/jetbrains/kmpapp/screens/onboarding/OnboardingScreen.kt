@@ -4,7 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -69,7 +69,7 @@ private fun OnboardingWelcome(onNext: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(LocalCozyShapes.current.button)
                 .background(MaterialTheme.colorScheme.primary)
                 .clickable(onClick = onNext)
                 .padding(vertical = 16.dp),
@@ -100,7 +100,7 @@ private fun OnboardingPath(onSolo: () -> Unit, onFamily: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
+                .clip(LocalCozyShapes.current.card)
                 .background(MaterialTheme.colorScheme.surface)
                 .clickable(onClick = onSolo)
                 .padding(24.dp),
@@ -122,7 +122,7 @@ private fun OnboardingPath(onSolo: () -> Unit, onFamily: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
+                .clip(LocalCozyShapes.current.card)
                 .background(MaterialTheme.colorScheme.surface)
                 .clickable(onClick = onFamily)
                 .padding(24.dp),
@@ -167,7 +167,7 @@ private fun OnboardingDone(onStart: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
+                .clip(LocalCozyShapes.current.button)
                 .background(MaterialTheme.colorScheme.primary)
                 .clickable(onClick = onStart)
                 .padding(vertical = 16.dp),

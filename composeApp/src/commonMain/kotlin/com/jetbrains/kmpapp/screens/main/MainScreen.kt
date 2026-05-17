@@ -72,6 +72,9 @@ import com.jetbrains.kmpapp.screens.groups.GroupDetailScreen
 import com.jetbrains.kmpapp.screens.groups.GroupsContent
 import com.jetbrains.kmpapp.screens.groups.GroupsUiEvent
 import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
+import com.jetbrains.kmpapp.screens.dashboard.DashboardContent
+import com.jetbrains.kmpapp.screens.dashboard.DashboardIntent
+import com.jetbrains.kmpapp.screens.dashboard.DashboardViewModel
 import com.jetbrains.kmpapp.screens.home.HomeContent
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListsContent
@@ -258,16 +261,23 @@ fun MainScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { paddingValues ->
         when (selectedTab) {
-            MainTab.HOME -> HomeContent(
-                contentPadding = paddingValues,
-                navigateToListDetail = navigateToListDetail,
-                onCreateList = { navigateToCreateList(null) },
-                onNavigateToHome = { selectedTab = MainTab.FAMILY },
-                onNavigateToGroups = { selectedTab = MainTab.FAMILY },
-                navigateToProfile = navigateToProfile,
-                navigateToGoals = navigateToGoals,
-                onNavigateToLists = { selectedTab = MainTab.LISTS },
-            )
+            MainTab.HOME -> {
+                val dashVm = koinViewModel<DashboardViewModel>()
+                val dashState by dashVm.state.collectAsStateWithLifecycle()
+                DashboardContent(
+                    state = dashState,
+                    onIntent = { intent ->
+                        when (intent) {
+                            is DashboardIntent.OpenTask -> navigateToListDetail(intent.taskId)
+                            is DashboardIntent.Add -> navigateToCreateList(null)
+                            is DashboardIntent.OpenPet -> {}
+                            is DashboardIntent.NavTab -> {}
+                            else -> dashVm.onIntent(intent)
+                        }
+                    },
+                    contentPadding = paddingValues,
+                )
+            }
             MainTab.FAMILY -> FamilyContent(
                 contentPadding = paddingValues,
                 onSpaceClick = { groupId, name ->

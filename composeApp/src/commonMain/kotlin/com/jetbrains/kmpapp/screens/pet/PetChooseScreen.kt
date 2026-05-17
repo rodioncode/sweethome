@@ -5,7 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -102,7 +102,7 @@ fun PetChooseScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(LocalCozyShapes.current.button)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable { step = 1 }
                             .padding(vertical = 16.dp),
@@ -141,7 +141,7 @@ fun PetChooseScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(14.dp))
+                            .clip(LocalCozyShapes.current.button)
                             .background(MaterialTheme.colorScheme.primary)
                             .clickable {
                                 selectedSpecies?.let { onConfirm(it, petName) }
