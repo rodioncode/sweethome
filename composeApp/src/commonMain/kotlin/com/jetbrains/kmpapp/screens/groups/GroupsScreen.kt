@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.EmptyHero
 
 @Composable
 internal fun GroupsContent(
@@ -119,8 +120,8 @@ internal fun GroupsContent(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text("👥", fontSize = 48.sp)
-                Spacer(Modifier.height(12.dp))
+                EmptyHero(emoji = "👨‍👩‍👧", decor = listOf("💬", "🏠", "❤️", "🌟"))
+                Spacer(Modifier.height(16.dp))
                 Text(
                     "Нет групп",
                     fontSize = 18.sp,

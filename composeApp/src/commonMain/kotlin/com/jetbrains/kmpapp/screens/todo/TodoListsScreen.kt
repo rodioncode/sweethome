@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
 import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.EmptyHero
 import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
@@ -354,6 +355,8 @@ private fun EmptyTodoListsContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            EmptyHero(emoji = "📝", decor = listOf("✨", "🌿", "☁️", "🍃"))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = "Нет списков",
                 style = MaterialTheme.typography.titleLarge,

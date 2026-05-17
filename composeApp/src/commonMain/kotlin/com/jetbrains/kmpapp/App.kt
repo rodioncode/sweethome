@@ -134,6 +134,27 @@ object AddTaskDestination
 @Serializable
 object MenuWeekDestination
 
+@Serializable
+data class MenuDayDestination(val date: String = "")
+
+@Serializable
+object KidHomeDestination
+
+@Serializable
+object KidTaskDestination
+
+@Serializable
+object KidShopDestination
+
+@Serializable
+object KidPetDestination
+
+@Serializable
+object KidStreakDestination
+
+@Serializable
+object KidLettersDestination
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun App() {
@@ -475,6 +496,53 @@ fun App() {
                         state = com.jetbrains.kmpapp.screens.menu.MenuWeekState(),
                         onIntent = {},
                         onBack = { navController.popBackStack() },
+                    )
+                }
+                composable<MenuDayDestination> { backStackEntry ->
+                    val dest = backStackEntry.toRoute<MenuDayDestination>()
+                    com.jetbrains.kmpapp.screens.menu.MenuDayScreen(
+                        state = com.jetbrains.kmpapp.screens.menu.MenuDayState(),
+                        onIntent = {},
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable<KidHomeDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidHomeScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidHomeState(),
+                        onTasksTap = { navController.navigate(KidTaskDestination) },
+                        onShopTap = { navController.navigate(KidShopDestination) },
+                        onPetTap = { navController.navigate(KidPetDestination) },
+                    )
+                }
+                composable<KidTaskDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidTaskScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidTaskState(),
+                        onTaskDone = {},
+                        onDone = { navController.popBackStack() },
+                    )
+                }
+                composable<KidShopDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidShopScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidShopState(),
+                        onBuy = {},
+                    )
+                }
+                composable<KidPetDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidPetScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidPetState(),
+                        onPet = {},
+                        onDressUp = {},
+                    )
+                }
+                composable<KidStreakDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidStreakScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidStreakState(),
+                    )
+                }
+                composable<KidLettersDestination> {
+                    com.jetbrains.kmpapp.screens.kid.KidLettersScreen(
+                        state = com.jetbrains.kmpapp.screens.kid.KidLettersState(),
+                        onLetterTap = {},
                     )
                 }
             }
