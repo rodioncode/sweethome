@@ -19,6 +19,9 @@ data class TodoList(
     val publicToken: String? = null,
     val totalCount: Int? = null,
     val doneCount: Int? = null,
+    // Client-only overlay populated by ListsRepository from LocalPreferences.
+    // Never sent to the backend (explicitNulls = false in Json config).
+    val pinnedAt: String? = null,
 )
 
 @Serializable

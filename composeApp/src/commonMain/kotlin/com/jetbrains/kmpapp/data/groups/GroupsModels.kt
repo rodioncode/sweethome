@@ -40,6 +40,10 @@ data class Group(
     val workHoursStart: String? = null,      // "HH:MM", актуально для type=work
     val workHoursEnd: String? = null,
     val workDays: List<String>? = null,      // подмножество mon..sun
+    // Client-only overlay; populated by GroupsRepository from LocalPreferences.
+    // Never sent to the backend (explicitNulls = false in Json config).
+    val pinnedAt: String? = null,
+    val mutedAt: String? = null,
 )
 
 @Serializable

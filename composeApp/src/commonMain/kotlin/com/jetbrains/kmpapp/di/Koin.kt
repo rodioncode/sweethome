@@ -184,7 +184,7 @@ val dataModule = module {
         )
     }
 
-    single { ListsRepository(get(), get()) }
+    single { ListsRepository(get(), get(), get()) }
 
     single<GroupsApi> {
         KtorGroupsApi(
@@ -193,7 +193,7 @@ val dataModule = module {
         )
     }
 
-    single { GroupsRepository(get()) }
+    single { GroupsRepository(get(), get()) }
 
     single<CategoriesApi> { KtorCategoriesApi(get(named("apiClient")), getApiBaseUrl()) }
     single { CategoriesRepository(get()) }
