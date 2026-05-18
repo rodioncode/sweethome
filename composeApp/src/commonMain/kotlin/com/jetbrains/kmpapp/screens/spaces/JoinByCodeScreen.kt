@@ -1,6 +1,8 @@
 package com.jetbrains.kmpapp.screens.spaces
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,23 +17,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +32,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -54,7 +48,10 @@ import com.jetbrains.kmpapp.data.groups.EmailRequiredException
 import com.jetbrains.kmpapp.data.groups.GroupsRepository
 import com.jetbrains.kmpapp.data.groups.InvalidInviteException
 import com.jetbrains.kmpapp.data.groups.InviteExpiredException
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -72,11 +69,16 @@ fun JoinByCodeScreen(
     val coroutineScope = rememberCoroutineScope()
     var code by remember { mutableStateOf(prefillCode.take(CODE_LENGTH).uppercase()) }
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val extras = LocalCozyExtraColors.current
+    val shapes = LocalCozyShapes.current
 
     fun submit() {
         val trimmed = code.trim()
         if (trimmed.length < CODE_LENGTH) return
         isLoading = true
+        errorMessage = null
         coroutineScope.launch {
             groupsRepository.joinByCode(trimmed)
                 .onSuccess { workspace ->
@@ -86,10 +88,14 @@ fun JoinByCodeScreen(
                     isLoading = false
                     when (err) {
                         is EmailRequiredException -> onEmailRequired()
-                        is InvalidInviteException, is InviteExpiredException ->
-                            snackbarHostState.showSnackbar("Код недействителен или истёк")
-                        else ->
-                            snackbarHostState.showSnackbar(err.message ?: "Ошибка при вступлении")
+                        is InvalidInviteException, is InviteExpiredException -> {
+                            errorMessage = "Код недействителен или истёк"
+                            snackbarHostState.showSnackbar(errorMessage!!)
+                        }
+                        else -> {
+                            errorMessage = err.message ?: "Ошибка при вступлении"
+                            snackbarHostState.showSnackbar(errorMessage!!)
+                        }
                     }
                 }
         }
@@ -97,126 +103,137 @@ fun JoinByCodeScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background,
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+                .padding(paddingValues),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            CozyTopBar(onBack = onNavigateBack)
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.Start,
             ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
+                Spacer(Modifier.height(12.dp))
+
+                // Hero chain icon (72dp tile)
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(shapes.cardLarge)
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("🔗", fontSize = 32.sp)
                 }
-            }
-            Spacer(Modifier.weight(0.10f))
 
-            // Chain link icon
-            Surface(
-                modifier = Modifier.size(72.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = "🔗", fontSize = 32.sp)
-                }
-            }
+                Spacer(Modifier.height(24.dp))
 
-            Spacer(Modifier.height(24.dp))
-
-            Text(
-                text = "Вступить в пространство",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Введите код из 6 символов, который\nподелился с вами владелец пространства",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-
-            Spacer(Modifier.height(32.dp))
-
-            // 6-cell code input
-            CodeInput(
-                code = code,
-                onCodeChange = { newCode ->
-                    code = newCode.uppercase().take(CODE_LENGTH)
-                    if (newCode.length == CODE_LENGTH) {
-                        submit()
-                    }
-                },
-                enabled = !isLoading,
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = "Код чувствителен к регистру",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
-            Spacer(Modifier.height(16.dp))
-
-            // Paste from clipboard
-            TextButton(onClick = { /* TODO: clipboard paste */ }) {
-                Text("📋 Вставить из буфера", color = MaterialTheme.colorScheme.primary)
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Divider with "или"
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                HorizontalDivider(modifier = Modifier.weight(1f))
                 Text(
-                    text = "или",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    text = "Введи код\nприглашения",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 28.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-                HorizontalDivider(modifier = Modifier.weight(1f))
-            }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "6 символов, которые тебе дали члены группы.",
+                    fontSize = 14.sp,
+                    lineHeight = 20.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(24.dp))
 
-            // Scan QR code button
-            OutlinedButton(
-                onClick = { /* TODO: QR scanner */ },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
-            ) {
-                Text("📷 Сканировать QR-код")
-            }
+                // 6-cell code input
+                CodeInput(
+                    code = code,
+                    onCodeChange = { newCode ->
+                        code = newCode.uppercase().take(CODE_LENGTH)
+                        errorMessage = null
+                        if (code.length == CODE_LENGTH) {
+                            submit()
+                        }
+                    },
+                    enabled = !isLoading,
+                    hasError = errorMessage != null,
+                )
 
-            Spacer(Modifier.weight(0.15f))
-
-            // Submit button at bottom
-            Button(
-                onClick = { submit() },
-                enabled = !isLoading && code.length == CODE_LENGTH,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = MaterialTheme.shapes.small,
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White,
+                if (errorMessage != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = errorMessage ?: "",
+                        fontSize = 12.sp,
+                        color = extras.coral,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                } else {
-                    Text("Вступить", color = Color.White)
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Submit button
+                val enabled = !isLoading && code.length == CODE_LENGTH
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .clip(shapes.button)
+                        .background(
+                            if (enabled) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
+                        .clickable(enabled = enabled) { submit() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(
+                            text = "Вступить",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // QR alt option
+                CozyCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { /* TODO: QR scanner */ },
+                    background = extras.surfaceSoft,
+                    contentPadding = 14.dp,
+                    radius = 14.dp,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text("📷", fontSize = 24.sp)
+                        Text(
+                            text = "Или отсканируй QR-код",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Text(
+                            text = "→",
+                            fontSize = 18.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                 }
             }
         }
@@ -228,11 +245,16 @@ private fun CodeInput(
     code: String,
     onCodeChange: (String) -> Unit,
     enabled: Boolean,
+    hasError: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val focusRequester = remember { FocusRequester() }
+    val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
 
-    Box(modifier = modifier) {
+    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+
+    Box(modifier = modifier.fillMaxWidth()) {
         // Hidden text field that captures input
         BasicTextField(
             value = code,
@@ -256,36 +278,40 @@ private fun CodeInput(
         // Visual cells
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             for (i in 0 until CODE_LENGTH) {
                 val char = code.getOrNull(i)?.toString() ?: ""
                 val isFocused = i == code.length && code.length < CODE_LENGTH
+                val borderColor = when {
+                    hasError -> extras.coral
+                    isFocused -> MaterialTheme.colorScheme.primary
+                    char.isNotEmpty() -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.outlineVariant
+                }
 
                 if (i > 0) Spacer(Modifier.width(8.dp))
 
-                Surface(
+                Box(
                     modifier = Modifier
-                        .size(48.dp)
+                        .weight(1f)
+                        .height(56.dp)
+                        .clip(shapes.chip)
+                        .background(MaterialTheme.colorScheme.surface)
                         .border(
-                            width = if (isFocused) 2.dp else 1.dp,
-                            color = if (isFocused) MaterialTheme.colorScheme.primary
-                            else if (char.isNotEmpty()) MaterialTheme.colorScheme.outline
-                            else MaterialTheme.colorScheme.outlineVariant,
-                            shape = LocalCozyShapes.current.chip,
-                        ),
-                    shape = LocalCozyShapes.current.chip,
-                    color = MaterialTheme.colorScheme.surface,
-                    onClick = { focusRequester.requestFocus() },
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = char,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            width = if (isFocused || hasError) 2.dp else 1.dp,
+                            color = borderColor,
+                            shape = shapes.chip,
                         )
-                    }
+                        .clickable { focusRequester.requestFocus() },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = char,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
             }
         }

@@ -20,9 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -113,10 +110,10 @@ internal fun TodoListsContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             filterOptions.forEach { (type, label) ->
-                FilterChip(
+                com.jetbrains.kmpapp.ui.components.CozyChip(
+                    label = label,
                     selected = selectedFilter == type,
                     onClick = { selectedFilter = if (selectedFilter == type) null else type },
-                    label = { Text(label) },
                 )
             }
         }
@@ -309,14 +306,12 @@ private fun GuestLinkEmailBanner(
     onLinkEmail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    com.jetbrains.kmpapp.ui.components.CozyCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-        ),
+        background = MaterialTheme.colorScheme.secondaryContainer,
+        contentPadding = 12.dp,
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {

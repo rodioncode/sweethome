@@ -16,8 +16,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -98,14 +96,10 @@ fun GoalsScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(GoalFilter.entries.toList()) { f ->
-                    FilterChip(
+                    com.jetbrains.kmpapp.ui.components.CozyChip(
+                        label = f.label,
                         selected = filter == f,
                         onClick = { filter = f },
-                        label = { Text(f.label, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
                     )
                 }
             }

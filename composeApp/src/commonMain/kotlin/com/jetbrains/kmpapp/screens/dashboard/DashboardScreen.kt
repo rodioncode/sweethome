@@ -72,7 +72,9 @@ fun DashboardContent(
                     )
                 }
                 state.me?.let { me ->
-                    CozyAvatar(letter = me.initial, palette = me.avatarPalette, size = 44.dp)
+                    Box(modifier = Modifier.clickable { onIntent(DashboardIntent.OpenProfile) }) {
+                        CozyAvatar(letter = me.initial, palette = me.avatarPalette, size = 44.dp)
+                    }
                 }
             }
 

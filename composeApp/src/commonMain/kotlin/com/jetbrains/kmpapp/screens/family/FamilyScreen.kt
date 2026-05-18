@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,21 +22,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -48,6 +44,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -61,8 +58,22 @@ import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyAvatar
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyChip
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
+import com.jetbrains.kmpapp.ui.components.EmptyHero
+import com.jetbrains.kmpapp.ui.components.pet.PetAvatar
+import com.jetbrains.kmpapp.ui.components.pet.PetSceneTile
+import com.jetbrains.kmpapp.ui.models.Mood
+import com.jetbrains.kmpapp.ui.models.Palette
+import com.jetbrains.kmpapp.ui.models.Pet
+import com.jetbrains.kmpapp.ui.models.Species
+import com.jetbrains.kmpapp.ui.models.Stage
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
+
+// ─── Entry point ───
 
 @Composable
 internal fun FamilyContent(
@@ -106,25 +117,23 @@ internal fun FamilyContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .padding(contentPadding),
     ) {
         SnackbarHost(snackbarHostState)
 
-        if (isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        when {
+            isLoading -> {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
             }
-        } else if (familySpace == null) {
-            EmptyFamilyState(
+            familySpace == null -> EmptyFamilyState(
                 isCreating = isCreating,
                 onCreateClick = { showCreateDialog = true },
                 onJoinByCodeClick = navigateToJoinByCode,
             )
-        } else {
-            FamilyHomeContent(
+            else -> FamilyHomeContent(
                 spaceName = familySpace!!.title,
                 memberCount = familyMembers.size,
                 lists = familyLists,
@@ -143,7 +152,6 @@ internal fun FamilyContent(
                 onChoreClick = { item -> onListClick(item.listId) },
                 onSettingsClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onListClick = onListClick,
-                onSpaceClick = { onSpaceClick(familySpace!!.id, familySpace!!.title) },
                 onGamificationClick = navigateToGamification,
                 onShopClick = navigateToShop,
                 onGoalsClick = navigateToGoals,
@@ -183,186 +191,93 @@ private fun EmptyFamilyState(
     onJoinByCodeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
+    Column(
+        modifier = modifier.fillMaxSize().padding(horizontal = spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Top bar
-        item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(horizontal = LocalCozySpacing.current.lg, vertical = 18.dp),
-            ) {
+        Spacer(Modifier.height(spacing.huge))
+        EmptyHero(emoji = "🏠", size = 140.dp)
+        Spacer(Modifier.height(spacing.xxxl))
+        Text(
+            "У вас ещё нет\nсемейного дома",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.sm))
+        Text(
+            "Создайте пространство для близких —\nделитесь списками, следите за задачами\nи общайтесь вместе",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(spacing.xl))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+        ) {
+            FeatureCard("📋", "Общие\nсписки", Modifier.weight(1f))
+            FeatureCard("✅", "Задачи\nдля всех", Modifier.weight(1f))
+            FeatureCard("💬", "Семейный\nчат", Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(spacing.xl))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
+                .clip(shapes.button)
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable(enabled = !isCreating, onClick = onCreateClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (isCreating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            } else {
                 Text(
-                    text = "Мой дом",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    "Создать семейный дом",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         }
-
-        // Illustration — concentric circles with house emoji
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.huge))
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.size(220.dp),
-            ) {
-                // Outer circle
-                Surface(
-                    modifier = Modifier.size(220.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f),
-                ) {}
-                // Middle circle
-                Surface(
-                    modifier = Modifier.size(160.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                ) {}
-                // Center
-                Surface(
-                    modifier = Modifier.size(80.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("🏠", fontSize = 36.sp)
-                    }
-                }
+        Spacer(Modifier.height(spacing.sm))
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onJoinByCodeClick,
+            bordered = true,
+            contentPadding = spacing.md,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🔗", fontSize = 16.sp)
+                Spacer(Modifier.width(spacing.xs))
+                Text(
+                    "Вступить по коду приглашения",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                Text("→", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             }
-        }
-
-        // Title
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxxl))
-            Text(
-                text = "У вас ещё нет\nсемейного дома",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-            )
-        }
-
-        // Subtitle
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.sm))
-            Text(
-                text = "Создайте пространство для близких —\nделитесь списками, следите за задачами\nи общайтесь вместе",
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxxl),
-            )
-        }
-
-        // Feature cards row
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.xxl),
-                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
-            ) {
-                FeatureCard("📋", "Общие списки", Modifier.weight(1f))
-                FeatureCard("✅", "Задачи для всех", Modifier.weight(1f))
-                FeatureCard("💬", "Семейный чат", Modifier.weight(1f))
-            }
-        }
-
-        // Create button
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            Surface(
-                onClick = onCreateClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.lg)
-                    .height(54.dp),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 6.dp,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (isCreating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    } else {
-                        Text(
-                            text = "Создать семейный дом",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                    }
-                }
-            }
-        }
-
-        // Join by code
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.lg))
-            Surface(
-                onClick = onJoinByCodeClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.lg),
-                shape = LocalCozyShapes.current.card,
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 0.5.dp,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant,
-                ),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .padding(horizontal = LocalCozySpacing.current.lg),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Text("🔗", fontSize = 16.sp)
-                    Text(
-                        text = "Вступить по коду приглашения",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(
-                        text = "→",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
         }
     }
 }
 
 @Composable
-private fun FeatureCard(
-    emoji: String,
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.height(72.dp),
-        shape = LocalCozyShapes.current.button,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+private fun FeatureCard(emoji: String, label: String, modifier: Modifier = Modifier) {
+    val spacing = LocalCozySpacing.current
+    CozyCard(
+        modifier = modifier.height(80.dp),
+        bordered = true,
+        contentPadding = spacing.xs,
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -370,9 +285,9 @@ private fun FeatureCard(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(emoji, fontSize = 22.sp)
-            Spacer(Modifier.height(LocalCozySpacing.current.xxs))
+            Spacer(Modifier.height(spacing.xxs))
             Text(
-                text = label,
+                label,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -404,125 +319,56 @@ private fun FamilyHomeContent(
     onChoreClick: (TodoItem) -> Unit,
     onSettingsClick: () -> Unit,
     onListClick: (String) -> Unit,
-    onSpaceClick: () -> Unit,
-    onGamificationClick: () -> Unit = {},
-    onShopClick: () -> Unit = {},
-    onGoalsClick: () -> Unit = {},
+    onGamificationClick: () -> Unit,
+    onShopClick: () -> Unit,
+    onGoalsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyColumn(modifier = modifier.fillMaxSize()) {
-        // Green header with mini stats inside
+    val spacing = LocalCozySpacing.current
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = spacing.huge),
+    ) {
         item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary),
-            ) {
-                // Decorative circle
-                Box(
-                    modifier = Modifier
-                        .size(180.dp)
-                        .align(Alignment.TopEnd)
-                        .background(Color.White.copy(alpha = 0.05f), CircleShape),
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = LocalCozySpacing.current.xxl)
-                        .padding(top = 14.dp, bottom = 16.dp),
-                ) {
-                    // Top row
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                "Семейное пространство",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.65f),
-                            )
-                            Text(
-                                spaceName,
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            com.jetbrains.kmpapp.ui.components.BalancePill(balance = balance)
-                            HeaderIconButton("🎯", onClick = onGoalsClick)
-                            HeaderIconButton("🏆", onClick = onGamificationClick)
-                            HeaderIconButton("⚙️", onClick = onSettingsClick)
-                        }
-                    }
-                    // Mini stats grid
-                    Spacer(Modifier.height(14.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        listOf(
-                            "0" to "выполнено",
-                            lists.size.toString() to "списка",
-                            "0" to "задач сегодня",
-                        ).forEach { (value, label) ->
-                            Surface(
-                                modifier = Modifier.weight(1f),
-                                shape = LocalCozyShapes.current.chip,
-                                color = Color.White.copy(alpha = 0.12f),
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 10.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                ) {
-                                    Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                                    Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f), modifier = Modifier.padding(top = 1.dp))
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Nav cards
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.xxl, vertical = 14.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                data class NavTile(val emoji: String, val label: String, val bg: Color, val fg: Color)
-                val navTiles = listOf(
-                    NavTile("📋", "Списки", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer),
-                    NavTile("💬", "Чат", MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer),
-                    NavTile("⚙️", "Настройки", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer),
-                )
-                navTiles.forEach { tile ->
-                    NavCard(
-                        emoji = tile.emoji,
-                        label = tile.label,
-                        bgColor = tile.bg,
-                        textColor = tile.fg,
-                        onClick = onSpaceClick,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-        }
-
-        // Rooms section (G-05)
-        item {
-            Text(
-                "Комнаты",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xs),
+            FamilyHeader(
+                spaceName = spaceName,
+                memberCount = memberCount,
+                members = familyMembers,
+                onSettingsClick = onSettingsClick,
             )
+        }
+        item { Spacer(Modifier.height(spacing.lg)) }
+
+        item {
+            PetGuardianScene(
+                modifier = Modifier.padding(horizontal = spacing.lg),
+                balance = balance,
+            )
+        }
+        item { Spacer(Modifier.height(spacing.lg)) }
+
+        item {
+            FamilyListsCarousel(
+                lists = lists,
+                onListClick = onListClick,
+            )
+        }
+        item { Spacer(Modifier.height(spacing.lg)) }
+
+        item {
+            FeatureGrid(
+                memberCount = memberCount,
+                balance = balance,
+                onGamificationClick = onGamificationClick,
+                onShopClick = onShopClick,
+                onGoalsClick = onGoalsClick,
+                onSettingsClick = onSettingsClick,
+            )
+        }
+        item { Spacer(Modifier.height(spacing.xl)) }
+
+        item {
+            SectionLabel("КОМНАТЫ")
         }
         item {
             RoomTabsRow(
@@ -554,391 +400,454 @@ private fun FamilyHomeContent(
                 )
             }
         }
-
-        // Gamification banner
-        item {
-            Surface(
-                onClick = onGamificationClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.xxl),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 2.dp,
-            ) {
-                Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(
-                        "🏆",
-                        fontSize = 60.sp,
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        color = Color.White.copy(alpha = 0.15f),
-                    )
-                    Column {
-                        Text("Семейный рейтинг", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                        Text(
-                            "Посмотреть результаты →",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        // Family shop banner
-        item {
-            Spacer(Modifier.height(10.dp))
-            Surface(
-                onClick = onShopClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.xxl),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.secondary,
-                shadowElevation = 2.dp,
-            ) {
-                Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                    Text(
-                        "🛍",
-                        fontSize = 60.sp,
-                        modifier = Modifier.align(Alignment.CenterEnd),
-                        color = Color.White.copy(alpha = 0.15f),
-                    )
-                    Column {
-                        Text("Семейный магазин", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                        Text(
-                            "Трать баллы на награды!",
-                            fontSize = 13.sp,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f),
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        // Activity section
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            Text(
-                "Активность сегодня",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
-            )
-            Spacer(Modifier.height(LocalCozySpacing.current.xs))
-        }
-
-        item {
-            ActivityCard(
-                emoji = "✅",
-                text = "Нет недавней активности",
-                time = "",
-            )
-        }
-
-        // Lists section
-        if (lists.isNotEmpty()) {
-            item {
-                Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-                Text(
-                    "Списки семьи",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.padding(horizontal = LocalCozySpacing.current.xxl),
-                )
-                Spacer(Modifier.height(LocalCozySpacing.current.xs))
-            }
-            items(lists, key = { it.id }) { list ->
-                FamilyListCard(list = list, onClick = { onListClick(list.id) })
-            }
-        }
-
-        // Chat button
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            Surface(
-                onClick = {},
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.xxl)
-                    .height(50.dp),
-                shape = LocalCozyShapes.current.button,
-                color = MaterialTheme.colorScheme.primary,
-                shadowElevation = 4.dp,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        "💬  Открыть чат семьи",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                }
-            }
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-        }
     }
 }
 
-@Composable
-private fun HeaderIconButton(emoji: String, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.size(36.dp),
-        shape = CircleShape,
-        color = Color.White.copy(alpha = 0.15f),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(emoji, fontSize = 18.sp)
-        }
-    }
-}
+// ─── Header ───
 
 @Composable
-private fun StatsBar(
-    completedCount: Int,
-    activeListsCount: Int,
-    todayTasksCount: Int,
-    modifier: Modifier = Modifier,
+private fun FamilyHeader(
+    spaceName: String,
+    memberCount: Int,
+    members: List<GroupMember>,
+    onSettingsClick: () -> Unit,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = androidx.compose.ui.graphics.RectangleShape,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(72.dp)
-                .padding(horizontal = LocalCozySpacing.current.lg),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StatColumn(
-                value = completedCount.toString(),
-                line1 = "Выполнено",
-                line2 = "за неделю",
-                modifier = Modifier.weight(1f),
-            )
-            VerticalDivider()
-            StatColumn(
-                value = activeListsCount.toString(),
-                line1 = "Активных",
-                line2 = "списка",
-                modifier = Modifier.weight(1f),
-            )
-            VerticalDivider()
-            StatColumn(
-                value = todayTasksCount.toString(),
-                line1 = "Задач",
-                line2 = "на сегодня",
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatColumn(
-    value: String,
-    line1: String,
-    line2: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = value,
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = line1,
-            fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = line2,
-            fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-@Composable
-private fun VerticalDivider(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier
-            .width(1.dp)
-            .height(40.dp)
-            .background(MaterialTheme.colorScheme.outline),
-    )
-}
-
-@Composable
-private fun ActivityCard(
-    emoji: String,
-    text: String,
-    time: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier
+    val spacing = LocalCozySpacing.current
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxs),
-        shape = LocalCozyShapes.current.chip,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+            .padding(horizontal = spacing.xxl, vertical = spacing.sm),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(60.dp)
-                .padding(horizontal = LocalCozySpacing.current.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                modifier = Modifier.size(36.dp),
-                shape = LocalCozyShapes.current.card,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(emoji, fontSize = 18.sp)
-                }
-            }
-            Spacer(Modifier.width(LocalCozySpacing.current.sm))
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = text,
+                "Семья 🏡",
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Spacer(Modifier.height(spacing.xxs))
+            Text(
+                "$spaceName · $memberCount ${memberCountWord(memberCount)}",
                 fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-                maxLines = 2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            if (time.isNotBlank()) {
+        }
+        OverlapAvatars(members = members)
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable(onClick = onSettingsClick),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("⚙", fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+        }
+    }
+}
+
+private fun memberCountWord(n: Int): String = when (n % 10) {
+    1 -> if (n % 100 == 11) "человек" else "человек"
+    2, 3, 4 -> if (n % 100 in 12..14) "человек" else "человека"
+    else -> "человек"
+}
+
+@Composable
+private fun OverlapAvatars(members: List<GroupMember>) {
+    val palettes = listOf(Palette.CORAL, Palette.LAVENDER, Palette.OCHRE, Palette.PRIMARY)
+    val visible = members.take(3)
+    Row {
+        visible.forEachIndexed { i, m ->
+            val letter = (m.displayName ?: m.userId).firstOrNull()?.toString()?.uppercase() ?: "?"
+            Box(
+                modifier = Modifier
+                    .offset(x = (-8 * i).dp)
+                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape),
+            ) {
+                CozyAvatar(
+                    letter = letter,
+                    palette = palettes[i % palettes.size],
+                    size = 32.dp,
+                )
+            }
+        }
+    }
+}
+
+// ─── Pet guardian scene ───
+
+@Composable
+private fun PetGuardianScene(
+    modifier: Modifier = Modifier,
+    balance: Int,
+) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+    val guardian = remember {
+        Pet(
+            id = "guardian",
+            name = "Большой Енот",
+            species = Species.RACCOON,
+            stage = Stage.ADULT,
+            level = 14,
+            mood = Mood.HAPPY,
+        )
+    }
+    val familyPets = listOf(Species.RACCOON, Species.FOX, Species.CAT, Species.HEDGIE)
+
+    CozyCard(
+        modifier = modifier.fillMaxWidth(),
+        radius = 22.dp,
+        contentPadding = spacing.lg,
+        background = extras.ochreSoft,
+    ) {
+        Column {
+            Text(
+                "НАША БЕРЛОГА",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(spacing.xs))
+            Text(
+                "${guardian.name} · ур. ${guardian.level}",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Spacer(Modifier.height(spacing.md))
+
+            // Scene with the guardian and 4 personal pets in corners
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(240.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                PetSceneTile(pet = guardian, size = 200.dp)
+
+                // Four mini pet avatars in corners
+                Box(
+                    modifier = Modifier.size(240.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        PetAvatar(
+                            species = familyPets[0],
+                            size = 44.dp,
+                            accent = true,
+                            modifier = Modifier.align(Alignment.TopStart),
+                        )
+                        PetAvatar(
+                            species = familyPets[1],
+                            size = 44.dp,
+                            accent = true,
+                            modifier = Modifier.align(Alignment.TopEnd),
+                        )
+                        PetAvatar(
+                            species = familyPets[2],
+                            size = 44.dp,
+                            accent = true,
+                            modifier = Modifier.align(Alignment.BottomStart),
+                        )
+                        PetAvatar(
+                            species = familyPets[3],
+                            size = 44.dp,
+                            accent = true,
+                            modifier = Modifier.align(Alignment.BottomEnd),
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(spacing.md))
+            // Level / streak bar
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                Text("🌿", fontSize = 14.sp)
                 Text(
-                    text = time,
+                    "Дружные",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(4.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.outline),
+                )
+                Text(
+                    "18 / 22 дел недели",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Spacer(Modifier.height(spacing.xs))
+            ProgressBar(progress = 0.82f, valueLabel = "$balance⭐")
         }
     }
 }
 
 @Composable
-private fun NavCard(
-    emoji: String,
-    label: String,
-    bgColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    textColor: Color = MaterialTheme.colorScheme.onSurface,
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.height(84.dp),
-        shape = LocalCozyShapes.current.card,
-        colors = CardDefaults.cardColors(containerColor = bgColor, contentColor = textColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+private fun ProgressBar(progress: Float, valueLabel: String) {
+    val spacing = LocalCozySpacing.current
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(8.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surface),
         ) {
-            Text(emoji, fontSize = 28.sp)
-            Spacer(Modifier.height(LocalCozySpacing.current.xs))
-            Text(
-                text = label,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = textColor,
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.primary),
             )
+        }
+        Text(
+            valueLabel,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+        )
+    }
+}
+
+// ─── Lists carousel ───
+
+@Composable
+private fun FamilyListsCarousel(
+    lists: List<TodoList>,
+    onListClick: (String) -> Unit,
+) {
+    val spacing = LocalCozySpacing.current
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.xxl),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "СПИСКИ СЕМЬИ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                letterSpacing = 1.sp,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(Modifier.height(spacing.sm))
+        if (lists.isEmpty()) {
+            Text(
+                "Пока списков нет",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = spacing.xxl),
+            )
+        } else {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = spacing.lg),
+                horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                items(lists, key = { it.id }) { list ->
+                    ListChipCard(list = list, onClick = { onListClick(list.id) })
+                }
+            }
         }
     }
 }
 
-// ─── Family list card ───
+@Composable
+private fun ListChipCard(list: TodoList, onClick: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+    val tileBg = when (list.type) {
+        "shopping" -> extras.coralSoft
+        "home_chores" -> MaterialTheme.colorScheme.primaryContainer
+        "wishlist" -> extras.lavenderSoft
+        "study" -> extras.ochreSoft
+        else -> extras.ochreSoft
+    }
+    CozyCard(
+        modifier = Modifier.width(140.dp),
+        onClick = onClick,
+        bordered = true,
+        contentPadding = spacing.sm,
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(tileBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    list.icon?.takeIf { it.isNotBlank() } ?: listTypeToEmoji(list.type),
+                    fontSize = 18.sp,
+                )
+            }
+            Spacer(Modifier.height(spacing.xs))
+            Text(
+                list.title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                listTypeLabel(list.type),
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
 
 private fun listTypeToEmoji(type: String) = when (type) {
     "shopping" -> "🛒"
-    "home_chores" -> "🏠"
+    "home_chores" -> "🏡"
+    "wishlist" -> "🎁"
+    "study" -> "📚"
     else -> "📋"
 }
 
+private fun listTypeLabel(type: String) = when (type) {
+    "shopping" -> "Покупки"
+    "home_chores" -> "Дом"
+    "wishlist" -> "Вишлист"
+    "study" -> "Учёба"
+    else -> "Общий"
+}
+
+// ─── Feature grid ───
+
 @Composable
-private fun FamilyListCard(
-    list: TodoList,
+private fun FeatureGrid(
+    memberCount: Int,
+    balance: Int,
+    onGamificationClick: () -> Unit,
+    onShopClick: () -> Unit,
+    onGoalsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+
+    data class Feature(
+        val emoji: String,
+        val title: String,
+        val subtitle: String,
+        val bgColor: Color,
+        val accent: Color,
+        val onClick: () -> Unit,
+    )
+
+    val features = listOf(
+        Feature("🏆", "Рейтинг", "Открыть таблицу", extras.ochreSoft, extras.ochre, onGamificationClick),
+        Feature("⭐", "Магазин наград", "$balance баллов", extras.coralSoft, extras.coral, onShopClick),
+        Feature("🎯", "Цели семьи", "Что важно", extras.lavenderSoft, extras.lavender, onGoalsClick),
+        Feature("⚙️", "Настройки", "$memberCount уч.", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.primary, onSettingsClick),
+    )
+
+    Column(modifier = Modifier.padding(horizontal = spacing.lg)) {
+        features.chunked(2).forEach { pair ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = spacing.xxs),
+                horizontalArrangement = Arrangement.spacedBy(spacing.xs),
+            ) {
+                pair.forEach { f ->
+                    FeatureTile(
+                        emoji = f.emoji,
+                        title = f.title,
+                        subtitle = f.subtitle,
+                        bgColor = f.bgColor,
+                        accent = f.accent,
+                        onClick = f.onClick,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeatureTile(
+    emoji: String,
+    title: String,
+    subtitle: String,
+    bgColor: Color,
+    accent: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxs)
-            .clickable(onClick = onClick),
-        shape = LocalCozyShapes.current.card,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+    val spacing = LocalCozySpacing.current
+    CozyCard(
+        modifier = modifier,
+        onClick = onClick,
+        bordered = true,
+        contentPadding = spacing.md,
     ) {
-        Row(
-            modifier = Modifier.padding(LocalCozySpacing.current.lg),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+        Column {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(bgColor),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = list.icon?.takeIf { it.isNotBlank() } ?: listTypeToEmoji(list.type),
-                        fontSize = 18.sp,
-                    )
-                }
+                Text(emoji, fontSize = 20.sp)
             }
-            Spacer(Modifier.width(LocalCozySpacing.current.sm))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = list.title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = list.type.let {
-                        when (it) {
-                            "shopping" -> "Покупки"
-                            "home_chores" -> "Дела по дому"
-                            else -> "Общий"
-                        }
-                    },
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            Spacer(Modifier.height(spacing.xs))
             Text(
-                text = "›",
-                fontSize = 20.sp,
-                color = MaterialTheme.colorScheme.outline,
+                title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                subtitle,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = accent,
             )
         }
     }
 }
 
-// ─── Create dialog ───
+// ─── Section label helper ───
+
+@Composable
+private fun SectionLabel(text: String) {
+    val spacing = LocalCozySpacing.current
+    Text(
+        text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.sp,
+        modifier = Modifier.padding(horizontal = spacing.xxl, vertical = spacing.xs),
+    )
+}
+
+// ─── Create family space dialog ───
 
 @Composable
 private fun CreateFamilySpaceDialog(
@@ -981,81 +890,36 @@ private fun RoomTabsRow(
     onAdd: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = LocalCozySpacing.current
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxs),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = spacing.lg, vertical = spacing.xxs),
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
         item(key = "__all__") {
-            RoomTab(
-                emoji = "🏠",
-                label = "Все",
+            CozyChip(
+                label = "🏠 Все",
                 selected = selectedId == null,
                 onClick = { onSelect(null) },
             )
         }
         items(rooms, key = { "room_${it.id}" }) { room ->
-            RoomTab(
-                emoji = room.emoji,
-                label = room.name,
+            CozyChip(
+                label = "${room.emoji} ${room.name}",
                 selected = selectedId == room.id,
                 onClick = { onSelect(room.id) },
             )
         }
         item(key = "__add__") {
-            RoomTab(
-                emoji = "＋",
-                label = "Добавить",
+            CozyChip(
+                label = "＋ Добавить",
                 selected = false,
                 onClick = onAdd,
-                isAddAction = true,
             )
         }
     }
 }
 
-@Composable
-private fun RoomTab(
-    emoji: String,
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    isAddAction: Boolean = false,
-) {
-    val bg = when {
-        selected -> MaterialTheme.colorScheme.primary
-        isAddAction -> Color.Transparent
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    val fg = when {
-        selected -> MaterialTheme.colorScheme.onPrimary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    Surface(
-        onClick = onClick,
-        shape = LocalCozyShapes.current.chip,
-        color = bg,
-        border = if (isAddAction && !selected) {
-            androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-        } else null,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg, vertical = LocalCozySpacing.current.xs),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(text = emoji, fontSize = 14.sp)
-            Spacer(Modifier.width(LocalCozySpacing.current.xxs))
-            Text(
-                text = label,
-                fontSize = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                color = fg,
-            )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterChipsRow(
     filters: RoomFilters,
@@ -1066,14 +930,15 @@ private fun FilterChipsRow(
     onResetFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val spacing = LocalCozySpacing.current
     var priorityExpanded by remember { mutableStateOf(false) }
     var assigneeExpanded by remember { mutableStateOf(false) }
     var statusExpanded by remember { mutableStateOf(false) }
 
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxs),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = spacing.lg, vertical = spacing.xxs),
+        horizontalArrangement = Arrangement.spacedBy(spacing.xs),
     ) {
         item(key = "f_priority") {
             Box {
@@ -1148,17 +1013,15 @@ private fun FilterChipsRow(
         }
         if (!filters.isDefault()) {
             item(key = "f_reset") {
-                FilterChip(
-                    selected = false,
+                CozyChip(
+                    label = "✕ Сбросить",
                     onClick = onResetFilters,
-                    label = { Text("✕ Сбросить", fontSize = 13.sp) },
                 )
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FilterPillButton(
     label: String,
@@ -1167,24 +1030,9 @@ private fun FilterPillButton(
     onClick: () -> Unit,
 ) {
     val isActive = activeCount > 0
-    FilterChip(
-        selected = isActive,
-        onClick = onClick,
-        label = {
-            Text(
-                text = if (isActive) "$label · $activeCount" else label,
-                fontSize = 13.sp,
-            )
-        },
-        trailingIcon = {
-            Text(
-                text = if (expanded) "▴" else "▾",
-                fontSize = 12.sp,
-                modifier = Modifier.padding(end = 4.dp),
-            )
-        },
-        colors = FilterChipDefaults.filterChipColors(),
-    )
+    val arrow = if (expanded) "▴" else "▾"
+    val text = if (isActive) "$label · $activeCount $arrow" else "$label $arrow"
+    CozyChip(label = text, selected = isActive, onClick = onClick)
 }
 
 @Composable
@@ -1193,6 +1041,7 @@ private fun FilterDropdownItem(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
+    val spacing = LocalCozySpacing.current
     DropdownMenuItem(
         text = {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1205,16 +1054,22 @@ private fun FilterDropdownItem(
                         )
                         .border(
                             1.dp,
-                            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                            if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
                             RoundedCornerShape(4.dp),
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (selected) {
-                        Text("✓", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                        Text(
+                            "✓",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                 }
-                Spacer(Modifier.width(LocalCozySpacing.current.sm))
+                Spacer(Modifier.width(spacing.sm))
                 Text(text, fontSize = 14.sp)
             }
         },
@@ -1224,27 +1079,25 @@ private fun FilterDropdownItem(
 
 @Composable
 private fun EmptyRoomState(modifier: Modifier = Modifier) {
-    Card(
+    val spacing = LocalCozySpacing.current
+    CozyCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xs),
-        shape = LocalCozyShapes.current.card,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            .padding(horizontal = spacing.lg, vertical = spacing.xs),
+        background = MaterialTheme.colorScheme.surfaceVariant,
+        contentPadding = spacing.xxl,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(LocalCozySpacing.current.xxl),
+            modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = "🧹", fontSize = 28.sp)
-            Spacer(Modifier.height(LocalCozySpacing.current.xxs))
+            Text("🧹", fontSize = 28.sp)
+            Spacer(Modifier.height(spacing.xxs))
             Text(
                 "Здесь пусто",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 "Нет дел, попадающих под фильтры",
@@ -1263,34 +1116,31 @@ private fun ChoreItemCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Card(
+    val spacing = LocalCozySpacing.current
+    CozyCard(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.xxs)
-            .clickable(onClick = onClick),
-        shape = LocalCozyShapes.current.card,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+            .padding(horizontal = spacing.lg, vertical = spacing.xxs),
+        onClick = onClick,
+        bordered = true,
+        contentPadding = spacing.sm,
     ) {
-        Row(
-            modifier = Modifier.padding(LocalCozySpacing.current.sm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // priority dot
+        Row(verticalAlignment = Alignment.CenterVertically) {
             choreItemAccent(item.priority)?.let { color ->
                 Box(
                     modifier = Modifier
                         .size(10.dp)
-                        .background(color, CircleShape),
+                        .clip(CircleShape)
+                        .background(color),
                 )
-                Spacer(Modifier.width(LocalCozySpacing.current.xs))
+                Spacer(Modifier.width(spacing.xs))
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = item.title,
+                    item.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1303,7 +1153,7 @@ private fun ChoreItemCard(
                 }
                 if (parts.isNotEmpty()) {
                     Text(
-                        text = parts.joinToString(" · "),
+                        parts.joinToString(" · "),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -1312,7 +1162,12 @@ private fun ChoreItemCard(
                 }
             }
             if (item.isDone) {
-                Text("✓", fontSize = 16.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                Text(
+                    "✓",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
     }
@@ -1337,29 +1192,36 @@ private fun CreateRoomSheet(
     val scope = rememberCoroutineScope()
     var name by remember { mutableStateOf("") }
     var selectedEmoji by remember { mutableStateOf("📁") }
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
 
     val close: () -> Unit = {
         scope.launch { sheetState.hide() }.invokeOnCompletion { onDismiss() }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = shapes.sheet,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = LocalCozySpacing.current.xxl, vertical = LocalCozySpacing.current.sm),
+                .padding(horizontal = spacing.xxl, vertical = spacing.sm),
         ) {
             Text(
                 "Новая комната",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = LocalCozySpacing.current.xs),
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(vertical = spacing.xs),
             )
             Text(
                 "Иконка определяется по названию автоматически. Можно выбрать вручную (отображается только в этом устройстве).",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.height(LocalCozySpacing.current.sm))
+            Spacer(Modifier.height(spacing.sm))
             OutlinedTextField(
                 value = name,
                 onValueChange = {
@@ -1372,66 +1234,67 @@ private fun CreateRoomSheet(
                 enabled = !isLoading,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Spacer(Modifier.height(LocalCozySpacing.current.sm))
+            Spacer(Modifier.height(spacing.sm))
             Text("Иконка", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(LocalCozySpacing.current.xs))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Spacer(Modifier.height(spacing.xs))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
                 items(RoomEmojiPresets) { emoji ->
-                    Surface(
-                        onClick = { selectedEmoji = emoji },
-                        shape = CircleShape,
-                        color = if (selectedEmoji == emoji) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.size(40.dp),
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (selectedEmoji == emoji) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                            .clickable { selectedEmoji = emoji },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(emoji, fontSize = 18.sp)
-                        }
+                        Text(emoji, fontSize = 18.sp)
                     }
                 }
             }
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
+            Spacer(Modifier.height(spacing.xl))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
             ) {
                 TextButton(
                     onClick = close,
                     modifier = Modifier.weight(1f),
                     enabled = !isLoading,
                 ) { Text("Отмена") }
-                Surface(
-                    onClick = {
-                        if (name.isNotBlank()) {
-                            onConfirm(name.trim())
-                        }
-                    },
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
-                    shape = LocalCozyShapes.current.chip,
-                    color = if (name.isNotBlank()) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant,
+                        .height(44.dp)
+                        .clip(shapes.button)
+                        .background(
+                            if (name.isNotBlank()) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        .clickable(enabled = name.isNotBlank()) {
+                            if (name.isNotBlank()) onConfirm(name.trim())
+                        },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        } else {
-                            Text(
-                                "Создать",
-                                fontWeight = FontWeight.SemiBold,
-                                color = if (name.isNotBlank()) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    } else {
+                        Text(
+                            "Создать",
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (name.isNotBlank()) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 }
             }
-            Spacer(Modifier.height(LocalCozySpacing.current.lg))
+            Spacer(Modifier.height(spacing.lg))
         }
     }
 }

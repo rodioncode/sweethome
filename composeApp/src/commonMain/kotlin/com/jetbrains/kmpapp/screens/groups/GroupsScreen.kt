@@ -1,6 +1,8 @@
 package com.jetbrains.kmpapp.screens.groups
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,10 +17,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -28,13 +30,38 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.CozyCard
 import com.jetbrains.kmpapp.ui.components.EmptyHero
+
+private data class GroupVisuals(
+    val emoji: String,
+    val typeLabel: String,
+    val tileBg: Color,
+)
+
+@Composable
+private fun groupVisuals(group: Group): GroupVisuals {
+    val extras = LocalCozyExtraColors.current
+    return when (group.type) {
+        "family" -> GroupVisuals("🏡", "Семья", MaterialTheme.colorScheme.primaryContainer)
+        "group" -> GroupVisuals("👥", "Группа", MaterialTheme.colorScheme.primaryContainer)
+        "work" -> GroupVisuals("💼", "Работа", extras.lavenderSoft)
+        "mentoring" -> GroupVisuals("🎓", "Наставничество", extras.lavenderSoft)
+        "hobby" -> GroupVisuals("🎯", "Хобби", extras.coralSoft)
+        "study" -> GroupVisuals("🎓", "Учёба", extras.ochreSoft)
+        "personal" -> GroupVisuals("🌿", "Личное", extras.surfaceSoft)
+        else -> GroupVisuals(group.icon ?: "👤", "Группа", MaterialTheme.colorScheme.primaryContainer)
+    }
+}
 
 @Composable
 internal fun GroupsContent(
@@ -47,102 +74,127 @@ internal fun GroupsContent(
     onCreateGroup: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    val shapes = LocalCozyShapes.current
+    var query by remember { mutableStateOf("") }
+
+    val filtered = remember(groups, query) {
+        if (query.isBlank()) groups
+        else groups.filter { it.title.contains(query, ignoreCase = true) }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding),
+            .padding(contentPadding)
+            .background(MaterialTheme.colorScheme.background),
     ) {
-        // Action buttons row
+        // Header row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(start = 24.dp, end = 24.dp, top = 12.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (isGuest) {
-                Surface(
-                    onClick = navigateToLinkEmail,
-                    modifier = Modifier.weight(1f).height(36.dp),
-                    shape = shapes.chip,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            "Привязать email",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            } else {
-                Surface(
-                    onClick = navigateToJoinByCode,
-                    modifier = Modifier.height(36.dp),
-                    shape = shapes.chip,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Box(
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            "🔗 Войти по коду",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                if (onCreateGroup != null) {
-                    Surface(
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "Группы",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    text = "${groups.size} активных",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconCircle(
+                    text = "⌗",
+                    bg = MaterialTheme.colorScheme.surface,
+                    fg = MaterialTheme.colorScheme.onBackground,
+                    bordered = true,
+                    onClick = if (isGuest) navigateToLinkEmail else navigateToJoinByCode,
+                )
+                if (!isGuest && onCreateGroup != null) {
+                    IconCircle(
+                        text = "+",
+                        bg = MaterialTheme.colorScheme.primary,
+                        fg = MaterialTheme.colorScheme.onPrimary,
                         onClick = onCreateGroup,
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary,
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("+", fontSize = 22.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Light)
-                        }
-                    }
+                    )
                 }
             }
         }
 
-        if (groups.isEmpty()) {
+        // Search bar
+        SearchBar(
+            value = query,
+            onValueChange = { query = it },
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
+        )
+
+        if (filtered.isEmpty()) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(32.dp),
+                    .padding(24.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 EmptyHero(emoji = "👨‍👩‍👧", decor = listOf("💬", "🏠", "❤️", "🌟"))
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "Нет групп",
+                    if (groups.isEmpty()) "Нет групп" else "Ничего не нашлось",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    if (isGuest) "Привяжите email чтобы создавать и вступать в группы"
-                    else "Нажмите + чтобы создать первую группу",
+                    when {
+                        isGuest -> "Привяжите email чтобы создавать и вступать в группы"
+                        groups.isEmpty() -> "Нажмите + чтобы создать первую группу"
+                        else -> "Попробуйте сбросить поиск"
+                    },
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
+            val personalTypes = setOf("family", "personal", "hobby", "study", "mentoring")
+            val workTypes = setOf("work", "group")
+            val personal = filtered.filter { it.type in personalTypes }
+            val work = filtered.filter { it.type in workTypes }
+            val other = filtered.filter { it.type !in personalTypes && it.type !in workTypes }
+
             LazyColumn(
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(groups, key = { it.id }) { group ->
-                    GroupCard(group = group, onClick = { onGroupClick(group) })
+                if (personal.isNotEmpty()) {
+                    item { SectionHeader(label = "🌿 ЛИЧНОЕ", count = personal.size) }
+                    items(personal, key = { "p_${it.id}" }) { group ->
+                        GroupRow(group = group, onClick = { onGroupClick(group) })
+                    }
+                }
+                if (work.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        SectionHeader(label = "💼 РАБОТА", count = work.size)
+                    }
+                    items(work, key = { "w_${it.id}" }) { group ->
+                        GroupRow(group = group, onClick = { onGroupClick(group) })
+                    }
+                }
+                if (other.isNotEmpty()) {
+                    item {
+                        Spacer(Modifier.height(8.dp))
+                        SectionHeader(label = "ПРОЧЕЕ", count = other.size)
+                    }
+                    items(other, key = { "o_${it.id}" }) { group ->
+                        GroupRow(group = group, onClick = { onGroupClick(group) })
+                    }
                 }
                 item { Spacer(Modifier.height(80.dp)) }
             }
@@ -151,80 +203,133 @@ internal fun GroupsContent(
 }
 
 @Composable
-private fun GroupCard(
-    group: Group,
+private fun IconCircle(
+    text: String,
+    bg: Color,
+    fg: Color,
     onClick: () -> Unit,
+    bordered: Boolean = false,
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(CircleShape)
+            .background(bg)
+            .then(
+                if (bordered) Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                else Modifier
+            )
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text = text, color = fg, fontSize = 18.sp, fontWeight = FontWeight.Light)
+    }
+}
+
+@Composable
+private fun SearchBar(
+    value: String,
+    onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val wsIcon = when (group.type) {
-        "family" -> "👨‍👩‍👧‍👦"
-        "group" -> "👥"
-        "work" -> "💼"
-        "mentoring" -> "🎓"
-        else -> "👤"
+    val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(shapes.chip)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shapes.chip)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("🔍", fontSize = 14.sp, color = extras.textTer)
+        Box(modifier = Modifier.weight(1f)) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) {
+                        Text(
+                            "Поиск группы…",
+                            fontSize = 13.sp,
+                            color = extras.textTer,
+                        )
+                    }
+                    inner()
+                },
+            )
+        }
+        if (value.isNotEmpty()) {
+            Text(
+                "×",
+                fontSize = 16.sp,
+                color = extras.textTer,
+                modifier = Modifier.clickable { onValueChange("") },
+            )
+        }
     }
-    val wsIconBg = when (group.type) {
-        "family" -> MaterialTheme.colorScheme.secondaryContainer
-        "group" -> MaterialTheme.colorScheme.primaryContainer
-        "work" -> MaterialTheme.colorScheme.tertiaryContainer
-        "mentoring" -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-    }
-    val typeLabel = when (group.type) {
-        "family" -> "Семья"
-        "group" -> "Группа"
-        "work" -> "Работа"
-        "mentoring" -> "Наставничество"
-        else -> "Личное"
-    }
+}
 
-    Surface(
+@Composable
+private fun SectionHeader(label: String, count: Int) {
+    Text(
+        text = "$label · $count",
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.2.sp,
+        modifier = Modifier.padding(vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun GroupRow(
+    group: Group,
+    onClick: () -> Unit,
+) {
+    val visuals = groupVisuals(group)
+    CozyCard(
+        modifier = Modifier.fillMaxWidth(),
         onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = LocalCozyShapes.current.avatarTile,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 1.dp,
+        contentPadding = 12.dp,
+        radius = 14.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .background(wsIconBg, LocalCozyShapes.current.button),
+                    .size(40.dp)
+                    .clip(LocalCozyShapes.current.chip)
+                    .background(visuals.tileBg),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(wsIcon, fontSize = 22.sp)
+                Text(visuals.emoji, fontSize = 20.sp)
             }
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    group.title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(typeLabel, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        group.title,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    if (group.role == "owner") {
+                        Text("⭐", fontSize = 11.sp)
+                    }
                 }
-            }
-            Surface(
-                shape = LocalCozyShapes.current.chip,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            ) {
                 Text(
-                    if (group.role == "owner") "Владелец" else "Участник",
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+                    text = visuals.typeLabel,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -238,69 +343,81 @@ internal fun CreateGroupDialog(
     onConfirm: (name: String, type: String) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var groupName by remember { mutableStateOf("") }
+    val groupName by remember { mutableStateOf("") }
+    val shapes = LocalCozyShapes.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = LocalCozyShapes.current.sheet,
+        shape = shapes.sheet,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 48.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
                 "Создать пространство",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onBackground,
             )
 
             val workspaceTypes = listOf(
-                Triple("family",    "👨‍👩‍👧‍👦", "Семья" to "Для совместного ведения домашних дел"),
-                Triple("group",     "👥",     "Группа" to "Команда, соседи, друзья"),
-                Triple("work",      "💼",     "Работа" to "Рабочие задачи и расписание"),
-                Triple("mentoring", "🎓",     "Наставничество" to "Учитель и ученики"),
+                Triple("family", "🏡", "Семья" to "Для совместного ведения домашних дел"),
+                Triple("group", "👥", "Группа" to "Команда, соседи, друзья"),
+                Triple("work", "💼", "Работа" to "Рабочие задачи и расписание"),
+                Triple("mentoring", "🎓", "Наставничество" to "Учитель и ученики"),
             )
 
             workspaceTypes.forEach { (type, icon, labels) ->
-                Surface(
+                CozyCard(
+                    modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         val defaultName = labels.first
                         onConfirm(groupName.ifBlank { defaultName }, type)
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = LocalCozyShapes.current.button,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    bordered = true,
+                    background = MaterialTheme.colorScheme.surface,
+                    contentPadding = 12.dp,
+                    radius = 14.dp,
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(44.dp)
-                                .background(MaterialTheme.colorScheme.surface, MaterialTheme.shapes.small),
+                                .clip(shapes.chip)
+                                .background(MaterialTheme.colorScheme.primaryContainer),
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(icon, fontSize = 22.sp)
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(labels.first, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            Text(labels.second, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                labels.first,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            Text(
+                                labels.second,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp),
+                            )
                         }
-                        Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("›", fontSize = 18.sp, color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
             }
         }
     }
 }
+

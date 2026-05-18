@@ -26,7 +26,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,8 +34,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,6 +70,7 @@ private val listTypeOptions = listOf(
     ListTypeOption("custom", "📝", "Произвольный", "Что-то своё"),
 )
 
+// User-picked list colors (data, not styling). Hex saved server-side.
 private val listColorPresets = listOf(
     Color(0xFFFF7043) to "#FF7043",
     Color(0xFF42A5F5) to "#42A5F5",
@@ -126,32 +124,18 @@ fun CreateListScreen(
     Scaffold(
         contentWindowInsets = WindowInsets.systemBars,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (step == 1) "Тип списка" else "Новый список",
-                        fontWeight = FontWeight.Bold,
-                    )
+            com.jetbrains.kmpapp.ui.components.CozyTopBar(
+                title = if (step == 1) "Тип списка" else "Новый список",
+                onBack = {
+                    if (step == 2) step = 1 else onNavigateBack()
                 },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (step == 2) step = 1 else onNavigateBack()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
-                actions = {
+                action = {
                     Text(
                         "$step/2",
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 16.dp),
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
             )
         },
     ) { padding ->
@@ -375,7 +359,7 @@ private fun Step2Configure(
             }
             if (allWorkspaces.size <= 1) {
                 allWorkspaces.firstOrNull()?.let { (_, label) ->
-                    FilterChip(selected = true, onClick = {}, label = { Text(label) })
+                    com.jetbrains.kmpapp.ui.components.CozyChip(label = label, selected = true)
                 }
             } else {
                 ExposedDropdownMenuBox(

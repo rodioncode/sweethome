@@ -20,8 +20,6 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -123,14 +121,10 @@ fun RecipePickerSheet(
 
             LazyRow(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
                 items(cuisines) { c ->
-                    FilterChip(
+                    com.jetbrains.kmpapp.ui.components.CozyChip(
+                        label = c,
                         selected = c == selectedCuisine,
                         onClick = { selectedCuisine = c },
-                        label = { Text(c, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
                     )
                 }
             }

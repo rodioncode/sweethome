@@ -1,12 +1,11 @@
 package com.jetbrains.kmpapp.screens.profile
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,16 +15,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -40,7 +42,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
 import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyAvatar
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
+import com.jetbrains.kmpapp.ui.components.MetaRow
 import kotlinx.coroutines.delay
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -56,314 +64,93 @@ fun ProfileContent(
 ) {
     val viewModel = koinViewModel<ProfileViewModel>()
     val isGuest by viewModel.isGuest.collectAsStateWithLifecycle()
-    val userId by viewModel.userId.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val listCount by viewModel.listCount.collectAsStateWithLifecycle()
-    val groupCount by viewModel.groupCount.collectAsStateWithLifecycle()
     val groups by viewModel.groups.collectAsStateWithLifecycle()
     val deleteState by viewModel.deleteState.collectAsStateWithLifecycle()
     val telegramStatus by viewModel.telegramStatus.collectAsStateWithLifecycle()
     val telegramLinkState by viewModel.telegramLinkState.collectAsStateWithLifecycle()
-    var showDeleteDialog by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Scaffold { paddingValues ->
-    LazyColumn(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    val spacing = LocalCozySpacing.current
 
-        // --- Green hero header ---
-        item {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.primary),
-            ) {
-                // Decorative circle
-                Box(
-                    modifier = Modifier
-                        .size(160.dp)
-                        .align(Alignment.TopEnd)
-                        .padding(top = 0.dp)
-                        .background(Color.White.copy(alpha = 0.06f), CircleShape),
-                )
-
-                Column(modifier = Modifier.fillMaxWidth().padding(20.dp).padding(top = 10.dp)) {
-                    // Top row: title + logout
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "Профиль",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
-                        Surface(
-                            onClick = { viewModel.logout() },
-                            shape = MaterialTheme.shapes.small,
-                            color = Color.White.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                "Выйти",
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(20.dp))
-
-                    // Avatar row
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    ) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(
+                top = spacing.sm,
+                start = spacing.xxl,
+                end = spacing.xxl,
+                bottom = 80.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(spacing.xl),
+        ) {
+            item {
+                CozyTopBar(
+                    title = "Профиль",
+                    action = {
                         Box(
                             modifier = Modifier
-                                .size(72.dp)
+                                .size(36.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.25f))
-                                .border(3.dp, Color.White.copy(alpha = 0.4f), CircleShape),
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable(onClick = navigateToSettings),
                             contentAlignment = Alignment.Center,
                         ) {
-                            val displayName = profile?.displayName?.takeIf { it.isNotBlank() } ?: ""
-                            val initial = displayName.firstOrNull()?.uppercase() ?: "·"
-                            Text(
-                                initial,
-                                fontSize = 28.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
+                            Text("⚙", fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
                         }
-                        Column {
-                            Text(
-                                if (isGuest) "Гостевой аккаунт"
-                                else (profile?.displayName?.takeIf { it.isNotBlank() } ?: "Пользователь"),
-                                fontSize = 20.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimary,
-                            )
-                            if (!isGuest && profile?.email != null) {
-                                Text(
-                                    profile!!.email!!.take(30),
-                                    fontSize = 13.sp,
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(top = 3.dp),
-                                )
-                            }
-                            if (isGuest) {
-                                Surface(
-                                    onClick = navigateToLinkEmail,
-                                    modifier = Modifier.padding(top = 8.dp),
-                                    shape = LocalCozyShapes.current.chip,
-                                    color = Color.White.copy(alpha = 0.15f),
-                                ) {
-                                    Text(
-                                        "Привязать email",
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                }
-                            } else {
-                                Surface(
-                                    onClick = navigateToSettings,
-                                    modifier = Modifier.padding(top = 8.dp),
-                                    shape = LocalCozyShapes.current.chip,
-                                    color = Color.White.copy(alpha = 0.15f),
-                                ) {
-                                    Text(
-                                        "Редактировать",
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                }
+                    },
+                )
+            }
+
+            item {
+                ProfileHero(
+                    isGuest = isGuest,
+                    displayName = profile?.displayName?.takeIf { it.isNotBlank() },
+                    email = profile?.email,
+                    listCount = listCount,
+                    groupsCount = groups.size,
+                    onLinkEmail = navigateToLinkEmail,
+                )
+            }
+
+            item {
+                AccountSection(
+                    isGuest = isGuest,
+                    email = profile?.email,
+                    telegramStatus = telegramStatus,
+                    onEditProfile = navigateToSettings,
+                    onLinkEmail = navigateToLinkEmail,
+                    onLinkTelegram = { viewModel.startTelegramLink() },
+                    onUnlinkTelegram = { viewModel.unlinkTelegram() },
+                )
+            }
+
+            item {
+                AppearanceShortcuts(
+                    onTemplates = navigateToTemplates,
+                    onSettings = navigateToSettings,
+                )
+            }
+
+            item {
+                SpacesSection(
+                    groups = groups.map { SpaceEntry(it.title, it.type, it.role) },
+                )
+            }
+
+            item {
+                DangerSection(
+                    onLogout = { viewModel.logout() },
+                    onDelete = { showDeleteDialog = true },
+                )
             }
         }
-
-        // --- Stats row ---
-        item {
-            Surface(color = MaterialTheme.colorScheme.surface) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(IntrinsicSize.Min)
-                        .border(width = 1.dp, color = MaterialTheme.colorScheme.outline),
-                ) {
-                    listOf(
-                        "0" to "задач",
-                        listCount.toString() to "списков",
-                        groupCount.toString() to "пространств",
-                    ).forEachIndexed { index, (value, label) ->
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(vertical = 16.dp)
-                                .then(
-                                    if (index < 2) Modifier.border(
-                                        width = 1.dp,
-                                        color = MaterialTheme.colorScheme.outline,
-                                    ) else Modifier
-                                ),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(value, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 2.dp))
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Settings section ---
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            SectionLabel("НАСТРОЙКИ")
-        }
-        item {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.lg),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-                Column {
-                    data class SettingsItem(val icon: String, val label: String, val onClick: () -> Unit)
-                    val settingsItems = listOf(
-                        SettingsItem("📋", "Шаблоны", navigateToTemplates),
-                        SettingsItem("🔔", "Уведомления", navigateToSettings),
-                        SettingsItem("📅", "Интеграция с календарём", navigateToSettings),
-                        SettingsItem("🌙", "Тема", navigateToSettings),
-                        SettingsItem("🌐", "Язык", navigateToSettings),
-                    )
-                    settingsItems.forEachIndexed { index, entry ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { entry.onClick() }
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Text(entry.icon, fontSize = 18.sp)
-                            Text(entry.label, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                            Text("›", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        if (index < settingsItems.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Telegram ---
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            SectionLabel("TELEGRAM")
-        }
-        item {
-            TelegramSection(
-                status = telegramStatus,
-                onLink = { viewModel.startTelegramLink() },
-                onUnlink = { viewModel.unlinkTelegram() },
-            )
-        }
-
-        // --- My spaces ---
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            SectionLabel("МОИ ПРОСТРАНСТВА")
-        }
-        item {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.lg),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-                Column {
-                    // Personal space
-                    SpaceRow(icon = "👤", title = "Личное", subtitle = "Только вы", onClick = {})
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-
-                    // Group spaces
-                    groups.forEachIndexed { index, group ->
-                        SpaceRow(
-                            icon = when (group.type) {
-                                "family" -> "👨‍👩‍👧‍👦"
-                                "mentoring" -> "🎓"
-                                else -> "👥"
-                            },
-                            title = group.title,
-                            subtitle = when (group.role) {
-                                "owner" -> "owner"
-                                else -> "member"
-                            },
-                            onClick = {},
-                        )
-                        if (index < groups.lastIndex) {
-                            HorizontalDivider(color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(horizontal = 16.dp))
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- Activity ---
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxl))
-            SectionLabel("АКТИВНОСТЬ")
-        }
-        item {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = LocalCozySpacing.current.lg),
-                shape = LocalCozyShapes.current.avatarTile,
-                color = MaterialTheme.colorScheme.surface,
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.Top,
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
-                            .padding(top = 6.dp),
-                    )
-                    Text("Нет недавней активности", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-        }
-
-        item {
-            Spacer(Modifier.height(LocalCozySpacing.current.xxxl))
-            DangerZone(
-                onDelete = { showDeleteDialog = true },
-            )
-        }
-
-        item { Spacer(Modifier.height(80.dp)) }
-    }
     }
 
     if (showDeleteDialog) {
@@ -377,28 +164,27 @@ fun ProfileContent(
     }
     when (val s = deleteState) {
         is ProfileViewModel.DeleteState.Error -> {
-            androidx.compose.material3.AlertDialog(
+            AlertDialog(
                 onDismissRequest = { viewModel.resetDeleteState() },
-                confirmButton = { androidx.compose.material3.TextButton(onClick = { viewModel.resetDeleteState() }) { Text("OK") } },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.resetDeleteState() }) { Text("OK") }
+                },
                 title = { Text("Не удалось") },
                 text = { Text(s.message) },
             )
         }
         ProfileViewModel.DeleteState.InProgress -> {
-            // Step 3: loading overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.45f)),
+                    .background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.45f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
+                    verticalArrangement = Arrangement.spacedBy(spacing.lg),
                 ) {
-                    androidx.compose.material3.CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.error,
-                    )
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.error)
                     Text(
                         "Удаляем ваш аккаунт…",
                         fontSize = 14.sp,
@@ -409,7 +195,6 @@ fun ProfileContent(
             }
         }
         ProfileViewModel.DeleteState.Done -> {
-            // Step 3: success final screen
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -418,8 +203,8 @@ fun ProfileContent(
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
-                    modifier = Modifier.padding(LocalCozySpacing.current.xxl),
+                    verticalArrangement = Arrangement.spacedBy(spacing.lg),
+                    modifier = Modifier.padding(spacing.xxl),
                 ) {
                     Box(
                         modifier = Modifier
@@ -428,7 +213,12 @@ fun ProfileContent(
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("✓", fontSize = 32.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        Text(
+                            "✓",
+                            fontSize = 32.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold,
+                        )
                     }
                     Text(
                         "Аккаунт удалён",
@@ -460,9 +250,11 @@ fun ProfileContent(
             )
         }
         is ProfileViewModel.TelegramLinkState.Error -> {
-            androidx.compose.material3.AlertDialog(
+            AlertDialog(
                 onDismissRequest = { viewModel.cancelTelegramLink() },
-                confirmButton = { androidx.compose.material3.TextButton(onClick = { viewModel.cancelTelegramLink() }) { Text("OK") } },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.cancelTelegramLink() }) { Text("OK") }
+                },
                 title = { Text("Не удалось") },
                 text = { Text(ls.message) },
             )
@@ -471,26 +263,227 @@ fun ProfileContent(
     }
 }
 
+private data class SpaceEntry(val title: String, val type: String, val role: String)
+
 @Composable
-private fun DangerZone(onDelete: () -> Unit) {
-    Column(modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg)) {
-        SectionLabel("ОПАСНАЯ ЗОНА")
-        Surface(
-            onClick = onDelete,
-            modifier = Modifier.fillMaxWidth(),
-            shape = LocalCozyShapes.current.button,
-            color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.3f)),
-        ) {
+private fun ProfileHero(
+    isGuest: Boolean,
+    displayName: String?,
+    email: String?,
+    listCount: Int,
+    groupsCount: Int,
+    onLinkEmail: () -> Unit,
+) {
+    val spacing = LocalCozySpacing.current
+    CozyCard(
+        modifier = Modifier.fillMaxWidth(),
+        radius = 24.dp,
+        background = MaterialTheme.colorScheme.primaryContainer,
+        contentPadding = spacing.xl,
+    ) {
+        Column {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(spacing.md),
             ) {
-                Text("⚠️", fontSize = 18.sp)
+                val letter = (displayName ?: if (isGuest) "Г" else "·").firstOrNull()?.uppercase() ?: "·"
+                CozyAvatar(
+                    letter = letter,
+                    color = MaterialTheme.colorScheme.primary,
+                    size = 64.dp,
+                )
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Удалить аккаунт", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.error)
-                    Text("Все данные будут удалены без возможности восстановления", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = if (isGuest) "Гостевой аккаунт"
+                        else (displayName ?: "Пользователь"),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val subtitle = when {
+                        isGuest -> "Привяжи email — сохрани прогресс"
+                        !email.isNullOrBlank() -> email
+                        else -> "Семья и порядок"
+                    }
+                    Text(
+                        text = subtitle,
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = spacing.xxs / 2),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (isGuest) {
+                        Spacer(Modifier.height(spacing.xs))
+                        Box(
+                            modifier = Modifier
+                                .clip(LocalCozyShapes.current.chip)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clickable(onClick = onLinkEmail)
+                                .padding(horizontal = spacing.sm, vertical = spacing.xxs),
+                        ) {
+                            Text(
+                                "Привязать email",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
+                        }
+                    }
+                }
+            }
+            Spacer(Modifier.height(spacing.lg))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                HeroStat(value = listCount.toString(), label = "списков", modifier = Modifier.weight(1f))
+                HeroStat(value = groupsCount.toString(), label = "пространств", modifier = Modifier.weight(1f))
+                HeroStat(value = "0", label = "наклеек", modifier = Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroStat(value: String, label: String, modifier: Modifier = Modifier) {
+    CozyCard(
+        modifier = modifier,
+        radius = 14.dp,
+        contentPadding = 10.dp,
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(value, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            Text(
+                label,
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String) {
+    Text(
+        text = text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = LocalCozySpacing.current.xs, start = 4.dp),
+    )
+}
+
+@Composable
+private fun AccountSection(
+    isGuest: Boolean,
+    email: String?,
+    telegramStatus: com.jetbrains.kmpapp.data.telegram.TelegramLinkStatusResponse?,
+    onEditProfile: () -> Unit,
+    onLinkEmail: () -> Unit,
+    onLinkTelegram: () -> Unit,
+    onUnlinkTelegram: () -> Unit,
+) {
+    Column {
+        SectionTitle("АККАУНТ")
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 0.dp,
+            radius = 18.dp,
+        ) {
+            Column {
+                MetaRow(
+                    icon = "✉️",
+                    title = if (isGuest) "Привязать email" else "Email",
+                    value = if (isGuest) null else (email ?: "—"),
+                    onClick = if (isGuest) onLinkEmail else onEditProfile,
+                )
+                Divider()
+                if (telegramStatus?.linked == true) {
+                    MetaRow(
+                        icon = "🤖",
+                        title = "Telegram",
+                        value = telegramStatus.telegramUsername?.let { "@$it" } ?: "Привязан",
+                        onClick = onUnlinkTelegram,
+                    )
+                } else {
+                    MetaRow(
+                        icon = "🤖",
+                        title = "Telegram",
+                        value = "Подключить",
+                        onClick = onLinkTelegram,
+                    )
+                }
+                Divider()
+                MetaRow(
+                    icon = "✏️",
+                    title = "Редактировать профиль",
+                    onClick = onEditProfile,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppearanceShortcuts(
+    onTemplates: () -> Unit,
+    onSettings: () -> Unit,
+) {
+    Column {
+        SectionTitle("БЫСТРЫЙ ДОСТУП")
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 0.dp,
+            radius = 18.dp,
+        ) {
+            Column {
+                MetaRow(icon = "📋", title = "Шаблоны", onClick = onTemplates)
+                Divider()
+                MetaRow(icon = "🔔", title = "Уведомления", onClick = onSettings)
+                Divider()
+                MetaRow(icon = "🎨", title = "Тема", onClick = onSettings)
+                Divider()
+                MetaRow(icon = "🌐", title = "Язык", value = "Русский", onClick = onSettings)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpacesSection(groups: List<SpaceEntry>) {
+    Column {
+        SectionTitle("СЕМЬИ И ГРУППЫ")
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 0.dp,
+            radius = 18.dp,
+        ) {
+            Column {
+                SpaceRow(
+                    letter = "Я",
+                    color = MaterialTheme.colorScheme.primary,
+                    title = "Личное",
+                    subtitle = "Только вы",
+                    onClick = {},
+                )
+                groups.forEach { g ->
+                    Divider()
+                    val palette = paletteForType(g.type)
+                    SpaceRow(
+                        letter = g.title.firstOrNull()?.uppercase() ?: "·",
+                        color = palette,
+                        title = g.title,
+                        subtitle = if (g.role == "owner") "Владелец" else "Участник",
+                        onClick = {},
+                    )
                 }
             }
         }
@@ -498,20 +491,100 @@ private fun DangerZone(onDelete: () -> Unit) {
 }
 
 @Composable
+private fun paletteForType(type: String): Color {
+    val extras = LocalCozyExtraColors.current
+    return when (type) {
+        "family" -> extras.coral
+        "mentoring" -> extras.ochre
+        else -> extras.lavender
+    }
+}
+
+@Composable
+private fun SpaceRow(
+    letter: String,
+    color: Color,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    val spacing = LocalCozySpacing.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = spacing.lg, vertical = spacing.md),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+    ) {
+        CozyAvatar(letter = letter, color = color, size = 36.dp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                subtitle,
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text("›", fontSize = 14.sp, color = MaterialTheme.colorScheme.outlineVariant)
+    }
+}
+
+@Composable
+private fun DangerSection(
+    onLogout: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Column {
+        SectionTitle("ОПАСНАЯ ЗОНА")
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 0.dp,
+            radius = 18.dp,
+        ) {
+            Column {
+                MetaRow(icon = "🚪", title = "Выйти", danger = true, onClick = onLogout)
+                Divider()
+                MetaRow(icon = "⚠️", title = "Удалить аккаунт", danger = true, onClick = onDelete)
+            }
+        }
+    }
+}
+
+@Composable
+private fun Divider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+}
+
+@Composable
 private fun ConfirmDeleteAccountDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    var input by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    val canConfirm = input.trim().equals("УДАЛИТЬ", ignoreCase = false)
-    androidx.compose.material3.AlertDialog(
+    var input by remember { mutableStateOf("") }
+    val canConfirm = input.trim() == "УДАЛИТЬ"
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Удалить аккаунт?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Это действие необратимо. Все списки, задачи, история и баланс будут стёрты.")
-                Text("Чтобы подтвердить, введите УДАЛИТЬ:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                androidx.compose.material3.OutlinedTextField(
+                Text(
+                    "Чтобы подтвердить, введите УДАЛИТЬ:",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
                     value = input,
                     onValueChange = { input = it },
                     singleLine = true,
@@ -520,116 +593,16 @@ private fun ConfirmDeleteAccountDialog(
             }
         },
         confirmButton = {
-            androidx.compose.material3.TextButton(onClick = onConfirm, enabled = canConfirm) {
-                Text("Удалить", color = if (canConfirm) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline)
+            TextButton(onClick = onConfirm, enabled = canConfirm) {
+                Text(
+                    "Удалить",
+                    color = if (canConfirm) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.outline,
+                )
             }
         },
-        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
-}
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        letterSpacing = 0.5.sp,
-        modifier = Modifier.padding(horizontal = LocalCozySpacing.current.lg, vertical = 0.dp).padding(bottom = 10.dp),
-    )
-}
-
-@Composable
-private fun SpaceRow(
-    icon: String,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(icon, fontSize = 18.sp)
-        Text(title, fontSize = 15.sp, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text("$subtitle ›", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun TelegramSection(
-    status: com.jetbrains.kmpapp.data.telegram.TelegramLinkStatusResponse?,
-    onLink: () -> Unit,
-    onUnlink: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = LocalCozySpacing.current.lg),
-        shape = LocalCozyShapes.current.avatarTile,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-    ) {
-        if (status?.linked == true) {
-            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("🤖", fontSize = 22.sp)
-                    Column(modifier = Modifier.weight(1f)) {
-                        val name = status.telegramUsername?.let { "@$it" } ?: "Привязан"
-                        Text(name, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        val linkedAt = formatLinkedAt(status.linkedAt)
-                        if (linkedAt != null) {
-                            Text("привязан $linkedAt", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                }
-                Surface(
-                    onClick = onUnlink,
-                    modifier = Modifier.align(Alignment.End),
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
-                ) {
-                    Text(
-                        "Отвязать",
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text("🤖", fontSize = 22.sp)
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("Telegram", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    Text("Добавляйте задачи прямо из бота", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Surface(
-                    onClick = onLink,
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primary,
-                ) {
-                    Text(
-                        "Привязать",
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                    )
-                }
-            }
-        }
-    }
 }
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -653,11 +626,20 @@ private fun TelegramLinkSheet(
         }
     }
     val expired = secondsLeft <= 0L
+    val spacing = LocalCozySpacing.current
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = LocalCozyShapes.current.sheet,
+        containerColor = MaterialTheme.colorScheme.surface,
+    ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.xxl)
+                .padding(bottom = spacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -676,7 +658,8 @@ private fun TelegramLinkSheet(
             Text(
                 if (expired) "Срок кода истёк" else "Действителен ещё ${formatTimer(secondsLeft)}",
                 fontSize = 13.sp,
-                color = if (expired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (expired) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 "Откройте бота — он сам подставит код. После этого вернитесь сюда.",
@@ -684,38 +667,39 @@ private fun TelegramLinkSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Surface(
-                onClick = {
-                    if (expired) onRetry() else uriHandler.openUri(deeplink)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.primary,
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(LocalCozyShapes.current.button)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable {
+                        if (expired) onRetry() else uriHandler.openUri(deeplink)
+                    }
+                    .padding(vertical = spacing.md),
+                contentAlignment = Alignment.Center,
             ) {
                 Text(
                     if (expired) "Получить новый код" else "Открыть бота",
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
-                    textAlign = TextAlign.Center,
                 )
             }
             if (!expired) {
-                Surface(
-                    onClick = onCheckNow,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(LocalCozyShapes.current.button)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable(onClick = onCheckNow)
+                        .padding(vertical = spacing.md),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         "Я уже привязал, проверить",
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
                     )
                 }
             }
@@ -745,11 +729,3 @@ private fun formatTimer(secondsLeft: Long): String {
 
 private fun formatCode(code: String): String =
     if (code.length == 6) "${code.substring(0, 3)} ${code.substring(3)}" else code
-
-private fun formatLinkedAt(iso: String?): String? {
-    val instant = iso?.let { parseInstant(it) } ?: return null
-    val dt = instant.toLocalDateTime(TimeZone.currentSystemDefault()).date
-    val day = if (dt.dayOfMonth < 10) "0${dt.dayOfMonth}" else dt.dayOfMonth.toString()
-    val month = dt.monthNumber.let { if (it < 10) "0$it" else it.toString() }
-    return "$day.$month.${dt.year}"
-}
