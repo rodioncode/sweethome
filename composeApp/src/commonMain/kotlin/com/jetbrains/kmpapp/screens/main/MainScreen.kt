@@ -83,7 +83,7 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { HOME, LISTS, FAMILY, CALENDAR, GROUPS }
+enum class MainTab { HOME, FAMILY, LISTS, CALENDAR, GROUPS }
 
 private fun CozyTab.toMainTab(): MainTab = when (this) {
     CozyTab.HOME     -> MainTab.HOME

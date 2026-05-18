@@ -1,16 +1,45 @@
 package com.jetbrains.kmpapp.data.lists
 
+import com.jetbrains.kmpapp.data.preferences.LocalPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.Clock
 
 class ListsRepository(
     private val listsApi: ListsApi,
     private val listsStorage: ListsStorage,
+    private val localPreferences: LocalPreferences,
 ) {
+
+    // Raw (no pin overlay). Use [lists] to read overlay-applied list.
+    private val _rawLists = MutableStateFlow<List<TodoList>>(emptyList())
+
+    private val _pinnedIds = MutableStateFlow(localPreferences.getPinnedListIds())
 
     private val _lists = MutableStateFlow<List<TodoList>>(emptyList())
     val lists: StateFlow<List<TodoList>> = _lists.asStateFlow()
+
+    private fun applyOverlay(raw: List<TodoList>): List<TodoList> {
+        val pinned = _pinnedIds.value
+        if (pinned.isEmpty()) return raw.map { it.copy(pinnedAt = null) }
+        val now = Clock.System.now().toString()
+        return raw.map { list ->
+            list.copy(pinnedAt = if (list.id in pinned) (list.pinnedAt ?: now) else null)
+        }
+    }
+
+    private fun publish(raw: List<TodoList>) {
+        _rawLists.value = raw
+        _lists.value = applyOverlay(raw)
+    }
+
+    fun togglePinned(listId: String) {
+        val next = if (listId in _pinnedIds.value) _pinnedIds.value - listId else _pinnedIds.value + listId
+        _pinnedIds.value = next
+        localPreferences.setPinnedListIds(next)
+        _lists.value = applyOverlay(_rawLists.value)
+    }
 
     private val _currentListWithItems = MutableStateFlow<Pair<TodoList, List<TodoItem>>?>(null)
     val currentListWithItems: StateFlow<Pair<TodoList, List<TodoItem>>?> = _currentListWithItems.asStateFlow()
@@ -23,10 +52,10 @@ class ListsRepository(
     suspend fun loadAllItemsOnce(): List<TodoItem> = listsStorage.getAllItems()
 
     suspend fun loadLists(workspaceId: String? = null) {
-        _lists.value = listsStorage.getLists()
+        publish(listsStorage.getLists())
         listsApi.getLists(workspaceId)
             .onSuccess {
-                _lists.value = it
+                publish(it)
                 listsStorage.saveLists(it)
             }
             .onFailure { _error.value = it.message }
@@ -53,8 +82,8 @@ class ListsRepository(
             )
         )
         result.onSuccess {
-            _lists.value = _lists.value + it
-            listsStorage.saveLists(_lists.value)
+            publish(_rawLists.value + it)
+            listsStorage.saveLists(_rawLists.value)
         }
         result.onFailure { _error.value = it.message }
         return result
@@ -75,7 +104,7 @@ class ListsRepository(
     }
 
     suspend fun reloadListsFromStorage() {
-        _lists.value = listsStorage.getLists()
+        publish(listsStorage.getLists())
     }
 
     suspend fun reloadCurrentListFromStorage(listId: String) {
@@ -95,11 +124,11 @@ class ListsRepository(
             UpdateListRequest(title = title, icon = icon, color = color, description = description, isPublic = isPublic)
         )
         result.onSuccess { updated ->
-            _lists.value = _lists.value.map { if (it.id == listId) updated else it }
+            publish(_rawLists.value.map { if (it.id == listId) updated else it })
             _currentListWithItems.value?.let { (list, items) ->
                 if (list.id == listId) _currentListWithItems.value = updated to items
             }
-            listsStorage.saveLists(_lists.value)
+            listsStorage.saveLists(_rawLists.value)
             _currentListWithItems.value?.let { (list, items) ->
                 listsStorage.saveListWithItems(list, items)
             }
@@ -111,11 +140,17 @@ class ListsRepository(
     suspend fun deleteList(listId: String): Result<Unit> {
         val result = listsApi.deleteList(listId)
         result.onSuccess {
-            _lists.value = _lists.value.filter { it.id != listId }
+            publish(_rawLists.value.filter { it.id != listId })
             if (_currentListWithItems.value?.first?.id == listId) {
                 _currentListWithItems.value = null
             }
-            listsStorage.saveLists(_lists.value)
+            // Drop local pin overlay for deleted list.
+            if (listId in _pinnedIds.value) {
+                val next = _pinnedIds.value - listId
+                _pinnedIds.value = next
+                localPreferences.setPinnedListIds(next)
+            }
+            listsStorage.saveLists(_rawLists.value)
         }
         result.onFailure { _error.value = it.message }
         return result
@@ -236,6 +271,7 @@ class ListsRepository(
     }
 
     fun clearAll() {
+        _rawLists.value = emptyList()
         _lists.value = emptyList()
         _currentListWithItems.value = null
         _error.value = null

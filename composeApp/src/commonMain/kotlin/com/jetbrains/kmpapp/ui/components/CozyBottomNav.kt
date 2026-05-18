@@ -17,8 +17,8 @@ import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 
 enum class CozyTab(val id: String, val emoji: String, val label: String) {
     HOME    ("home",     "⌂", "Главная"),
+    FAMILY  ("family",   "⌖", "Мой дом"),
     LISTS   ("lists",    "☰", "Списки"),
-    FAMILY  ("family",   "⌖", "Семья"),
     CALENDAR("calendar", "◷", "Календарь"),
     GROUPS  ("groups",   "◇", "Группы");
 }

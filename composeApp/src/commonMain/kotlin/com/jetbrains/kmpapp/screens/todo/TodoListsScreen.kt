@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.screens.todo
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -20,11 +21,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,28 +36,40 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.groups.Group
+import com.jetbrains.kmpapp.data.groups.WorkspaceType
 import com.jetbrains.kmpapp.data.lists.TodoList
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.CozyChip
 import com.jetbrains.kmpapp.ui.components.EmptyHero
 import com.jetbrains.kmpapp.ui.components.SweetHomeListCard
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
+import org.koin.compose.viewmodel.koinViewModel
 
-private val filterOptions = listOf(
-    null to "Все",
-    "general_todos" to "Общие",
-    "shopping" to "Покупки",
-    "home_chores" to "Дела по дому",
+private data class TypeFilter(val key: String?, val label: String)
+
+private val FILTER_OPTIONS = listOf(
+    TypeFilter(null, "Все"),
+    TypeFilter("shopping", "Покупки"),
+    TypeFilter("home_chores", "Домашние"),
+    TypeFilter("general_todos", "Задачи"),
+    TypeFilter("wishlist", "Вишлист"),
+    TypeFilter("media", "Медиа"),
 )
 
 @Composable
 internal fun TodoListsContent(
-    lists: List<TodoList>,
+    lists: List<TodoList>,           // legacy param kept for caller; not used (VM is source of truth)
     groups: List<Group> = emptyList(),
     contentPadding: PaddingValues,
     onListClick: (String) -> Unit,
@@ -63,35 +79,54 @@ internal fun TodoListsContent(
     navigateToLinkEmail: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    var searchQuery by remember { mutableStateOf("") }
-    var selectedFilter by remember { mutableStateOf<String?>(null) }
+    val viewModel = koinViewModel<TodoListsViewModel>()
+    val allGroups by viewModel.groups.collectAsStateWithLifecycle()
+    val activeWs by viewModel.activeWorkspace.collectAsStateWithLifecycle()
+    val visibleLists by viewModel.visibleLists.collectAsStateWithLifecycle()
+    val typeFilter by viewModel.typeFilter.collectAsStateWithLifecycle()
+    val query by viewModel.searchQuery.collectAsStateWithLifecycle()
 
-    val filteredLists = remember(lists, searchQuery, selectedFilter) {
-        lists.filter { list ->
-            val matchesSearch = searchQuery.isBlank() || list.title.contains(searchQuery, ignoreCase = true)
-            val matchesFilter = selectedFilter == null || list.type == selectedFilter
-            matchesSearch && matchesFilter
-        }
-    }
+    var showWorkspaceSheet by remember { mutableStateOf(false) }
+    var showSearch by remember { mutableStateOf(false) }
+    val workspaces = remember(allGroups) { allGroups.filter { it.archivedAt == null } }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .padding(contentPadding),
     ) {
-        // Search bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Поиск списков…") },
-            singleLine = true,
+        // Top bar: workspace dropdown + actions
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = MaterialTheme.shapes.medium,
-        )
+                .padding(horizontal = 20.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            WorkspaceDropdownTrigger(
+                workspace = activeWs,
+                onClick = { showWorkspaceSheet = true },
+                modifier = Modifier.weight(1f),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                IconCircleButton(
+                    text = if (showSearch) "×" else "🔍",
+                    onClick = {
+                        showSearch = !showSearch
+                        if (!showSearch) viewModel.setSearchQuery("")
+                    },
+                )
+            }
+        }
 
-        // Templates entry banner — F3
+        if (showSearch) {
+            SearchBar(
+                value = query,
+                onValueChange = { viewModel.setSearchQuery(it) },
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
+            )
+        }
+
+        // Templates entry banner
         TemplatesBanner(
             onClick = onNavigateToTemplates,
             modifier = Modifier
@@ -109,144 +144,330 @@ internal fun TodoListsContent(
                 .padding(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            filterOptions.forEach { (type, label) ->
-                com.jetbrains.kmpapp.ui.components.CozyChip(
-                    label = label,
-                    selected = selectedFilter == type,
-                    onClick = { selectedFilter = if (selectedFilter == type) null else type },
+            FILTER_OPTIONS.forEach { option ->
+                CozyChip(
+                    label = option.label,
+                    selected = typeFilter == option.key,
+                    onClick = {
+                        viewModel.setTypeFilter(if (typeFilter == option.key) null else option.key)
+                    },
                 )
             }
         }
 
         Spacer(Modifier.height(4.dp))
 
-        AnimatedContent(filteredLists.isNotEmpty()) { hasLists ->
+        AnimatedContent(visibleLists.isNotEmpty()) { hasLists ->
             if (hasLists) {
-                GroupedLists(
-                    lists = filteredLists,
-                    groups = groups,
-                    isGuest = isGuest,
-                    navigateToLinkEmail = navigateToLinkEmail,
-                    onListClick = onListClick,
-                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (isGuest && navigateToLinkEmail != null) {
+                        item("guest") { GuestLinkEmailBanner(onLinkEmail = navigateToLinkEmail) }
+                    }
+                    val pinned = visibleLists.filter { it.pinnedAt != null }
+                    val regular = visibleLists.filter { it.pinnedAt == null }
+                    if (pinned.isNotEmpty()) {
+                        item("h_pin") { SectionLabel("📌 ЗАКРЕПЛЕНО · ${pinned.size}") }
+                        items(pinned.chunked(2), key = { it.joinToString("_") { l -> "pin_${l.id}" } }) { row ->
+                            ListsRow(row, onListClick, viewModel::togglePinned)
+                        }
+                    }
+                    if (regular.isNotEmpty()) {
+                        if (pinned.isNotEmpty()) {
+                            item("h_all") { SectionLabel("СПИСКИ · ${regular.size}") }
+                        }
+                        items(regular.chunked(2), key = { it.joinToString("_") { l -> l.id } }) { row ->
+                            ListsRow(row, onListClick, viewModel::togglePinned)
+                        }
+                    }
+                }
             } else {
                 EmptyTodoListsContent(
                     modifier = Modifier.fillMaxSize(),
                     onCreateList = onCreateList,
                     isGuest = isGuest,
                     navigateToLinkEmail = navigateToLinkEmail,
+                    workspaceName = activeWs?.title,
                 )
             }
         }
     }
-}
 
-@Composable
-private fun GroupedLists(
-    lists: List<TodoList>,
-    groups: List<Group>,
-    isGuest: Boolean,
-    navigateToLinkEmail: (() -> Unit)?,
-    onListClick: (String) -> Unit,
-) {
-    // Группируем списки по workspaceId. Personal-workspace всегда первым.
-    val byWorkspace = lists.groupBy { it.workspaceId }
-    val personal = groups.firstOrNull { it.type == "personal" }
-    val rest = groups.filter { it.type != "personal" }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 80.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (isGuest && navigateToLinkEmail != null) {
-            item(key = "guest_banner") {
-                GuestLinkEmailBanner(onLinkEmail = navigateToLinkEmail)
-            }
-        }
-
-        // Личное пространство сверху, если есть.
-        personal?.let { renderSection(it, byWorkspace[it.id].orEmpty(), onListClick) }
-        // Остальные группы.
-        rest.forEach { group ->
-            renderSection(group, byWorkspace[group.id].orEmpty(), onListClick)
-        }
-        // Списки без известного workspace (на случай рассинхронизации) — внизу.
-        val knownIds = (listOfNotNull(personal) + rest).map { it.id }.toSet()
-        val orphan = lists.filter { it.workspaceId !in knownIds }
-        if (orphan.isNotEmpty()) {
-            item(key = "orphan_header") { SectionHeader(title = "Прочее", subtitle = null) }
-            items(orphan.chunked(2), key = { row -> "orphan_" + row.joinToString { it.id } }) { row ->
-                ListsRow(row, onListClick)
-            }
-        }
-    }
-}
-
-private fun androidx.compose.foundation.lazy.LazyListScope.renderSection(
-    group: Group,
-    items: List<TodoList>,
-    onListClick: (String) -> Unit,
-) {
-    if (items.isEmpty()) return
-    val displayTitle = if (group.type == "personal") "Личные" else group.title
-    val subtitle = when (group.type) {
-        "personal" -> null
-        "family" -> "Семья · ${items.size}"
-        "work" -> "Работа · ${items.size}"
-        "mentoring" -> "Наставничество · ${items.size}"
-        else -> "${items.size}"
-    }
-    item(key = "h_${group.id}") { SectionHeader(displayTitle, subtitle) }
-    items(items.chunked(2), key = { row -> group.id + "_" + row.joinToString { it.id } }) { row ->
-        ListsRow(row, onListClick)
-    }
-}
-
-@Composable
-private fun SectionHeader(title: String, subtitle: String?) {
-    Column(modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)) {
-        Text(
-            text = title,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+    if (showWorkspaceSheet) {
+        WorkspaceSelectorSheet(
+            workspaces = workspaces,
+            activeId = activeWs?.id,
+            onSelect = { id ->
+                viewModel.selectWorkspace(id)
+                showWorkspaceSheet = false
+            },
+            onDismiss = { showWorkspaceSheet = false },
         )
-        subtitle?.let {
+    }
+}
+
+@Composable
+private fun WorkspaceDropdownTrigger(
+    workspace: Group?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shapes = LocalCozyShapes.current
+    Row(
+        modifier = modifier
+            .clip(shapes.chip)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 6.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(workspaceEmoji(workspace), fontSize = 18.sp)
+        Text(
+            workspace?.title ?: "Все списки",
+            fontSize = 17.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        Text("▾", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+private fun workspaceEmoji(workspace: Group?): String = when (workspace?.type) {
+    WorkspaceType.PERSONAL -> "🌿"
+    WorkspaceType.FAMILY -> "🏡"
+    WorkspaceType.WORK -> "💼"
+    WorkspaceType.MENTORING -> "🎓"
+    "hobby" -> "🎯"
+    "study" -> "📚"
+    else -> "👥"
+}
+
+@Composable
+private fun IconCircleButton(text: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(text, fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+    }
+}
+
+@Composable
+private fun SearchBar(value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .clip(shapes.chip)
+            .background(MaterialTheme.colorScheme.surface)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shapes.chip)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text("🔍", fontSize = 14.sp, color = extras.textTer)
+        Box(modifier = Modifier.weight(1f)) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) {
+                        Text("Поиск списков…", fontSize = 13.sp, color = extras.textTer)
+                    }
+                    inner()
+                },
+            )
+        }
+        if (value.isNotEmpty()) {
             Text(
-                text = it,
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                "×",
+                fontSize = 16.sp,
+                color = extras.textTer,
+                modifier = Modifier.clickable { onValueChange("") },
             )
         }
     }
 }
 
 @Composable
-private fun ListsRow(row: List<TodoList>, onListClick: (String) -> Unit) {
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.2.sp,
+        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+    )
+}
+
+@Composable
+private fun ListsRow(
+    row: List<TodoList>,
+    onListClick: (String) -> Unit,
+    onTogglePin: (String) -> Unit,
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         row.forEach { list ->
-            val listColor = list.color?.toComposeColor()
+            val listColor: Color = list.color?.toComposeColor()
                 ?: listColorForType(list.type, isSystemInDarkTheme())
             Box(modifier = Modifier.weight(1f)) {
-                SweetHomeListCard(
-                    title = list.title,
-                    onClick = { onListClick(list.id) },
-                    icon = list.icon ?: listEmojiForType(list.type),
+                ListCardWithPin(
+                    list = list,
                     listColor = listColor,
-                    doneCount = list.doneCount,
-                    totalCount = list.totalCount,
+                    onClick = { onListClick(list.id) },
+                    onTogglePin = { onTogglePin(list.id) },
                 )
             }
         }
-        // Если в ряду одна карточка — добавляем фиктивный weight для выравнивания.
         if (row.size == 1) {
             Box(modifier = Modifier.weight(1f))
         }
     }
+}
+
+@Composable
+private fun ListCardWithPin(
+    list: TodoList,
+    listColor: Color,
+    onClick: () -> Unit,
+    onTogglePin: () -> Unit,
+) {
+    Box {
+        SweetHomeListCard(
+            title = list.title,
+            onClick = onClick,
+            icon = list.icon ?: listEmojiForType(list.type),
+            listColor = listColor,
+            doneCount = list.doneCount,
+            totalCount = list.totalCount,
+        )
+        val isPinned = list.pinnedAt != null
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(6.dp)
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isPinned) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.surface.copy(alpha = 0.85f)
+                )
+                .clickable(onClick = onTogglePin),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                if (isPinned) "📌" else "☆",
+                fontSize = if (isPinned) 13.sp else 16.sp,
+                color = if (isPinned) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun WorkspaceSelectorSheet(
+    workspaces: List<Group>,
+    activeId: String?,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val shapes = LocalCozyShapes.current
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = shapes.sheet,
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                "Ваши пространства",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp),
+            )
+            workspaces.forEach { ws ->
+                WorkspaceRow(
+                    workspace = ws,
+                    selected = ws.id == activeId,
+                    onClick = { onSelect(ws.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WorkspaceRow(
+    workspace: Group,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val shapes = LocalCozyShapes.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(shapes.chip)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Text(workspaceEmoji(workspace), fontSize = 22.sp)
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                workspace.title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                workspaceTypeLabel(workspace.type),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (selected) {
+            Text("✓", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+private fun workspaceTypeLabel(type: String): String = when (type) {
+    WorkspaceType.PERSONAL -> "Личное"
+    WorkspaceType.FAMILY -> "Семья"
+    WorkspaceType.WORK -> "Работа"
+    WorkspaceType.MENTORING -> "Наставничество"
+    "hobby" -> "Хобби"
+    "study" -> "Учёба"
+    WorkspaceType.GROUP -> "Группа"
+    else -> "Пространство"
 }
 
 @Composable
@@ -270,10 +491,7 @@ private fun TemplatesBanner(
             Box(
                 modifier = Modifier
                     .size(36.dp)
-                    .background(
-                        MaterialTheme.colorScheme.surface,
-                        CircleShape,
-                    ),
+                    .background(MaterialTheme.colorScheme.surface, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("📋", fontSize = 18.sp)
@@ -334,6 +552,7 @@ private fun EmptyTodoListsContent(
     onCreateList: () -> Unit,
     isGuest: Boolean = false,
     navigateToLinkEmail: (() -> Unit)? = null,
+    workspaceName: String? = null,
 ) {
     Column(
         modifier = modifier.padding(16.dp),
@@ -350,15 +569,19 @@ private fun EmptyTodoListsContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            EmptyHero(emoji = "📝", decor = listOf("✨", "🌿", "☁️", "🍃"))
+            EmptyHero(emoji = "🏠", decor = listOf("✨", "🌿", "☁️", "🍃"))
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "Нет списков",
+                text = if (workspaceName != null) "Здесь пока пусто" else "Нет списков",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
-                text = "Нажмите + чтобы создать первый список дел",
+                text = if (workspaceName != null) {
+                    "В пространстве «$workspaceName» нет списков. Создайте первый."
+                } else {
+                    "Нажмите + чтобы создать первый список дел"
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
