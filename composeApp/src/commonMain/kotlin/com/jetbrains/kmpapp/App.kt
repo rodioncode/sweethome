@@ -462,8 +462,8 @@ fun App() {
                     )
                 }
                 composable<OnboardingDestination> {
-                    com.jetbrains.kmpapp.screens.onboarding.OnboardingScreen(
-                        onComplete = {
+                    com.jetbrains.kmpapp.screens.onboarding.OnboardingFlow(
+                        onFinish = {
                             navController.navigate(ListDestination) {
                                 popUpTo(OnboardingDestination) { inclusive = true }
                             }
@@ -508,10 +508,28 @@ fun App() {
                 }
                 composable<KidHomeDestination> {
                     com.jetbrains.kmpapp.screens.kid.KidHomeScreen(
-                        state = com.jetbrains.kmpapp.screens.kid.KidHomeState(),
-                        onTasksTap = { navController.navigate(KidTaskDestination) },
-                        onShopTap = { navController.navigate(KidShopDestination) },
-                        onPetTap = { navController.navigate(KidPetDestination) },
+                        state = com.jetbrains.kmpapp.screens.kid.KidHomeState(
+                            stops = listOf(
+                                com.jetbrains.kmpapp.screens.kid.KidStop("1", "🪥", "Почистить зубы", 5, done = true),
+                                com.jetbrains.kmpapp.screens.kid.KidStop("2", "🥣", "Завтрак", 5, done = true),
+                                com.jetbrains.kmpapp.screens.kid.KidStop("3", "📚", "Сделать уроки", 10, current = true),
+                                com.jetbrains.kmpapp.screens.kid.KidStop("4", "🦔", "Покормить Колючку", 5),
+                            ),
+                        ),
+                        onIntent = { intent ->
+                            when (intent) {
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.OpenStop -> navController.navigate(KidTaskDestination)
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.NavTab -> when (intent.tab) {
+                                    com.jetbrains.kmpapp.screens.kid.KidTab.HOME -> {}
+                                    com.jetbrains.kmpapp.screens.kid.KidTab.PET  -> navController.navigate(KidPetDestination)
+                                    com.jetbrains.kmpapp.screens.kid.KidTab.SHOP -> navController.navigate(KidShopDestination)
+                                }
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.OpenShop -> navController.navigate(KidShopDestination)
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.OpenPet -> navController.navigate(KidPetDestination)
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.OpenLetters -> navController.navigate(KidLettersDestination)
+                                is com.jetbrains.kmpapp.screens.kid.KidHomeIntent.OpenStreak -> navController.navigate(KidStreakDestination)
+                            }
+                        },
                     )
                 }
                 composable<KidTaskDestination> {

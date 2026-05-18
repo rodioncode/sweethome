@@ -1,13 +1,17 @@
 package com.jetbrains.kmpapp.screens.chat
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -18,7 +22,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,7 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.chat.ChatMessage
+import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.CozyAvatar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -48,6 +54,7 @@ fun ChatScreen(
     val viewModel = koinViewModel<ChatViewModel>()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val currentUserId by viewModel.currentUserId.collectAsStateWithLifecycle()
+    val connection by viewModel.connection.collectAsStateWithLifecycle()
 
     LaunchedEffect(workspaceId) {
         viewModel.init(workspaceId)
@@ -63,139 +70,187 @@ fun ChatScreen(
     }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 1.dp,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ChatHeader(
+                title = chatTitle,
+                memberCount = memberCount,
+                isOnline = connection == ChatViewModel.Connection.Online,
+                navigateBack = navigateBack,
+            )
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                if (navigateBack != null) {
-                    Surface(
-                        onClick = navigateBack,
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
-                }
-
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("💬", fontSize = 18.sp)
-                }
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(chatTitle, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    if (memberCount > 0) {
-                        Text("$memberCount участника", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-
-                Surface(
-                    onClick = {},
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("⋮", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                items(messages) { msg ->
+                    val isMe = msg.senderId == currentUserId
+                    MessageBubble(msg = msg, isMe = isMe)
                 }
             }
-        }
 
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.weight(1f),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                horizontal = 16.dp,
-                vertical = 12.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            items(messages) { msg ->
-                val isMe = msg.senderId == currentUserId
-                MessageBubble(msg = msg, isMe = isMe)
-            }
-        }
-
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 4.dp,
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = LocalCozyShapes.current.pill,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    border = androidx.compose.foundation.BorderStroke(1.5.dp, MaterialTheme.colorScheme.outline),
-                ) {
-                    BasicTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        textStyle = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        decorationBox = { inner ->
-                            if (inputText.isEmpty()) {
-                                Text("Написать сообщение...", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            }
-                            inner()
-                        },
-                    )
-                }
-
-                val canSend = inputText.isNotBlank()
-                Surface(
-                    onClick = {
-                        if (canSend) {
-                            viewModel.sendMessage(inputText)
-                            inputText = ""
-                        }
-                    },
-                    modifier = Modifier.size(44.dp),
-                    shape = CircleShape,
-                    color = if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("↑", fontSize = 18.sp, color = Color.White)
+            ChatInputBar(
+                value = inputText,
+                onValueChange = { inputText = it },
+                onSend = {
+                    if (inputText.isNotBlank()) {
+                        viewModel.sendMessage(inputText)
+                        inputText = ""
                     }
-                }
-            }
+                },
+            )
         }
     }
+}
+
+@Composable
+private fun ChatHeader(
+    title: String,
+    memberCount: Int,
+    isOnline: Boolean,
+    navigateBack: (() -> Unit)?,
+) {
+    val extras = LocalCozyExtraColors.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        if (navigateBack != null) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .clickable(onClick = navigateBack),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("←", fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+            }
+        }
+
+        CozyAvatar(
+            letter = title.firstOrNull()?.uppercase() ?: "С",
+            color = MaterialTheme.colorScheme.primary,
+            size = 36.dp,
+        )
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                title,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+            val subtitleColor = if (isOnline) extras.success else MaterialTheme.colorScheme.onSurfaceVariant
+            val subtitle = when {
+                isOnline && memberCount > 0 -> "● $memberCount онлайн"
+                memberCount > 0 -> "$memberCount участника"
+                isOnline -> "● онлайн"
+                else -> ""
+            }
+            if (subtitle.isNotEmpty()) {
+                Text(subtitle, fontSize = 11.sp, color = subtitleColor)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("⋯", fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+        }
+    }
+}
+
+@Composable
+private fun ChatInputBar(
+    value: String,
+    onValueChange: (String) -> Unit,
+    onSend: () -> Unit,
+) {
+    val shapes = LocalCozyShapes.current
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable {},
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("+", fontSize = 18.sp, color = MaterialTheme.colorScheme.onBackground)
+        }
+
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(40.dp)
+                .clip(shapes.pill)
+                .background(MaterialTheme.colorScheme.background)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, shapes.pill)
+                .padding(horizontal = 14.dp),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            BasicTextField(
+                value = value,
+                onValueChange = onValueChange,
+                textStyle = TextStyle(fontSize = 13.sp, color = MaterialTheme.colorScheme.onBackground),
+                modifier = Modifier.fillMaxWidth(),
+                decorationBox = { inner ->
+                    if (value.isEmpty()) {
+                        Text(
+                            "Написать сообщение…",
+                            fontSize = 13.sp,
+                            color = LocalCozyExtraColors.current.textTer,
+                        )
+                    }
+                    inner()
+                },
+            )
+        }
+
+        val canSend = value.isNotBlank()
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(if (canSend) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
+                .clickable(enabled = canSend, onClick = onSend),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("↑", fontSize = 16.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
 @Composable
 private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
     val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
     val initial = msg.senderName.firstOrNull()?.uppercase() ?: "?"
-    val senderColor = MaterialTheme.colorScheme.tertiary
+    val senderColor = remember(msg.senderId) {
+        val palette = listOf(extras.lavender, extras.coral, extras.ochre, extras.primaryLight)
+        palette[(msg.senderId.hashCode() and 0x7FFFFFFF) % palette.size]
+    }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -203,14 +258,7 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
         verticalAlignment = Alignment.Bottom,
     ) {
         if (!isMe) {
-            Box(
-                modifier = Modifier
-                    .size(28.dp)
-                    .background(senderColor, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(initial, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            }
+            CozyAvatar(letter = initial, color = senderColor, size = 28.dp)
             Spacer(Modifier.size(8.dp))
         }
 
@@ -218,41 +266,36 @@ private fun MessageBubble(msg: ChatMessage, isMe: Boolean) {
             modifier = Modifier.widthIn(max = 280.dp),
             horizontalAlignment = if (isMe) Alignment.End else Alignment.Start,
         ) {
-            if (!isMe) {
-                Text(
-                    msg.senderName,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 3.dp),
-                )
-            }
-
-            Surface(
-                shape = if (isMe) shapes.chatBubbleMine else shapes.chatBubbleTheirs,
-                color = if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                border = if (!isMe) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline) else null,
-                shadowElevation = 1.dp,
+            Box(
+                modifier = Modifier
+                    .clip(if (isMe) shapes.chatBubbleMine else shapes.chatBubbleTheirs)
+                    .background(if (isMe) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             ) {
-                Text(
-                    msg.content,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    fontSize = 15.sp,
-                    color = if (isMe) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                    lineHeight = 21.sp,
-                )
+                Column {
+                    if (!isMe) {
+                        Text(
+                            msg.senderName,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = senderColor,
+                            modifier = Modifier.padding(bottom = 4.dp),
+                        )
+                    }
+                    Text(
+                        msg.content,
+                        fontSize = 14.sp,
+                        color = if (isMe) Color.White else MaterialTheme.colorScheme.onBackground,
+                        lineHeight = 19.sp,
+                    )
+                    Text(
+                        msg.createdAt,
+                        fontSize = 10.sp,
+                        color = if (isMe) Color.White.copy(alpha = 0.7f) else extras.textTer,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
-
-            Text(
-                msg.createdAt,
-                fontSize = 10.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.padding(
-                    top = 3.dp,
-                    start = if (isMe) 0.dp else 4.dp,
-                    end = if (isMe) 4.dp else 0.dp,
-                ),
-            )
         }
 
         if (isMe) {

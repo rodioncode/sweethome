@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.screens.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,9 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,9 +32,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,8 +46,11 @@ import com.jetbrains.kmpapp.data.calendar.CalendarEvent
 import com.jetbrains.kmpapp.data.calendar.EventSource
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
@@ -52,7 +60,14 @@ private val MONTHS_RU = listOf(
     "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
     "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
 )
+private val MONTHS_RU_GEN = listOf(
+    "января", "февраля", "марта", "апреля", "мая", "июня",
+    "июля", "августа", "сентября", "октября", "ноября", "декабря",
+)
 private val WEEKDAYS_RU = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+private val WEEKDAYS_RU_FULL = listOf(
+    "ПОНЕДЕЛЬНИК", "ВТОРНИК", "СРЕДА", "ЧЕТВЕРГ", "ПЯТНИЦА", "СУББОТА", "ВОСКРЕСЕНЬЕ",
+)
 
 @Composable
 fun CalendarContent(
@@ -65,17 +80,28 @@ fun CalendarContent(
     val selected by vm.selected.collectAsStateWithLifecycle()
     val eventsByDate by vm.eventsByDate.collectAsStateWithLifecycle()
     val filters by vm.filters.collectAsStateWithLifecycle()
+    val lists by vm.lists.collectAsStateWithLifecycle()
 
     var showFilters by remember { mutableStateOf(false) }
     var openEvent by remember { mutableStateOf<CalendarEvent?>(null) }
     var showCreateTask by remember { mutableStateOf(false) }
-    val lists by vm.lists.collectAsStateWithLifecycle()
+
+    val filtersActive = filters != CalendarFilters()
+    val activeFilterCount = remember(filters) {
+        var n = 0
+        if (filters.sources.size < EventSource.entries.size) n++
+        if (filters.priorities != null) n++
+        if (filters.listIds != null) n++
+        n
+    }
 
     Box(modifier = Modifier.fillMaxSize().padding(contentPadding)) {
         Column(modifier = Modifier.fillMaxSize()) {
             CalendarHeader(
                 cursor = cursor,
                 view = view,
+                filtersActive = filtersActive,
+                filterCount = activeFilterCount,
                 onPrev = {
                     val unit = if (view == CalendarView.MONTH) DateTimeUnit.MONTH else DateTimeUnit.WEEK
                     vm.setCursor(cursor.minus(1, unit))
@@ -84,10 +110,10 @@ fun CalendarContent(
                     val unit = if (view == CalendarView.MONTH) DateTimeUnit.MONTH else DateTimeUnit.WEEK
                     vm.setCursor(cursor.plus(1, unit))
                 },
-                onToday = vm::goToday,
+                onAdd = { showCreateTask = true },
                 onSetView = vm::setView,
                 onFilters = { showFilters = true },
-                filtersActive = filters != com.jetbrains.kmpapp.screens.calendar.CalendarFilters(),
+                onToday = vm::goToday,
             )
 
             when (view) {
@@ -107,18 +133,23 @@ fun CalendarContent(
                     onSelect = vm::setSelected,
                     onOpenEvent = { openEvent = it },
                 )
-                CalendarView.AGENDA -> AgendaView(
-                    cursor = cursor,
+                CalendarView.AGENDA -> DayView(
+                    selected = selected,
                     eventsByDate = eventsByDate,
                     onOpenEvent = { openEvent = it },
                 )
             }
         }
 
-        // FAB для создания новой задачи на выбранный день
-        androidx.compose.material3.FloatingActionButton(
+        FloatingActionButton(
             onClick = { showCreateTask = true },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp),
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(LocalCozySpacing.current.xl)
+                .size(56.dp),
+            shape = CircleShape,
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
         ) {
             Text("+", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         }
@@ -139,7 +170,7 @@ fun CalendarContent(
     if (showFilters) {
         CalendarFiltersSheet(
             filters = filters,
-            lists = vm.lists.collectAsStateWithLifecycle().value,
+            lists = lists,
             onToggleSource = vm::toggleSource,
             onTogglePriority = vm::togglePriority,
             onToggleList = vm::toggleList,
@@ -164,74 +195,164 @@ fun CalendarContent(
 private fun CalendarHeader(
     cursor: LocalDate,
     view: CalendarView,
+    filtersActive: Boolean,
+    filterCount: Int,
     onPrev: () -> Unit,
     onNext: () -> Unit,
-    onToday: () -> Unit,
+    onAdd: () -> Unit,
     onSetView: (CalendarView) -> Unit,
     onFilters: () -> Unit,
-    filtersActive: Boolean,
+    onToday: () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 1.dp,
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(top = spacing.sm, bottom = spacing.sm),
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                IconBtn("‹", onPrev)
-                Spacer(Modifier.width(6.dp))
+        // Title row
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.xxl),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SmallIconBtn("‹", onPrev)
+                    Spacer(Modifier.width(spacing.xs))
+                    Text(
+                        "${MONTHS_RU[cursor.monthNumber - 1]} ${cursor.year}",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .clickable(onClick = onToday)
+                            .padding(horizontal = spacing.xxs),
+                    )
+                    Spacer(Modifier.width(spacing.xxs))
+                    SmallIconBtn("›", onNext)
+                }
+                Spacer(Modifier.height(2.dp))
                 Text(
-                    "${MONTHS_RU[cursor.monthNumber - 1]} ${cursor.year}",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
+                    "Все списки · мои задачи",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = spacing.xs),
                 )
-                IconBtn("›", onNext)
-                Spacer(Modifier.width(6.dp))
-                Surface(onClick = onToday, shape = LocalCozyShapes.current.pill, color = MaterialTheme.colorScheme.surfaceVariant) {
-                    Text("Сегодня", modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                }
-                Spacer(Modifier.width(6.dp))
-                Surface(
-                    onClick = onFilters,
-                    shape = CircleShape,
-                    color = if (filtersActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(32.dp),
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("⚙", fontSize = 14.sp, color = if (filtersActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                    }
-                }
             }
-            Spacer(Modifier.height(8.dp))
-            Row {
-                listOf(
-                    CalendarView.MONTH to "Месяц",
-                    CalendarView.WEEK to "Неделя",
-                    CalendarView.AGENDA to "Список",
-                ).forEach { (v, label) ->
-                    val active = view == v
-                    Surface(
-                        onClick = { onSetView(v) },
-                        shape = LocalCozyShapes.current.pill,
-                        color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.padding(end = 6.dp),
-                    ) {
-                        Text(label, modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp), fontSize = 12.sp, fontWeight = FontWeight.Bold,
-                            color = if (active) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface)
-                    }
-                }
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .shadow(4.dp, CircleShape)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable(onClick = onAdd),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    "+",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(spacing.lg))
+
+        // View toggle + filter button
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.xxl),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ViewToggleSegment(view = view, onSetView = onSetView)
+            Spacer(Modifier.weight(1f))
+            FilterButton(active = filtersActive, count = filterCount, onClick = onFilters)
+        }
+    }
+}
+
+@Composable
+private fun SmallIconBtn(label: String, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            label,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+    }
+}
+
+@Composable
+private fun ViewToggleSegment(view: CalendarView, onSetView: (CalendarView) -> Unit) {
+    val shapes = LocalCozyShapes.current
+    Row(
+        modifier = Modifier
+            .clip(shapes.chip)
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .padding(3.dp),
+    ) {
+        listOf(
+            CalendarView.MONTH to "Месяц",
+            CalendarView.WEEK to "Неделя",
+            CalendarView.AGENDA to "День",
+        ).forEach { (v, label) ->
+            val sel = view == v
+            val segShape = RoundedCornerShape(11.dp)
+            Box(
+                modifier = Modifier
+                    .then(if (sel) Modifier.shadow(2.dp, segShape, clip = false) else Modifier)
+                    .clip(segShape)
+                    .background(if (sel) MaterialTheme.colorScheme.surface else Color.Transparent)
+                    .clickable { onSetView(v) }
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+            ) {
+                Text(
+                    label,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (sel) MaterialTheme.colorScheme.onBackground
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
 }
 
 @Composable
-private fun IconBtn(label: String, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(32.dp)) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-        }
+private fun FilterButton(active: Boolean, count: Int, onClick: () -> Unit) {
+    val shapes = LocalCozyShapes.current
+    val bg = if (active) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface
+    val fg = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+    Row(
+        modifier = Modifier
+            .height(32.dp)
+            .clip(shapes.chip)
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "⚙ Фильтры" + if (count > 0) " · $count" else "",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = fg,
+        )
     }
 }
 
@@ -252,7 +373,6 @@ private fun MonthPager(
     val baseMonth = remember { LocalDate(cursor.year, cursor.month, 1) }
     val pagerState = rememberPagerState(initialPage = PAGER_INITIAL) { Int.MAX_VALUE }
 
-    // External cursor changes (кнопки ‹›/Сегодня) — анимируем pager к нужному месяцу.
     LaunchedEffect(cursor) {
         val targetPage = PAGER_INITIAL + monthsBetween(baseMonth, cursor)
         if (pagerState.currentPage != targetPage && !pagerState.isScrollInProgress) {
@@ -260,7 +380,6 @@ private fun MonthPager(
         }
     }
 
-    // Свайп пользователя — обновляем cursor.
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.settledPage }
             .distinctUntilChanged()
@@ -320,7 +439,7 @@ private fun WeekPager(
     HorizontalPager(state = pagerState) { page ->
         val weekStart = baseWeek.plus((page - PAGER_INITIAL) * 7L, DateTimeUnit.DAY)
         WeekView(
-            cursor = weekStart,
+            weekStart = weekStart,
             selected = selected,
             eventsByDate = eventsByDate,
             onSelect = onSelect,
@@ -337,233 +456,472 @@ private fun MonthView(
     onSelect: (LocalDate) -> Unit,
     onOpenEvent: (CalendarEvent) -> Unit,
 ) {
+    val spacing = LocalCozySpacing.current
     val firstOfMonth = LocalDate(cursor.year, cursor.month, 1)
-    val firstOffset = ((firstOfMonth.dayOfWeek.ordinal) % 7)  // Mon=0
+    val firstOffset = ((firstOfMonth.dayOfWeek.ordinal) % 7)
     val gridStart = firstOfMonth.minus(firstOffset, DateTimeUnit.DAY)
+    val extras = LocalCozyExtraColors.current
+    val today = remember { com.jetbrains.kmpapp.screens.calendar.todayDate() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
+        // Weekday headers
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.lg, vertical = spacing.xxs),
+        ) {
             WEEKDAYS_RU.forEach { d ->
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    Text(d, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        d,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = extras.textTer,
+                    )
                 }
             }
         }
-        // 6 weeks grid
-        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).weight(1f, fill = false)) {
+
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.lg)) {
             for (w in 0 until 6) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     for (d in 0 until 7) {
                         val date = gridStart.plus(w * 7 + d, DateTimeUnit.DAY)
                         val isCurrentMonth = date.month == cursor.month
+                        val isToday = date == today
                         val isSelected = date == selected
                         val dayEvents = eventsByDate[date].orEmpty()
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(64.dp)
-                                .padding(2.dp)
-                                .background(
-                                    if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.surface,
-                                    LocalCozyShapes.current.chip,
-                                )
-                                .clickable { onSelect(date) }
-                                .padding(4.dp),
-                        ) {
-                            Column {
-                                Text(
-                                    date.dayOfMonth.toString(),
-                                    fontSize = 12.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                    color = when {
-                                        isSelected -> MaterialTheme.colorScheme.primary
-                                        !isCurrentMonth -> MaterialTheme.colorScheme.outline
-                                        else -> MaterialTheme.colorScheme.onSurface
-                                    },
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                Row {
-                                    dayEvents.take(3).forEach { ev ->
-                                        Box(
-                                            modifier = Modifier
-                                                .size(5.dp)
-                                                .padding(end = 2.dp)
-                                                .background(eventColor(ev), CircleShape),
-                                        )
-                                    }
-                                    if (dayEvents.size > 3) {
-                                        Text("+", fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    }
-                                }
-                            }
-                        }
+                        DayCell(
+                            date = date,
+                            isCurrentMonth = isCurrentMonth,
+                            isToday = isToday,
+                            isSelected = isSelected,
+                            events = dayEvents,
+                            onClick = { onSelect(date) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
                 }
             }
         }
 
-        // Events for selected day
+        Spacer(Modifier.height(spacing.lg))
+
+        // Section header for selected day
         val dayEvents = eventsByDate[selected].orEmpty()
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "${selected.dayOfMonth} ${MONTHS_RU[selected.monthNumber - 1].lowercase()} · ${dayEvents.size} ${pluralEvents(dayEvents.size)}",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        SectionLabel(
+            text = "${WEEKDAYS_RU_FULL[(selected.dayOfWeek.ordinal) % 7]}, " +
+                "${selected.dayOfMonth} ${MONTHS_RU_GEN[selected.monthNumber - 1].uppercase()} · ${dayEvents.size}",
+            modifier = Modifier.padding(horizontal = spacing.xxl),
         )
-        LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            items(dayEvents, key = { it.id }) { ev ->
-                EventChip(ev, onClick = { onOpenEvent(ev) })
+        Spacer(Modifier.height(spacing.xs))
+
+        if (dayEvents.isEmpty()) {
+            EmptyDay(modifier = Modifier.padding(horizontal = spacing.xxl, vertical = spacing.xxl))
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                items(dayEvents, key = { it.id }) { ev ->
+                    EventRow(ev, onClick = { onOpenEvent(ev) })
+                }
+                item { Spacer(Modifier.height(96.dp)) }
             }
-            item { Spacer(Modifier.height(80.dp)) }
+        }
+    }
+}
+
+@Composable
+private fun DayCell(
+    date: LocalDate,
+    isCurrentMonth: Boolean,
+    isToday: Boolean,
+    isSelected: Boolean,
+    events: List<CalendarEvent>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val extras = LocalCozyExtraColors.current
+    val bg = when {
+        isToday -> MaterialTheme.colorScheme.primary
+        isSelected -> MaterialTheme.colorScheme.primaryContainer
+        else -> Color.Transparent
+    }
+    val dayColor = when {
+        isToday -> MaterialTheme.colorScheme.onPrimary
+        isSelected -> MaterialTheme.colorScheme.primary
+        !isCurrentMonth -> MaterialTheme.colorScheme.outline
+        else -> MaterialTheme.colorScheme.onBackground
+    }
+    val dotColors = remember(events, isToday) {
+        val out = mutableListOf<Color>()
+        if (events.isNotEmpty()) out += if (isToday) Color.White else Color.Unspecified
+        if (events.size > 1) out += if (isToday) Color.White else Color.Unspecified
+        out
+    }
+
+    Box(
+        modifier = modifier
+            .padding(1.dp)
+            .height(48.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(4.dp),
+        contentAlignment = Alignment.TopCenter,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                date.dayOfMonth.toString(),
+                fontSize = 13.sp,
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = dayColor,
+            )
+            Spacer(Modifier.weight(1f))
+            // Up to 2 dots
+            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                if (events.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .background(
+                                if (isToday) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.primary,
+                                CircleShape,
+                            ),
+                    )
+                }
+                if (events.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .size(4.dp)
+                            .background(
+                                if (isToday) MaterialTheme.colorScheme.onPrimary
+                                else extras.lavender,
+                                CircleShape,
+                            ),
+                    )
+                }
+            }
+            Spacer(Modifier.height(2.dp))
         }
     }
 }
 
 @Composable
 private fun WeekView(
-    cursor: LocalDate,
+    weekStart: LocalDate,
     selected: LocalDate,
     eventsByDate: Map<LocalDate, List<CalendarEvent>>,
     onSelect: (LocalDate) -> Unit,
     onOpenEvent: (CalendarEvent) -> Unit,
 ) {
-    // Неделя, начиная с понедельника, содержащая cursor
-    val dayOfWeekIdx = (cursor.dayOfWeek.ordinal) % 7  // Mon=0..Sun=6
-    val weekStart = cursor.minus(dayOfWeekIdx, DateTimeUnit.DAY)
+    val spacing = LocalCozySpacing.current
     val days = (0 until 7).map { weekStart.plus(it, DateTimeUnit.DAY) }
+    val today = remember { com.jetbrains.kmpapp.screens.calendar.todayDate() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.lg, vertical = spacing.lg),
+            horizontalArrangement = Arrangement.spacedBy(spacing.xxs),
+        ) {
             days.forEachIndexed { idx, day ->
-                val isSelected = day == selected
-                val dayEvents = eventsByDate[day].orEmpty()
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 2.dp)
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surface,
-                            LocalCozyShapes.current.chip,
-                        )
-                        .clickable { onSelect(day) }
-                        .padding(vertical = 8.dp, horizontal = 4.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            WEEKDAYS_RU[idx],
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            day.dayOfMonth.toString(),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Row {
-                            dayEvents.take(4).forEach { ev ->
-                                Box(
-                                    modifier = Modifier
-                                        .size(5.dp)
-                                        .padding(end = 2.dp)
-                                        .background(eventColor(ev), CircleShape),
-                                )
-                            }
-                        }
-                    }
-                }
+                WeekDayCard(
+                    weekdayLabel = WEEKDAYS_RU[idx],
+                    day = day,
+                    events = eventsByDate[day].orEmpty(),
+                    isToday = day == today,
+                    isSelected = day == selected,
+                    onClick = { onSelect(day) },
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
 
         val dayEvents = eventsByDate[selected].orEmpty()
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "${selected.dayOfMonth} ${MONTHS_RU[selected.monthNumber - 1].lowercase()} · ${dayEvents.size} ${pluralEvents(dayEvents.size)}",
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+        SectionLabel(
+            text = "НЕДЕЛЯ · ${days.sumOf { (eventsByDate[it]?.size ?: 0) }} СОБЫТИЙ",
+            modifier = Modifier.padding(horizontal = spacing.xxl),
         )
+        Spacer(Modifier.height(spacing.xs))
+
         if (dayEvents.isEmpty()) {
-            Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
-                Text("Нет событий. Нажмите +, чтобы назначить.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            EmptyDay(modifier = Modifier.padding(horizontal = spacing.xxl, vertical = spacing.xxl))
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(dayEvents, key = { it.id }) { ev -> EventChip(ev, onClick = { onOpenEvent(ev) }) }
-                item { Spacer(Modifier.height(80.dp)) }
+                items(dayEvents, key = { it.id }) { ev ->
+                    EventRow(ev, onClick = { onOpenEvent(ev) })
+                }
+                item { Spacer(Modifier.height(96.dp)) }
             }
         }
     }
 }
 
 @Composable
-private fun AgendaView(
-    cursor: LocalDate,
+private fun WeekDayCard(
+    weekdayLabel: String,
+    day: LocalDate,
+    events: List<CalendarEvent>,
+    isToday: Boolean,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
+    val bg = when {
+        isToday -> MaterialTheme.colorScheme.primary
+        isSelected -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val fg = when {
+        isToday -> MaterialTheme.colorScheme.onPrimary
+        isSelected -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.onBackground
+    }
+    Box(
+        modifier = modifier
+            .shadow(if (isToday) 6.dp else 2.dp, shapes.chip, clip = false)
+            .clip(shapes.chip)
+            .background(bg)
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp, horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                weekdayLabel,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = if (isToday) fg.copy(alpha = 0.7f) else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                day.dayOfMonth.toString(),
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = fg,
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.height(5.dp),
+            ) {
+                if (events.isNotEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .size(5.dp)
+                            .background(
+                                if (isToday) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.primary,
+                                CircleShape,
+                            ),
+                    )
+                }
+                if (events.size > 1) {
+                    Box(
+                        modifier = Modifier
+                            .size(5.dp)
+                            .background(
+                                if (isToday) MaterialTheme.colorScheme.onPrimary
+                                else extras.lavender,
+                                CircleShape,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayView(
+    selected: LocalDate,
     eventsByDate: Map<LocalDate, List<CalendarEvent>>,
     onOpenEvent: (CalendarEvent) -> Unit,
 ) {
-    val days = (0 until 30).map { cursor.plus(it, DateTimeUnit.DAY) }
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
-        days.forEach { day ->
-            val evs = eventsByDate[day].orEmpty()
-            if (evs.isNotEmpty()) {
-                item(key = "h_$day") {
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
+    val extras = LocalCozyExtraColors.current
+    val dayEvents = eventsByDate[selected].orEmpty()
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Hero gradient card
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = spacing.xxl, vertical = spacing.lg)
+                .clip(shapes.card)
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            extras.surfaceSoft,
+                        ),
+                    ),
+                )
+                .padding(vertical = spacing.lg, horizontal = spacing.lg),
+            contentAlignment = Alignment.Center,
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    WEEKDAYS_RU_FULL[(selected.dayOfWeek.ordinal) % 7],
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    selected.dayOfMonth.toString(),
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "${MONTHS_RU_GEN[selected.monthNumber - 1]} ${selected.year}",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(spacing.sm))
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                ) {
                     Text(
-                        "${day.dayOfMonth} ${MONTHS_RU[day.monthNumber - 1].lowercase()} · ${WEEKDAYS_RU[(day.dayOfWeek.ordinal) % 7]}",
-                        fontSize = 12.sp,
+                        "${dayEvents.size} ${pluralEvents(dayEvents.size)}",
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = MaterialTheme.colorScheme.primary,
                     )
-                }
-                items(evs, key = { it.id }) { ev ->
-                    EventChip(ev, onClick = { onOpenEvent(ev) })
                 }
             }
         }
-        item { Spacer(Modifier.height(80.dp)) }
+
+        SectionLabel(
+            text = "СОБЫТИЯ ДНЯ · ${dayEvents.size}",
+            modifier = Modifier.padding(horizontal = spacing.xxl),
+        )
+        Spacer(Modifier.height(spacing.xs))
+
+        if (dayEvents.isEmpty()) {
+            EmptyDay(modifier = Modifier.padding(horizontal = spacing.xxl, vertical = spacing.xxl))
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(dayEvents, key = { it.id }) { ev ->
+                    EventRow(ev, onClick = { onOpenEvent(ev) })
+                }
+                item { Spacer(Modifier.height(96.dp)) }
+            }
+        }
     }
 }
 
 @Composable
-private fun EventChip(ev: CalendarEvent, onClick: () -> Unit) {
-    val color = eventColor(ev)
-    Surface(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = LocalCozyShapes.current.chip,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+private fun EventRow(ev: CalendarEvent, onClick: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+    val accent = eventAccent(ev)
+    val accentSoft = eventAccentSoft(ev)
+    val timeLabel = ev.time?.let {
+        "${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}"
+    } ?: "—"
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.xxl, vertical = spacing.xxs),
+        verticalAlignment = Alignment.Top,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Box(
+            modifier = Modifier.width(44.dp).padding(top = 8.dp),
+            contentAlignment = Alignment.TopStart,
         ) {
-            Box(modifier = Modifier.size(8.dp).background(color, CircleShape))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    ev.title,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
+            Text(
+                timeLabel,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+        }
+        CozyCard(
+            modifier = Modifier.weight(1f),
+            onClick = onClick,
+            contentPadding = 0.dp,
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                // Accent border-left
+                Box(
+                    modifier = Modifier
+                        .width(3.dp)
+                        .height(56.dp)
+                        .background(accent),
                 )
-                Text(
-                    sourceLabel(ev.source) + (ev.time?.let { " · ${it.hour.toString().padStart(2, '0')}:${it.minute.toString().padStart(2, '0')}" } ?: ""),
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                ) {
+                    Text(
+                        ev.title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(accentSoft)
+                            .padding(horizontal = 8.dp, vertical = 2.dp),
+                    ) {
+                        Text(
+                            sourceLabel(ev.source),
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = accent,
+                        )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier = modifier,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun EmptyDay(modifier: Modifier = Modifier) {
+    val extras = LocalCozyExtraColors.current
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            "Нет событий",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Нажмите +, чтобы назначить.",
+            fontSize = 12.sp,
+            color = extras.textTer,
+        )
     }
 }
 
@@ -578,11 +936,35 @@ private fun sourceLabel(s: EventSource): String = when (s) {
     EventSource.CHORE -> "Дело"
 }
 
-@androidx.compose.runtime.Composable
-private fun eventColor(ev: CalendarEvent): Color = when (ev.priority) {
-    "high" -> MaterialTheme.colorScheme.error
-    "medium" -> LocalCozyExtraColors.current.coral
-    "low" -> MaterialTheme.colorScheme.tertiary
-    else -> MaterialTheme.colorScheme.primary
+@Composable
+private fun eventAccent(ev: CalendarEvent): Color {
+    val extras = LocalCozyExtraColors.current
+    return when (ev.priority) {
+        "high" -> MaterialTheme.colorScheme.error
+        "medium" -> extras.coral
+        "low" -> extras.success
+        else -> when (ev.source) {
+            EventSource.CHORE -> extras.lavender
+            else -> MaterialTheme.colorScheme.primary
+        }
+    }
 }
 
+@Composable
+private fun eventAccentSoft(ev: CalendarEvent): Color {
+    val extras = LocalCozyExtraColors.current
+    return when (ev.priority) {
+        "high" -> extras.coralSoft
+        "medium" -> extras.coralSoft
+        "low" -> extras.ochreSoft
+        else -> when (ev.source) {
+            EventSource.CHORE -> extras.lavenderSoft
+            else -> MaterialTheme.colorScheme.primaryContainer
+        }
+    }
+}
+
+internal fun todayDate(): LocalDate {
+    val tz = kotlinx.datetime.TimeZone.currentSystemDefault()
+    return kotlinx.datetime.Clock.System.now().toLocalDateTime(tz).date
+}

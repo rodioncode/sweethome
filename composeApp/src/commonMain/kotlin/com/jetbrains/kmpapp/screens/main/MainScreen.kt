@@ -75,7 +75,6 @@ import com.jetbrains.kmpapp.screens.groups.GroupsViewModel
 import com.jetbrains.kmpapp.screens.dashboard.DashboardContent
 import com.jetbrains.kmpapp.screens.dashboard.DashboardIntent
 import com.jetbrains.kmpapp.screens.dashboard.DashboardViewModel
-import com.jetbrains.kmpapp.screens.home.HomeContent
 import com.jetbrains.kmpapp.screens.todo.TodoListDetailScreen
 import com.jetbrains.kmpapp.screens.todo.TodoListsContent
 import com.jetbrains.kmpapp.screens.todo.TodoListsViewModel
@@ -84,14 +83,14 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
-enum class MainTab { HOME, LISTS, FAMILY, CALENDAR, PROFILE }
+enum class MainTab { HOME, LISTS, FAMILY, CALENDAR, GROUPS }
 
 private fun CozyTab.toMainTab(): MainTab = when (this) {
     CozyTab.HOME     -> MainTab.HOME
     CozyTab.LISTS    -> MainTab.LISTS
     CozyTab.FAMILY   -> MainTab.FAMILY
     CozyTab.CALENDAR -> MainTab.CALENDAR
-    CozyTab.PROFILE  -> MainTab.PROFILE
+    CozyTab.GROUPS   -> MainTab.GROUPS
 }
 
 private fun MainTab.toCozyTab(): CozyTab = when (this) {
@@ -99,7 +98,7 @@ private fun MainTab.toCozyTab(): CozyTab = when (this) {
     MainTab.LISTS    -> CozyTab.LISTS
     MainTab.FAMILY   -> CozyTab.FAMILY
     MainTab.CALENDAR -> CozyTab.CALENDAR
-    MainTab.PROFILE  -> CozyTab.PROFILE
+    MainTab.GROUPS   -> CozyTab.GROUPS
 }
 
 @Serializable private object ListsRoot
@@ -272,6 +271,7 @@ fun MainScreen(
                             is DashboardIntent.Add -> navigateToCreateList(null)
                             is DashboardIntent.OpenPet -> {}
                             is DashboardIntent.NavTab -> {}
+                            is DashboardIntent.OpenProfile -> navigateToProfile()
                             else -> dashVm.onIntent(intent)
                         }
                     },
@@ -310,12 +310,21 @@ fun MainScreen(
                     selectedTab = MainTab.LISTS
                 },
             )
-            MainTab.PROFILE -> {
-                com.jetbrains.kmpapp.screens.profile.ProfileContent(
-                    navigateToLinkEmail = navigateToLinkEmail,
-                    navigateToTemplates = navigateToTemplates,
-                )
-            }
+            MainTab.GROUPS -> GroupsTabNavHost(
+                navController = groupsNavController,
+                paddingValues = paddingValues,
+                groupSpaces = groupSpaces,
+                isGuest = isGuest,
+                navigateToLinkEmail = navigateToLinkEmail,
+                navigateToJoinByCode = navigateToJoinByCode,
+                onCreateGroup = { showCreateGroupDialog = true },
+                navigateToListDetail = { listId ->
+                    pendingListsRoute = ListsDetail(listId)
+                    selectedTab = MainTab.LISTS
+                },
+                navigateToChat = navigateToChat,
+                navigateToCreateList = navigateToCreateList,
+            )
         }
     }
 

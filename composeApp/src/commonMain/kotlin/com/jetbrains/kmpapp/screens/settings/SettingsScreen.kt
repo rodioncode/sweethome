@@ -1,9 +1,11 @@
 package com.jetbrains.kmpapp.screens.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,49 +13,35 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
-import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
-import com.jetbrains.kmpapp.ui.LocalCozyShapes
-import com.jetbrains.kmpapp.ui.LocalCozySpacing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.screens.profile.ProfileViewModel
+import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyChip
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
+import com.jetbrains.kmpapp.ui.components.MetaRow
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -65,132 +53,156 @@ fun SettingsScreen(
     val prefs by notifVm.prefs.collectAsStateWithLifecycle()
     val notifyPush = prefs.firstOrNull { it.channel == "push" }?.enabled ?: true
     val notifyEmail = prefs.firstOrNull { it.channel == "email" }?.enabled ?: true
+    val notifyTelegram = prefs.firstOrNull { it.channel == "telegram" }?.enabled ?: false
+
     var darkTheme by remember { mutableStateOf(false) }
     var showWorkHoursSheet by remember { mutableStateOf(false) }
-    // Work hours state — defaults to Mon-Fri 09:00-18:00. Persisted by repository in real impl.
     var workDays by remember { mutableStateOf(setOf("Пн", "Вт", "Ср", "Чт", "Пт")) }
     var workStart by remember { mutableStateOf("09:00") }
     var workEnd by remember { mutableStateOf("18:00") }
 
-    Scaffold { paddingValues ->
-        Column(
+    val spacing = LocalCozySpacing.current
+
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
+                .background(MaterialTheme.colorScheme.background)
+                .padding(paddingValues),
+            contentPadding = PaddingValues(
+                start = spacing.xxl,
+                end = spacing.xxl,
+                top = 0.dp,
+                bottom = 80.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(spacing.xl),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 8.dp),
-            ) {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад")
-                }
-                Text("Настройки", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            }
-            // Notifications section
-            SettingsSection(title = "Уведомления") {
-                SettingsToggleRow(
-                    emoji = "🔔",
-                    emojiBgColor = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                    title = "Push-уведомления",
-                    subtitle = "Напоминания и активность",
-                    checked = notifyPush,
-                    onCheckedChange = { notifVm.toggle("push", it) },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-                SettingsToggleRow(
-                    emoji = "✉️",
-                    emojiBgColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                    title = "Email-уведомления",
-                    subtitle = "Сводки и важные события",
-                    checked = notifyEmail,
-                    onCheckedChange = { notifVm.toggle("email", it) },
-                )
+            item {
+                CozyTopBar(title = "Настройки", onBack = onNavigateBack)
             }
 
-            // Appearance section
-            SettingsSection(title = "Внешний вид") {
-                SettingsToggleRow(
-                    emoji = "🌙",
-                    emojiBgColor = LocalCozyExtraColors.current.lavender.copy(alpha = 0.15f),
-                    title = "Тёмная тема",
-                    subtitle = if (darkTheme) "Сейчас: Тёмная" else "Сейчас: Светлая",
-                    checked = darkTheme,
-                    onCheckedChange = { darkTheme = it },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-                SettingsNavRow(
-                    emoji = "🌐",
-                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    title = "Язык",
-                    value = "Русский",
-                    onClick = { },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-                SettingsNavRow(
-                    emoji = "💼",
-                    emojiBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                    title = "Рабочие часы",
-                    value = workHoursSubtitle(workDays, workStart, workEnd),
-                    onClick = { showWorkHoursSheet = true },
-                )
-            }
-
-            // Account section
-            SettingsSection(title = "Аккаунт") {
-                SettingsNavRow(
-                    emoji = "✏️",
-                    emojiBgColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    title = "Редактировать профиль",
-                    onClick = { },
-                )
-                HorizontalDivider(modifier = Modifier.padding(start = 64.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { profileViewModel.logout() }
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Surface(
-                        modifier = Modifier.size(36.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.15f),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ExitToApp,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                    }
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        text = "Выйти из аккаунта",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.error,
+            item {
+                SettingsSection(title = "ВНЕШНИЙ ВИД") {
+                    MetaRow(
+                        icon = "🎨",
+                        title = "Тёмная тема",
+                        value = if (darkTheme) "Тёмная" else "Светлая",
+                        valueAdornment = {
+                            CozySwitch(checked = darkTheme, onCheckedChange = { darkTheme = it })
+                        },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "🌐",
+                        title = "Язык",
+                        value = "Русский",
+                        onClick = { },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "⏱",
+                        title = "Рабочие часы",
+                        value = workHoursSubtitle(workDays, workStart, workEnd),
+                        onClick = { showWorkHoursSheet = true },
                     )
                 }
             }
 
-            // Footer
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "SweetHome v1.0.0 · © 2025",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            item {
+                SettingsSection(title = "УВЕДОМЛЕНИЯ") {
+                    MetaRow(
+                        icon = "🔔",
+                        title = "Push-уведомления",
+                        valueAdornment = {
+                            CozySwitch(
+                                checked = notifyPush,
+                                onCheckedChange = { notifVm.toggle("push", it) },
+                            )
+                        },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "📧",
+                        title = "Email-уведомления",
+                        valueAdornment = {
+                            CozySwitch(
+                                checked = notifyEmail,
+                                onCheckedChange = { notifVm.toggle("email", it) },
+                            )
+                        },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "💬",
+                        title = "Telegram-уведомления",
+                        valueAdornment = {
+                            CozySwitch(
+                                checked = notifyTelegram,
+                                onCheckedChange = { notifVm.toggle("telegram", it) },
+                            )
+                        },
+                    )
+                }
             }
 
-            Spacer(Modifier.height(16.dp))
+            item {
+                SettingsSection(title = "ПРИВАТНОСТЬ") {
+                    MetaRow(
+                        icon = "🔒",
+                        title = "Конфиденциальность",
+                        onClick = { },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "📊",
+                        title = "Аналитика",
+                        value = "Включена",
+                        onClick = { },
+                    )
+                }
+            }
+
+            item {
+                SettingsSection(title = "АККАУНТ") {
+                    MetaRow(
+                        icon = "✏️",
+                        title = "Редактировать профиль",
+                        onClick = { },
+                    )
+                    Divider()
+                    MetaRow(
+                        icon = "🚪",
+                        title = "Выйти из аккаунта",
+                        danger = true,
+                        onClick = { profileViewModel.logout() },
+                    )
+                }
+            }
+
+            item {
+                SettingsSection(title = "О ПРИЛОЖЕНИИ") {
+                    MetaRow(icon = "ℹ️", title = "Версия", value = "1.0.0")
+                    Divider()
+                    MetaRow(icon = "📜", title = "Условия использования", onClick = { })
+                    Divider()
+                    MetaRow(icon = "🛡", title = "Политика конфиденциальности", onClick = { })
+                }
+            }
+
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = "SweetHome v1.0.0 · © 2026",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
     }
 
@@ -210,6 +222,53 @@ fun SettingsScreen(
     }
 }
 
+@Composable
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit,
+) {
+    Column {
+        Text(
+            text = title,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.2.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 4.dp, bottom = LocalCozySpacing.current.xs),
+        )
+        CozyCard(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = 0.dp,
+            radius = 18.dp,
+        ) {
+            Column { content() }
+        }
+    }
+}
+
+@Composable
+private fun Divider() {
+    HorizontalDivider(
+        color = MaterialTheme.colorScheme.outlineVariant,
+        modifier = Modifier.padding(horizontal = 16.dp),
+    )
+}
+
+@Composable
+private fun CozySwitch(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        colors = SwitchDefaults.colors(
+            checkedTrackColor = MaterialTheme.colorScheme.primary,
+            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+            uncheckedTrackColor = MaterialTheme.colorScheme.outline,
+            uncheckedThumbColor = MaterialTheme.colorScheme.onPrimary,
+            uncheckedBorderColor = MaterialTheme.colorScheme.outline,
+        ),
+    )
+}
+
 private fun workHoursSubtitle(days: Set<String>, start: String, end: String): String {
     val daysShort = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").filter { it in days }
     return if (daysShort.isEmpty()) "Не задано" else "${daysShort.joinToString(" ")} · $start–$end"
@@ -226,8 +285,9 @@ private fun WorkHoursSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var days by remember { mutableStateOf(initialDays) }
-    var start by remember { mutableStateOf(initialStart) }
-    var end by remember { mutableStateOf(initialEnd) }
+    val start by remember { mutableStateOf(initialStart) }
+    val end by remember { mutableStateOf(initialEnd) }
+    val spacing = LocalCozySpacing.current
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -237,10 +297,10 @@ private fun WorkHoursSheet(
     ) {
         Column(
             modifier = Modifier.padding(
-                horizontal = LocalCozySpacing.current.xxl,
-                vertical = LocalCozySpacing.current.lg,
+                horizontal = spacing.xxl,
+                vertical = spacing.lg,
             ),
-            verticalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.lg),
+            verticalArrangement = Arrangement.spacedBy(spacing.lg),
         ) {
             Text(
                 "Рабочие часы",
@@ -258,25 +318,23 @@ private fun WorkHoursSheet(
                 "ДНИ НЕДЕЛИ",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp,
+                letterSpacing = 1.2.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(
-                horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs),
+                horizontalArrangement = Arrangement.spacedBy(spacing.xs),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс").forEach { d ->
                     val selected = d in days
-                    FilterChip(
+                    CozyChip(
+                        label = d,
                         selected = selected,
+                        accent = MaterialTheme.colorScheme.primary,
+                        accentContainer = MaterialTheme.colorScheme.primaryContainer,
                         onClick = {
                             days = if (selected) days - d else days + d
                         },
-                        label = { Text(d, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -286,42 +344,26 @@ private fun WorkHoursSheet(
                 "ВРЕМЯ",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp,
+                letterSpacing = 1.2.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
-                TimeSelectorButton(
-                    label = "Начало",
-                    value = start,
-                    onClick = { /* TODO: open M3 TimePicker */ },
-                    modifier = Modifier.weight(1f),
-                )
-                TimeSelectorButton(
-                    label = "Конец",
-                    value = end,
-                    onClick = { /* TODO: open M3 TimePicker */ },
-                    modifier = Modifier.weight(1f),
-                )
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                TimeTile(label = "Начало", value = start, modifier = Modifier.weight(1f))
+                TimeTile(label = "Конец", value = end, modifier = Modifier.weight(1f))
             }
 
-            // Preview
-            Surface(
+            CozyCard(
                 modifier = Modifier.fillMaxWidth(),
-                shape = LocalCozyShapes.current.card,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                background = MaterialTheme.colorScheme.surfaceVariant,
+                radius = 18.dp,
+                contentPadding = spacing.lg,
             ) {
                 Row(
-                    modifier = Modifier.padding(LocalCozySpacing.current.lg),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.sm),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
                 ) {
-                    Icon(
-                        Icons.Outlined.Schedule,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Column {
+                    Text("⏰", fontSize = 20.sp)
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             "Предпросмотр",
                             fontSize = 14.sp,
@@ -337,47 +379,45 @@ private fun WorkHoursSheet(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(LocalCozySpacing.current.xs)) {
-                OutlinedButton(
+            Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                SheetButton(
+                    label = "Отмена",
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = LocalCozyShapes.current.button,
-                ) { Text("Отмена") }
-                Button(
+                    primary = false,
+                    modifier = Modifier.weight(1f),
+                )
+                SheetButton(
+                    label = "Сохранить",
                     onClick = { onSave(days, start, end) },
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    shape = LocalCozyShapes.current.button,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    ),
-                ) { Text("Сохранить") }
+                    primary = true,
+                    modifier = Modifier.weight(1f),
+                )
             }
 
-            Spacer(Modifier.height(LocalCozySpacing.current.lg))
+            Spacer(Modifier.height(spacing.lg))
         }
     }
 }
 
 @Composable
-private fun TimeSelectorButton(
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedButton(
-        onClick = onClick,
-        modifier = modifier.height(56.dp),
-        shape = LocalCozyShapes.current.button,
+private fun TimeTile(label: String, value: String, modifier: Modifier = Modifier) {
+    CozyCard(
+        modifier = modifier,
+        bordered = true,
+        background = MaterialTheme.colorScheme.surface,
+        radius = 14.dp,
+        contentPadding = 14.dp,
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
                 label,
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp,
+                letterSpacing = 1.2.sp,
             )
             Text(
                 value,
@@ -390,118 +430,22 @@ private fun TimeSelectorButton(
 }
 
 @Composable
-private fun SettingsSection(
-    title: String,
-    content: @Composable () -> Unit,
-) {
-    Column {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun SettingsToggleRow(
-    emoji: String,
-    emojiBgColor: Color,
-    title: String,
-    subtitle: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            modifier = Modifier.size(36.dp),
-            shape = CircleShape,
-            color = emojiBgColor,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = emoji, fontSize = 16.sp)
-            }
-        }
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-            )
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.width(8.dp))
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            colors = SwitchDefaults.colors(checkedTrackColor = MaterialTheme.colorScheme.primary),
-        )
-    }
-}
-
-@Composable
-private fun SettingsNavRow(
-    emoji: String,
-    emojiBgColor: Color,
-    title: String,
-    value: String? = null,
+private fun SheetButton(
+    label: String,
     onClick: () -> Unit,
+    primary: Boolean,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    val bg = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+    Box(
+        modifier = modifier
+            .height(48.dp)
+            .clip(LocalCozyShapes.current.button)
+            .background(bg)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
     ) {
-        Surface(
-            modifier = Modifier.size(36.dp),
-            shape = CircleShape,
-            color = emojiBgColor,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(text = emoji, fontSize = 16.sp)
-            }
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1f),
-        )
-        if (value != null) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(4.dp))
-        }
-        Text(
-            text = "›",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = fg)
     }
 }

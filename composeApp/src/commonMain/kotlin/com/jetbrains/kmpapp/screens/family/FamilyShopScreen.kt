@@ -1,9 +1,11 @@
 package com.jetbrains.kmpapp.screens.family
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,8 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
@@ -20,7 +23,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -31,8 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,6 +41,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jetbrains.kmpapp.data.gamification.Prize
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -59,7 +63,7 @@ fun FamilyShopScreen(
     var deleting by remember { mutableStateOf<Prize?>(null) }
 
     val myBalance = leaderboard.firstOrNull { it.userId == currentUserId }?.balance ?: 0
-    val currencyIcon = currency?.icon ?: "💎"
+    val currencyIcon = currency?.icon ?: "⭐"
 
     LaunchedEffect(Unit) {
         vm.events.collect { ev ->
@@ -69,67 +73,73 @@ fun FamilyShopScreen(
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
+    val spacing = LocalCozySpacing.current
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbar) },
+        containerColor = MaterialTheme.colorScheme.background,
+    ) { paddingValues ->
         Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            // Header with gradient
-            Box(modifier = Modifier.fillMaxWidth().background(Brush.linearGradient(listOf(LocalCozyExtraColors.current.coral, LocalCozyExtraColors.current.coralSoft)))) {
-                Text(
-                    "🛍",
-                    fontSize = 80.sp,
-                    modifier = Modifier.align(Alignment.TopEnd),
-                    color = Color.White.copy(alpha = 0.15f),
-                )
-                Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 14.dp, bottom = 20.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        modifier = Modifier.padding(bottom = 14.dp),
-                    ) {
-                        Surface(onClick = navigateBack, modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.White.copy(alpha = 0.2f)) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                            }
-                        }
-                        Text(
-                            "Магазин призов",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (isOwnerOrAdmin) {
-                            Surface(onClick = { creating = true }, modifier = Modifier.size(36.dp), shape = CircleShape, color = Color.White.copy(alpha = 0.25f)) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text("+", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                                }
-                            }
+            CozyTopBar(
+                title = "Магазин наград",
+                onBack = navigateBack,
+                action = if (isOwnerOrAdmin) {
+                    {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary)
+                                .clickable { creating = true },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                "+",
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
                         }
                     }
-                    Text("Твой баланс", fontSize = 12.sp, color = Color.White.copy(alpha = 0.85f))
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text("$myBalance", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
-                        Spacer(Modifier.size(6.dp))
-                        Text(currencyIcon, fontSize = 22.sp, modifier = Modifier.padding(bottom = 4.dp))
-                    }
-                }
-            }
+                } else null,
+            )
+
+            BalanceHero(balance = myBalance, currencyIcon = currencyIcon)
 
             if (prizes.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("🎁", fontSize = 40.sp)
-                        Spacer(Modifier.height(8.dp))
+                        Spacer(Modifier.height(spacing.xs))
                         Text(
-                            if (isOwnerOrAdmin) "Призов пока нет — добавьте первый" else "Призов пока нет",
+                            if (isOwnerOrAdmin) "Призов пока нет — добавьте первый"
+                            else "Призов пока нет",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize().padding(top = 12.dp)) {
+                Text(
+                    "ДОСТУПНЫЕ НАГРАДЫ",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 1.sp,
+                    modifier = Modifier.padding(horizontal = spacing.xxl, vertical = spacing.sm),
+                )
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    contentPadding = PaddingValues(
+                        start = spacing.lg, end = spacing.lg,
+                        top = spacing.xxs, bottom = spacing.huge,
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(spacing.sm),
+                    horizontalArrangement = Arrangement.spacedBy(spacing.sm),
+                    modifier = Modifier.fillMaxSize(),
+                ) {
                     items(prizes, key = { it.id }) { prize ->
-                        PrizeCard(
+                        PrizeTile(
                             prize = prize,
                             currencyIcon = currencyIcon,
                             myBalance = myBalance,
@@ -139,7 +149,6 @@ fun FamilyShopScreen(
                             onDelete = { deleting = prize },
                         )
                     }
-                    item { Spacer(Modifier.height(40.dp)) }
                 }
             }
         }
@@ -181,7 +190,49 @@ fun FamilyShopScreen(
 }
 
 @Composable
-private fun PrizeCard(
+private fun BalanceHero(balance: Int, currencyIcon: String) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+    CozyCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.lg, vertical = spacing.xs),
+        background = extras.coralSoft,
+        radius = 22.dp,
+        contentPadding = spacing.xl,
+        bordered = true,
+    ) {
+        Column {
+            Text(
+                "МОЙ БАЛАНС",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = extras.coral,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(spacing.xs))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "$balance",
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Spacer(Modifier.size(spacing.xs))
+                Text(currencyIcon, fontSize = 28.sp, modifier = Modifier.padding(bottom = spacing.xs))
+            }
+            Spacer(Modifier.height(spacing.xxs))
+            Text(
+                "Зарабатывай за выполнение задач",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PrizeTile(
     prize: Prize,
     currencyIcon: String,
     myBalance: Int,
@@ -190,57 +241,108 @@ private fun PrizeCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    val shapes = LocalCozyShapes.current
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
     val canAfford = myBalance >= prize.price
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        shape = shapes.button,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+    val tileBg = when (prize.id.hashCode().let { (it and 0x7FFFFFFF) % 4 }) {
+        0 -> extras.coralSoft
+        1 -> extras.ochreSoft
+        2 -> extras.lavenderSoft
+        else -> MaterialTheme.colorScheme.primaryContainer
+    }
+    CozyCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = if (canAfford) onRedeem else null,
+        bordered = true,
+        contentPadding = spacing.md,
+        radius = 18.dp,
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(LocalCozyShapes.current.chip)
+                    .background(tileBg),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("🎁", fontSize = 26.sp)
+            }
+            Spacer(Modifier.height(spacing.sm))
+            Text(
+                prize.title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
+            )
+            prize.description?.takeIf { it.isNotBlank() }?.let {
+                Spacer(Modifier.height(spacing.xxs))
+                Text(
+                    it,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                )
+            }
+            Spacer(Modifier.height(spacing.xs))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${prize.price}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (canAfford) MaterialTheme.colorScheme.primary
+                    else extras.textTer,
+                )
+                Spacer(Modifier.size(spacing.xxs))
+                Text(currencyIcon, fontSize = 12.sp)
+                Spacer(Modifier.weight(1f))
                 Box(
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) { Text("🎁", fontSize = 22.sp) }
-                Spacer(Modifier.size(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(prize.title, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                    prize.description?.takeIf { it.isNotBlank() }?.let {
-                        Text(it, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                if (canEdit) {
-                    Surface(onClick = onEdit, modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant) {
-                        Box(contentAlignment = Alignment.Center) { Text("✎", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface) }
-                    }
-                    Spacer(Modifier.size(4.dp))
-                    Surface(onClick = onDelete, modifier = Modifier.size(32.dp), shape = CircleShape, color = MaterialTheme.colorScheme.errorContainer) {
-                        Box(contentAlignment = Alignment.Center) { Text("✕", fontSize = 14.sp, color = MaterialTheme.colorScheme.error) }
-                    }
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${prize.price}", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.size(4.dp))
-                Text(currencyIcon, fontSize = 14.sp)
-                Spacer(Modifier.weight(1f))
-                Surface(
-                    onClick = if (canAfford) onRedeem else ({}),
-                    shape = shapes.pill,
-                    color = if (canAfford) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                        .clip(LocalCozyShapes.current.chip)
+                        .background(
+                            if (canAfford) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        .padding(horizontal = spacing.sm, vertical = spacing.xxs),
                 ) {
                     Text(
-                        if (canAfford) "Купить" else "Не хватает",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        fontSize = 13.sp,
+                        if (canAfford) "Заберу" else "Не хватает",
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (canAfford) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = if (canAfford) MaterialTheme.colorScheme.onPrimary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            if (canEdit) {
+                Spacer(Modifier.height(spacing.xs))
+                Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                    Box(
+                        modifier = Modifier
+                            .clip(LocalCozyShapes.current.chip)
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .clickable(onClick = onEdit)
+                            .padding(horizontal = spacing.xs, vertical = spacing.xxs),
+                    ) {
+                        Text(
+                            "✎",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onBackground,
+                        )
+                    }
+                    Box(
+                        modifier = Modifier
+                            .clip(LocalCozyShapes.current.chip)
+                            .background(MaterialTheme.colorScheme.errorContainer)
+                            .clickable(onClick = onDelete)
+                            .padding(horizontal = spacing.xs, vertical = spacing.xxs),
+                    ) {
+                        Text(
+                            "✕",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
         }

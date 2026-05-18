@@ -34,6 +34,7 @@ sealed interface DashboardIntent {
     data class OpenTask(val taskId: String) : DashboardIntent
     data class NavTab(val tab: CozyTab) : DashboardIntent
     data object OpenPet : DashboardIntent
+    data object OpenProfile : DashboardIntent
     data object Add : DashboardIntent
     data class SwitchContext(val context: DashboardContext) : DashboardIntent
 }

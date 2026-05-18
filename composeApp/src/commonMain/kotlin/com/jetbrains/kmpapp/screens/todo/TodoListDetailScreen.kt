@@ -40,7 +40,6 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -1274,10 +1273,10 @@ private fun ItemBottomSheet(
                         val units = listOf("шт", "л", "мл", "кг", "г", "уп", "пач")
                         LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             items(units) { u ->
-                                FilterChip(
+                                com.jetbrains.kmpapp.ui.components.CozyChip(
+                                    label = u,
                                     selected = unit == u,
                                     onClick = { unit = u },
-                                    label = { Text(u, fontSize = 12.sp) },
                                 )
                             }
                         }
@@ -1360,10 +1359,10 @@ private fun ItemBottomSheet(
                     SheetFieldLabel("Зона дома")
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(homeZones) { zone ->
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = zone,
                                 selected = selectedZone == zone,
                                 onClick = { selectedZone = if (selectedZone == zone) null else zone },
-                                label = { Text(zone) },
                             )
                         }
                     }
@@ -1372,23 +1371,23 @@ private fun ItemBottomSheet(
                     SheetFieldLabel("Расписание")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("1" to "Каждый день", "7" to "Еженедельно").forEach { (days, label) ->
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = label,
                                 selected = intervalDays == days,
                                 onClick = { intervalDays = if (intervalDays == days) "" else days },
-                                label = { Text(label) },
                             )
                         }
                     }
                     Spacer(Modifier.height(8.dp))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         items(dayOptions) { (dayKey, dayLabel) ->
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = dayLabel,
                                 selected = dayKey in selectedDays,
                                 onClick = {
                                     selectedDays = if (dayKey in selectedDays)
                                         selectedDays - dayKey else selectedDays + dayKey
                                 },
-                                label = { Text(dayLabel) },
                             )
                         }
                     }
@@ -1400,10 +1399,10 @@ private fun ItemBottomSheet(
                 SheetFieldLabel("Приоритет")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("low" to "🟢 Низкий", "medium" to "🟡 Средний", "high" to "🔴 Высокий").forEach { (value, label) ->
-                        FilterChip(
+                        com.jetbrains.kmpapp.ui.components.CozyChip(
+                            label = label,
                             selected = priority == value,
                             onClick = { priority = value },
-                            label = { Text(label, fontSize = 12.sp) },
                         )
                     }
                 }
@@ -1438,19 +1437,19 @@ private fun ItemBottomSheet(
                     SheetFieldLabel("Исполнитель")
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         item {
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = "Никто",
                                 selected = assignedTo == null,
                                 onClick = { assignedTo = null },
-                                label = { Text("Никто") },
                             )
                         }
                         items(members) { member ->
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = member.displayName ?: member.userId,
                                 selected = assignedTo == member.userId,
                                 onClick = {
                                     assignedTo = if (assignedTo == member.userId) null else member.userId
                                 },
-                                label = { Text(member.displayName ?: member.userId) },
                             )
                         }
                     }
@@ -1478,12 +1477,12 @@ private fun ItemBottomSheet(
                     SheetFieldLabel("Категория")
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(categories) { category ->
-                            FilterChip(
+                            com.jetbrains.kmpapp.ui.components.CozyChip(
+                                label = category.name,
                                 selected = selectedCategory == category.name,
                                 onClick = {
                                     selectedCategory = if (selectedCategory == category.name) null else category.name
                                 },
-                                label = { Text(category.name) },
                             )
                         }
                         item {

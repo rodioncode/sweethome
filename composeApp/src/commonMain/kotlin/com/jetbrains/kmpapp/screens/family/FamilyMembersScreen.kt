@@ -1,6 +1,7 @@
 package com.jetbrains.kmpapp.screens.family
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,15 +15,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,30 +30,36 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.LocalCozySpacing
+import com.jetbrains.kmpapp.ui.components.CozyAvatar
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyChip
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
+import com.jetbrains.kmpapp.ui.models.Palette
 
 private data class FamilyMember(
     val id: String,
     val name: String,
     val initials: String,
-    val color: Color,
+    val palette: Palette,
     val roleLabel: String,
-    val roleBg: Color,
-    val roleColor: Color,
-    val tasks: Int,
-    val online: Boolean,
+    val ageLabel: String,
+    val email: String?,
+    val done: Int,
+    val you: Boolean,
 )
 
-private val familyMembers = listOf(
-    FamilyMember("u1", "Аня Новикова", "АН", Color(0xFF5B7C5A), "Владелец", Color(0xFFE8F5E8), Color(0xFF3D5C3C), 8, true),
-    FamilyMember("u2", "Дима Новиков", "ДН", Color(0xFFE8A87C), "Участник", Color(0xFFF5F5F5), Color(0xFF888888), 5, true),
-    FamilyMember("u3", "Соня Новикова", "СН", Color(0xFFAB47BC), "Участник", Color(0xFFF5F5F5), Color(0xFF888888), 3, false),
-    FamilyMember("u4", "Гриша Новиков", "ГН", Color(0xFF42A5F5), "Ребёнок", Color(0xFFFFF3E0), Color(0xFFE8A87C), 2, false),
+private val mockMembers = listOf(
+    FamilyMember("u1", "Аня Сидорова", "А", Palette.CORAL, "Владелец", "мама", "anya@sweethome.app", 47, you = true),
+    FamilyMember("u2", "Дима Сидоров", "Д", Palette.PRIMARY, "Взрослый", "папа", "dima@sweethome.app", 32, you = false),
+    FamilyMember("u3", "Маша Сидорова", "М", Palette.LAVENDER, "Ребёнок", "8 лет", null, 18, you = false),
+    FamilyMember("u4", "Петя Сидоров", "П", Palette.OCHRE, "Ребёнок", "5 лет", null, 6, you = false),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,298 +67,320 @@ private val familyMembers = listOf(
 fun FamilyMembersScreen(
     navigateBack: () -> Unit,
 ) {
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
     var showInviteSheet by remember { mutableStateOf(false) }
+    var memberSheet by remember { mutableStateOf<FamilyMember?>(null) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val memberSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-    ) {
-        // TopBar
-        Surface(
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 2.dp,
+        Column(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Surface(
-                    onClick = navigateBack,
-                    modifier = Modifier.size(36.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text("‹", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
-                Text(
-                    "Участники",
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = { showInviteSheet = true }) {
-                    Text(
-                        "+ Добавить",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
-            }
-        }
-
-        LazyColumn(
-            contentPadding = PaddingValues(top = 12.dp, bottom = 32.dp, start = 16.dp, end = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            // Invite code banner
-            item {
-                Surface(
-                    onClick = { showInviteSheet = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.small,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "🔗 Пригласить: FAMILY42",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text(
-                            "Поделиться",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-            }
-
-            // Member list
-            items(familyMembers.size) { i ->
-                val member = familyMembers[i]
-                MemberCard(member = member)
-            }
-
-            // Invite button
-            item {
-                Spacer(Modifier.height(2.dp))
-                Surface(
-                    onClick = { showInviteSheet = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = LocalCozyShapes.current.button,
-                    color = MaterialTheme.colorScheme.primary,
-                    shadowElevation = 3.dp,
-                ) {
+            CozyTopBar(
+                title = "Семья Сидоровых",
+                onBack = navigateBack,
+                action = {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 16.dp),
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                            .clickable { showInviteSheet = true },
                         contentAlignment = Alignment.Center,
                     ) {
                         Text(
-                            "+ Пригласить участника",
-                            fontSize = 15.sp,
+                            "+",
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
                         )
                     }
+                },
+            )
+
+            LazyColumn(
+                contentPadding = PaddingValues(
+                    start = spacing.lg, end = spacing.lg,
+                    top = spacing.sm, bottom = spacing.xxxl,
+                ),
+                verticalArrangement = Arrangement.spacedBy(spacing.sm),
+            ) {
+                items(mockMembers, key = { it.id }) { member ->
+                    MemberRow(member = member, onClick = { memberSheet = member })
+                }
+
+                item {
+                    Spacer(Modifier.height(spacing.xs))
+                    InviteCodeCard(onShare = { showInviteSheet = true })
                 }
             }
         }
-    }
     }
 
     if (showInviteSheet) {
         ModalBottomSheet(
             onDismissRequest = { showInviteSheet = false },
             sheetState = sheetState,
+            shape = shapes.sheet,
         ) {
             InviteCodeSheet(onDismiss = { showInviteSheet = false })
+        }
+    }
+
+    memberSheet?.let { m ->
+        ModalBottomSheet(
+            onDismissRequest = { memberSheet = null },
+            sheetState = memberSheetState,
+            shape = shapes.sheet,
+        ) {
+            MemberActionsSheet(member = m, onDismiss = { memberSheet = null })
         }
     }
 }
 
 @Composable
-private fun MemberCard(member: FamilyMember) {
-    Surface(
+private fun MemberRow(member: FamilyMember, onClick: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    val extras = LocalCozyExtraColors.current
+    CozyCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = LocalCozyShapes.current.button,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 1.dp,
+        onClick = onClick,
+        bordered = true,
+        contentPadding = spacing.lg,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(spacing.md),
         ) {
-            // Avatar with online indicator
-            Box(modifier = Modifier.size(48.dp)) {
-                MemberCircle(
-                    displayName = member.initials,
-                    color = member.color,
-                    size = 48,
-                    fontSize = 15,
-                )
-                if (member.online) {
-                    Box(
-                        modifier = Modifier
-                            .size(12.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape)
-                            .background(Color.White, shape = CircleShape)
-                            .align(Alignment.BottomEnd),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(MaterialTheme.colorScheme.primary, CircleShape)
-                                .align(Alignment.Center),
+            CozyAvatar(letter = member.initials, palette = member.palette, size = 52.dp)
+            Column(modifier = Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                    Text(
+                        member.name,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    if (member.you) {
+                        CozyChip(
+                            label = "ВЫ",
+                            selected = true,
                         )
                     }
                 }
-            }
-
-            Column(modifier = Modifier.weight(1f)) {
+                Spacer(Modifier.height(spacing.xxs))
+                val emailPart = member.email ?: "без email"
                 Text(
-                    member.name,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    "${member.tasks} задач",
-                    fontSize = 12.sp,
+                    "${member.roleLabel} · ${member.ageLabel} · $emailPart",
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp),
+                )
+                Spacer(Modifier.height(spacing.xxs))
+                Text(
+                    "✓ ${member.done} задач выполнено",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
+            Text(
+                "⋯",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = extras.textTer,
+                modifier = Modifier.padding(start = spacing.xs),
+            )
+        }
+    }
+}
 
-            Surface(
-                shape = LocalCozyShapes.current.chip,
-                color = member.roleBg,
+@Composable
+private fun InviteCodeCard(onShare: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    CozyCard(
+        modifier = Modifier.fillMaxWidth(),
+        background = MaterialTheme.colorScheme.primaryContainer,
+        contentPadding = spacing.lg,
+        onClick = onShare,
+    ) {
+        Column {
+            Text(
+                "КОД ПРИГЛАШЕНИЯ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.sp,
+            )
+            Spacer(Modifier.height(spacing.sm))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    member.roleLabel,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    fontSize = 10.sp,
+                    "HOME42",
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = member.roleColor,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    letterSpacing = 4.sp,
+                    modifier = Modifier.weight(1f),
                 )
+                Box(
+                    modifier = Modifier
+                        .clip(LocalCozyShapes.current.button)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable(onClick = onShare)
+                        .padding(horizontal = spacing.md, vertical = spacing.xs),
+                ) {
+                    Text(
+                        "Поделиться",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
             }
-
-            Text("›", fontSize = 20.sp, color = MaterialTheme.colorScheme.outline)
         }
     }
 }
 
 @Composable
 private fun InviteCodeSheet(onDismiss: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    val shapes = LocalCozyShapes.current
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 40.dp),
+            .padding(horizontal = spacing.xxl)
+            .padding(bottom = spacing.huge),
     ) {
-        // Drag handle
-        Box(
-            modifier = Modifier
-                .width(36.dp)
-                .height(4.dp)
-                .background(MaterialTheme.colorScheme.outline, RoundedCornerShape(2.dp))
-                .align(Alignment.CenterHorizontally)
-                .padding(bottom = 20.dp),
-        )
-        Spacer(Modifier.height(16.dp))
         Text(
             "Код приглашения",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 20.dp),
+            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.padding(bottom = spacing.xl),
         )
 
-        // Big code display
-        Surface(
+        CozyCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = LocalCozyShapes.current.avatarTile,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            background = MaterialTheme.colorScheme.surfaceVariant,
+            radius = 22.dp,
+            contentPadding = spacing.xl,
+            bordered = true,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     "FAMILY42",
                     fontSize = 36.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onBackground,
                     letterSpacing = 8.sp,
                 )
+                Spacer(Modifier.height(spacing.xs))
                 Text(
                     "Действителен 7 дней",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(spacing.xl))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Surface(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                shape = LocalCozyShapes.current.button,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+        Row(horizontalArrangement = Arrangement.spacedBy(spacing.sm)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(shapes.button)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable(onClick = onDismiss)
+                    .padding(vertical = spacing.md),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Скопировать", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                }
+                Text(
+                    "Скопировать",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
             }
-            Surface(
-                onClick = onDismiss,
-                modifier = Modifier.weight(1f),
-                shape = LocalCozyShapes.current.button,
-                color = MaterialTheme.colorScheme.primary,
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(shapes.button)
+                    .background(MaterialTheme.colorScheme.primary)
+                    .clickable(onClick = onDismiss)
+                    .padding(vertical = spacing.md),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 14.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Поделиться", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                }
+                Text(
+                    "Поделиться",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MemberActionsSheet(member: FamilyMember, onDismiss: () -> Unit) {
+    val spacing = LocalCozySpacing.current
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = spacing.xxl)
+            .padding(bottom = spacing.huge),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(spacing.md),
+            modifier = Modifier.padding(bottom = spacing.lg),
+        ) {
+            CozyAvatar(letter = member.initials, palette = member.palette, size = 48.dp)
+            Column {
+                Text(
+                    member.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Text(
+                    "${member.roleLabel} · ${member.ageLabel}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        listOf(
+            "✏️" to "Изменить роль",
+            "🔔" to "Настройки уведомлений",
+            "🚪" to "Удалить из семьи",
+        ).forEachIndexed { i, (icon, label) ->
+            val danger = i == 2
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onDismiss)
+                    .padding(vertical = spacing.md),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(spacing.md),
+            ) {
+                Text(icon, fontSize = 18.sp, modifier = Modifier.width(24.dp))
+                Text(
+                    label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (danger) MaterialTheme.colorScheme.error
+                    else MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }

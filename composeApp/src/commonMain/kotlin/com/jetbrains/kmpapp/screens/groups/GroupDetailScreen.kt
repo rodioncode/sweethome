@@ -2,6 +2,7 @@ package com.jetbrains.kmpapp.screens.groups
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,20 +27,14 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DayOfWeek
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,9 +58,16 @@ import com.jetbrains.kmpapp.data.groups.Invite
 import com.jetbrains.kmpapp.data.lists.TodoList
 import com.jetbrains.kmpapp.ui.LocalCozyExtraColors
 import com.jetbrains.kmpapp.ui.LocalCozyShapes
+import com.jetbrains.kmpapp.ui.components.CozyAvatar
+import com.jetbrains.kmpapp.ui.components.CozyCard
+import com.jetbrains.kmpapp.ui.components.CozyTopBar
 import com.jetbrains.kmpapp.ui.listColorForType
 import com.jetbrains.kmpapp.ui.listEmojiForType
 import com.jetbrains.kmpapp.ui.toComposeColor
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -113,6 +114,27 @@ fun GroupDetailScreen(
 
     val isOwner = group?.role == "owner"
     val isAdmin = group?.role == "admin"
+    val extras = LocalCozyExtraColors.current
+    val shapes = LocalCozyShapes.current
+
+    val visuals = remember(group?.type) {
+        when (group?.type) {
+            "family" -> Triple("🏡", "Семья", null)
+            "work" -> Triple("💼", "Работа", null)
+            "group" -> Triple("👥", "Группа", null)
+            "mentoring" -> Triple("🎓", "Наставничество", null)
+            "hobby" -> Triple("🏃", "Хобби", null)
+            "study" -> Triple("📚", "Учёба", null)
+            else -> Triple(group?.icon ?: "👤", "Группа", null)
+        }
+    }
+    val heroBg: Color = when (group?.type) {
+        "hobby" -> extras.coralSoft
+        "work" -> extras.lavenderSoft
+        "study" -> extras.ochreSoft
+        "mentoring" -> extras.lavenderSoft
+        else -> MaterialTheme.colorScheme.primaryContainer
+    }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -123,231 +145,86 @@ fun GroupDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues),
         ) {
-            // Green header
+            // TopBar
             item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.primary),
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(120.dp)
-                            .align(Alignment.TopEnd)
-                            .padding(top = 0.dp)
-                            .background(Color.White.copy(alpha = 0.07f), CircleShape),
-                    )
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                            .padding(top = 12.dp, bottom = 20.dp),
-                    ) {
-                        // Top row: back + name + menu
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Surface(
-                                onClick = navigateBack,
-                                modifier = Modifier.size(36.dp),
-                                shape = CircleShape,
-                                color = Color.White.copy(alpha = 0.15f),
+                CozyTopBar(
+                    onBack = navigateBack,
+                    action = {
+                        Box {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .clickable { menuExpanded = true },
+                                contentAlignment = Alignment.Center,
                             ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text("‹", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
-                                }
+                                Text("⋯", fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
                             }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    group?.title ?: groupName,
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary,
-                                )
-                                if (members.isNotEmpty()) {
-                                    Text(
-                                        "${members.size} участника",
-                                        fontSize = 12.sp,
-                                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                                    )
-                                }
-                            }
-                            Box {
-                                Surface(
-                                    onClick = { menuExpanded = true },
-                                    modifier = Modifier.size(36.dp),
-                                    shape = CircleShape,
-                                    color = Color.White.copy(alpha = 0.15f),
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text("⚙️", fontSize = 18.sp)
-                                    }
-                                }
-                                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                                    if (isOwner || isAdmin) {
-                                        DropdownMenuItem(
-                                            text = { Text("Пригласить") },
-                                            onClick = { menuExpanded = false; viewModel.createInvite() },
-                                        )
-                                    }
-                                    if (isOwner) {
-                                        DropdownMenuItem(
-                                            text = { Text("Передать роль владельца") },
-                                            onClick = { menuExpanded = false; showTransferDialog = true },
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text("Удалить группу", color = MaterialTheme.colorScheme.error) },
-                                            onClick = { menuExpanded = false; showDeleteConfirm = true },
-                                        )
-                                    }
-                                    if (!isOwner) {
-                                        DropdownMenuItem(
-                                            text = { Text("Выйти из группы") },
-                                            onClick = { menuExpanded = false; viewModel.leaveGroup() },
-                                        )
-                                    }
-                                }
-                            }
-                        }
-
-                        // Member avatars row
-                        if (members.isNotEmpty()) {
-                            Spacer(Modifier.height(14.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy((-8).dp),
-                            ) {
-                                members.take(5).forEachIndexed { index, member ->
-                                    MemberAvatar(
-                                        displayName = member.displayName ?: member.userId,
-                                        modifier = Modifier.offset(x = (index * (-4)).dp),
-                                    )
-                                }
+                            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                                 if (isOwner || isAdmin) {
-                                    Spacer(Modifier.width(4.dp))
-                                    Surface(
-                                        onClick = { viewModel.createInvite() },
-                                        modifier = Modifier.size(36.dp),
-                                        shape = CircleShape,
-                                        color = Color.White.copy(alpha = 0.2f),
-                                        border = androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.4f)),
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Text("+", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Light)
-                                        }
-                                    }
+                                    DropdownMenuItem(
+                                        text = { Text("Пригласить") },
+                                        onClick = { menuExpanded = false; viewModel.createInvite() },
+                                    )
+                                }
+                                if (isOwner) {
+                                    DropdownMenuItem(
+                                        text = { Text("Передать роль владельца") },
+                                        onClick = { menuExpanded = false; showTransferDialog = true },
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Удалить группу",
+                                                color = MaterialTheme.colorScheme.error,
+                                            )
+                                        },
+                                        onClick = { menuExpanded = false; showDeleteConfirm = true },
+                                    )
+                                }
+                                if (!isOwner) {
+                                    DropdownMenuItem(
+                                        text = { Text("Выйти из группы") },
+                                        onClick = { menuExpanded = false; viewModel.leaveGroup() },
+                                    )
                                 }
                             }
                         }
-                    }
-                }
+                    },
+                )
             }
 
-            // Invite code banner (shown when we have a current invite or can create one)
-            if (currentInvite != null) {
-                item {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                "🔗 Код: ${currentInvite!!.token}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.weight(1f),
-                            )
-                            TextButton(onClick = {
-                                clipboardManager.setText(AnnotatedString(currentInvite!!.token))
-                            }) {
-                                Text("Поделиться →", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Lists section header
+            // Hero — avatar + title + meta
             item {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        "Списки группы",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    TextButton(onClick = { navigateToCreateList(groupId) }) {
-                        Text("+ Создать", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                    }
-                }
-            }
-
-            // Lists
-            if (groupLists.isEmpty()) {
-                item {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                            .size(80.dp)
+                            .clip(shapes.cardLarge)
+                            .background(heroBg),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Нет списков. Нажмите + чтобы создать.", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(visuals.first, fontSize = 40.sp)
                     }
-                }
-            } else {
-                items(groupLists, key = { "list_${it.id}" }) { list ->
-                    GroupListCard(list = list, onClick = { navigateToListDetail(list.id) })
-                }
-            }
-
-            // Work hours (только для type=work)
-            if (group?.type == "work") {
-                item {
-                    Spacer(Modifier.height(16.dp))
-                    Surface(
-                        onClick = { if (isOwner) showWorkHoursDialog = true },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                        shape = LocalCozyShapes.current.button,
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text("Рабочее время", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                            val g = group
-                            val hours = if (g?.workHoursStart != null && g.workHoursEnd != null) "${g.workHoursStart} – ${g.workHoursEnd}" else "Не задано"
-                            val days = g?.workDays?.takeIf { it.isNotEmpty() }?.joinToString(", ") { dayLabel(it) } ?: "—"
-                            Text(hours, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Text("Дни: $days", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                            // Live preview "сейчас рабочее / нерабочее"
-                            workHoursStatus(g?.workHoursStart, g?.workHoursEnd, g?.workDays)?.let { (label, isWork) ->
-                                Text(
-                                    text = label,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = if (isWork) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
-                            }
-                            if (isOwner) Text("Нажмите, чтобы изменить", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
-                        }
-                    }
+                    Spacer(Modifier.height(14.dp))
+                    Text(
+                        group?.title ?: groupName,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${members.size} участников · ${groupLists.size} списков · ${visuals.second.lowercase()}",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
@@ -357,36 +234,226 @@ fun GroupDetailScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        .padding(horizontal = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Surface(
+                    ActionButton(
+                        label = "👥 Участники",
+                        modifier = Modifier.weight(1f),
+                        primary = false,
                         onClick = { showMembersSheet = true },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = LocalCozyShapes.current.button,
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("👥 Участники", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                        }
-                    }
-                    Surface(
+                    )
+                    ActionButton(
+                        label = "💬 Чат",
+                        modifier = Modifier.weight(1f),
+                        primary = true,
                         onClick = {
                             val g = group
                             if (g != null) navigateToChat(g.id, g.title, members.size)
                         },
-                        modifier = Modifier.weight(1f).height(48.dp),
-                        shape = LocalCozyShapes.current.button,
-                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
+            // Members section
+            if (members.isNotEmpty()) {
+                item {
+                    Spacer(Modifier.height(24.dp))
+                    SectionLabel(label = "УЧАСТНИКИ", modifier = Modifier.padding(horizontal = 24.dp))
+                    Spacer(Modifier.height(8.dp))
+                }
+                item {
+                    CozyCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        contentPadding = 4.dp,
+                        radius = 18.dp,
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text("💬 Чат", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimary)
+                        Column {
+                            members.forEachIndexed { idx, member ->
+                                MemberRow(member = member)
+                                if (idx < members.size - 1) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(start = 60.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-                Spacer(Modifier.height(80.dp))
             }
+
+            // Lists section
+            item {
+                Spacer(Modifier.height(24.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 24.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "СПИСКИ ГРУППЫ · ${groupLists.size}",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        letterSpacing = 1.2.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        "+ Создать",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .clickable { navigateToCreateList(groupId) }
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+
+            if (groupLists.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "Нет списков. Нажмите + чтобы создать.",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            } else {
+                items(groupLists, key = { "l_${it.id}" }) { list ->
+                    GroupListCard(
+                        list = list,
+                        onClick = { navigateToListDetail(list.id) },
+                    )
+                }
+            }
+
+            // Invite code card
+            if (currentInvite != null) {
+                item {
+                    Spacer(Modifier.height(20.dp))
+                    InviteCard(
+                        token = currentInvite!!.token,
+                        modifier = Modifier.padding(horizontal = 24.dp),
+                        onCopy = { clipboardManager.setText(AnnotatedString(currentInvite!!.token)) },
+                    )
+                }
+            } else if (isOwner || isAdmin) {
+                item {
+                    Spacer(Modifier.height(20.dp))
+                    CozyCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        onClick = { viewModel.createInvite() },
+                        background = MaterialTheme.colorScheme.primaryContainer,
+                        contentPadding = 16.dp,
+                        radius = 18.dp,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("🔗", fontSize = 24.sp)
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "КОД ПРИГЛАШЕНИЯ",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    letterSpacing = 1.2.sp,
+                                )
+                                Text(
+                                    "Создать новый код",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
+                            }
+                            Text("→", fontSize = 18.sp, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+            }
+
+            // Work hours (type=work)
+            if (group?.type == "work") {
+                item {
+                    Spacer(Modifier.height(20.dp))
+                    val g = group
+                    CozyCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp),
+                        onClick = if (isOwner) ({ showWorkHoursDialog = true }) else null,
+                        bordered = true,
+                        contentPadding = 16.dp,
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text(
+                                "Рабочее время",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            )
+                            val hours = if (g?.workHoursStart != null && g.workHoursEnd != null) "${g.workHoursStart} – ${g.workHoursEnd}" else "Не задано"
+                            val days = g?.workDays?.takeIf { it.isNotEmpty() }?.joinToString(", ") { dayLabel(it) } ?: "—"
+                            Text(hours, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Дни: $days", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            workHoursStatus(g?.workHoursStart, g?.workHoursEnd, g?.workDays)?.let { (label, isWork) ->
+                                Text(
+                                    text = label,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = if (isWork) extras.success else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            if (isOwner) {
+                                Text(
+                                    "Нажмите, чтобы изменить",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Leave button (non-owner)
+            if (!isOwner && group != null) {
+                item {
+                    Spacer(Modifier.height(20.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .height(48.dp)
+                            .clip(shapes.button)
+                            .border(1.dp, extras.coral, shapes.button)
+                            .clickable { viewModel.leaveGroup() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            "Покинуть группу",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = extras.coral,
+                        )
+                    }
+                }
+            }
+
+            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 
@@ -414,14 +481,25 @@ fun GroupDetailScreen(
             title = { Text("Приглашение в группу") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Surface(
+                    CozyCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        background = MaterialTheme.colorScheme.primaryContainer,
+                        contentPadding = 16.dp,
                     ) {
-                        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(token, fontSize = 28.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface, letterSpacing = 4.sp)
-                            Text("Действует до: ${currentInvite!!.expiresAt.take(10)}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                token,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                letterSpacing = 4.sp,
+                            )
+                            Text(
+                                "Действует до: ${currentInvite!!.expiresAt.take(10)}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp),
+                            )
                         }
                     }
                     Text(
@@ -432,12 +510,18 @@ fun GroupDetailScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(token)); showInviteDialog = false }) {
+                TextButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(token))
+                    showInviteDialog = false
+                }) {
                     Text("Скопировать код")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { clipboardManager.setText(AnnotatedString(deepLink)); showInviteDialog = false }) {
+                TextButton(onClick = {
+                    clipboardManager.setText(AnnotatedString(deepLink))
+                    showInviteDialog = false
+                }) {
                     Text("Скопировать ссылку")
                 }
             },
@@ -457,7 +541,10 @@ fun GroupDetailScreen(
                     Column {
                         nonOwnerMembers.forEach { member ->
                             TextButton(
-                                onClick = { viewModel.transferOwnership(member.userId); showTransferDialog = false },
+                                onClick = {
+                                    viewModel.transferOwnership(member.userId)
+                                    showTransferDialog = false
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                             ) { Text(member.displayName ?: member.userId) }
                         }
@@ -465,7 +552,9 @@ fun GroupDetailScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { showTransferDialog = false }) { Text("Отмена") } },
+            dismissButton = {
+                TextButton(onClick = { showTransferDialog = false }) { Text("Отмена") }
+            },
         )
     }
 
@@ -490,13 +579,15 @@ fun GroupDetailScreen(
         ModalBottomSheet(
             onDismissRequest = { showMembersSheet = false },
             sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = shapes.sheet,
         ) {
-            Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+            Column(modifier = Modifier.padding(horizontal = 24.dp)) {
                 Text(
                     "Участники",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
                 if (members.isEmpty()) {
@@ -509,7 +600,7 @@ fun GroupDetailScreen(
                 } else {
                     members.forEach { member ->
                         MemberRow(member = member)
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outline)
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     }
                 }
                 Spacer(Modifier.height(32.dp))
@@ -519,70 +610,167 @@ fun GroupDetailScreen(
 }
 
 @Composable
-private fun MemberAvatar(displayName: String, modifier: Modifier = Modifier) {
-    val extras = LocalCozyExtraColors.current
-    val colors = listOf(
-        MaterialTheme.colorScheme.primary,
-        extras.lavenderSoft,
-        extras.coral,
-        extras.lavender,
-        extras.ochre,
+private fun SectionLabel(label: String, modifier: Modifier = Modifier) {
+    Text(
+        text = label,
+        fontSize = 11.sp,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        letterSpacing = 1.2.sp,
+        modifier = modifier,
     )
-    val color = colors[displayName.hashCode().and(0x7FFFFFFF) % colors.size]
+}
+
+@Composable
+private fun ActionButton(
+    label: String,
+    primary: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shapes = LocalCozyShapes.current
+    val bg = if (primary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (primary) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onBackground
     Box(
         modifier = modifier
-            .size(36.dp)
-            .clip(CircleShape)
-            .background(color)
-            .border(2.dp, Color.White.copy(alpha = 0.4f), CircleShape),
+            .height(48.dp)
+            .clip(shapes.button)
+            .background(bg)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            displayName.take(2).uppercase(),
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-        )
+        Text(label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = fg)
     }
 }
 
 @Composable
+private fun memberColor(seed: String): Color {
+    val extras = LocalCozyExtraColors.current
+    val palette = listOf(
+        MaterialTheme.colorScheme.primary,
+        extras.lavender,
+        extras.coral,
+        extras.ochre,
+        extras.primaryLight,
+    )
+    return palette[(seed.hashCode() and 0x7FFFFFFF) % palette.size]
+}
+
+@Composable
 private fun MemberRow(member: GroupMember) {
+    val displayName = member.displayName ?: member.userId
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        MemberAvatar(displayName = member.displayName ?: member.userId)
+        CozyAvatar(
+            letter = displayName.firstOrNull()?.uppercase() ?: "?",
+            color = memberColor(displayName),
+            size = 40.dp,
+        )
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                member.displayName ?: member.userId,
+                displayName,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = MaterialTheme.colorScheme.onBackground,
             )
-            if (member.displayName != null) {
+            val roleLabel = when (member.role) {
+                "owner" -> "Владелец"
+                "admin" -> "Админ"
+                "mentor" -> "Наставник"
+                else -> "Участник"
+            }
+            Text(
+                roleLabel,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
+        if (member.role == "owner") {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
                 Text(
-                    member.userId,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "OWNER",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-        val roleLabel = when (member.role) {
-            "owner" -> "Владелец"
-            "admin" -> "Админ"
-            "mentor" -> "Наставник"
-            else -> "Участник"
+    }
+}
+
+@Composable
+private fun InviteCard(
+    token: String,
+    onCopy: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shapes = LocalCozyShapes.current
+    CozyCard(
+        modifier = modifier.fillMaxWidth(),
+        background = MaterialTheme.colorScheme.primaryContainer,
+        contentPadding = 16.dp,
+        radius = 18.dp,
+    ) {
+        Column {
+            Text(
+                "КОД ПРИГЛАШЕНИЯ",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                letterSpacing = 1.2.sp,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // 6-cell display
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val padded = token.take(6).padEnd(6, ' ')
+                    for (i in 0 until 6) {
+                        val ch = padded[i].toString()
+                        Text(
+                            text = ch,
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            letterSpacing = 2.sp,
+                        )
+                    }
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(shapes.button)
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable(onClick = onCopy)
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        "Копировать",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Действителен 7 дней",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        Text(
-            roleLabel,
-            fontSize = 12.sp,
-            color = if (member.role == "owner") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            fontWeight = if (member.role == "owner") FontWeight.Bold else FontWeight.Normal,
-        )
     }
 }
 
@@ -590,34 +778,31 @@ private fun MemberRow(member: GroupMember) {
 private fun GroupListCard(
     list: TodoList,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     val listColor = list.color?.toComposeColor() ?: listColorForType(list.type, isSystemInDarkTheme())
     val listIcon = list.icon ?: listEmojiForType(list.type)
     val doneCount = list.doneCount
     val totalCount = list.totalCount
 
-    Surface(
-        onClick = onClick,
-        modifier = modifier
+    CozyCard(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 5.dp),
-        shape = LocalCozyShapes.current.button,
-        color = MaterialTheme.colorScheme.surface,
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        shadowElevation = 1.dp,
+            .padding(horizontal = 24.dp, vertical = 4.dp),
+        onClick = onClick,
+        bordered = true,
+        contentPadding = 12.dp,
+        radius = 14.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(listColor.copy(alpha = 0.13f), MaterialTheme.shapes.small),
+                    .clip(LocalCozyShapes.current.chip)
+                    .background(listColor.copy(alpha = 0.13f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(listIcon, fontSize = 22.sp)
@@ -627,16 +812,19 @@ private fun GroupListCard(
                     list.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (doneCount != null && totalCount != null && totalCount > 0) {
                     val progress = (doneCount.toFloat() / totalCount).coerceIn(0f, 1f)
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(Modifier.height(8.dp))
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(2.dp)),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp)
+                            .clip(RoundedCornerShape(4.dp)),
                         color = listColor,
                         trackColor = MaterialTheme.colorScheme.outlineVariant,
                         strokeCap = StrokeCap.Round,
@@ -680,10 +868,6 @@ private fun DayOfWeek.toCode(): String = when (this) {
     else -> "mon"
 }
 
-/**
- * Возвращает («🟢 Сейчас рабочее время» / «🌙 Сейчас нерабочее время», isWork) либо null,
- * если параметры не заданы.
- */
 private fun workHoursStatus(start: String?, end: String?, days: List<String>?): Pair<String, Boolean>? {
     val s = parseHHmm(start) ?: return null
     val e = parseHHmm(end) ?: return null
@@ -696,7 +880,6 @@ private fun workHoursStatus(start: String?, end: String?, days: List<String>?): 
     val isWorkHour = if (startMin <= endMin) {
         nowMin in startMin until endMin
     } else {
-        // Ночная смена (23:00–07:00)
         nowMin >= startMin || nowMin < endMin
     }
     val active = isWorkDay && isWorkHour
@@ -751,25 +934,29 @@ private fun WorkHoursDialog(
                     if (editingStart) TimePicker(state = startState) else TimePicker(state = endState)
                 }
                 Text("Дни недели:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     allDays.forEach { d ->
                         val selected = d in days.value
-                        Surface(
-                            onClick = {
-                                days.value = if (selected) days.value - d else days.value + d
-                            },
-                            shape = CircleShape,
-                            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.size(36.dp),
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Text(
-                                    dayLabel(d),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    if (selected) MaterialTheme.colorScheme.primary
+                                    else MaterialTheme.colorScheme.surfaceVariant
                                 )
-                            }
+                                .clickable {
+                                    days.value = if (selected) days.value - d else days.value + d
+                                },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                dayLabel(d),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (selected) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onBackground,
+                            )
                         }
                     }
                 }
@@ -797,29 +984,36 @@ private fun TimeChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = if (selected) MaterialTheme.colorScheme.primaryContainer
-        else MaterialTheme.colorScheme.surfaceVariant,
-        border = androidx.compose.foundation.BorderStroke(
-            width = if (selected) 2.dp else 1.dp,
-            color = if (selected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outline,
-        ),
+    val shapes = LocalCozyShapes.current
+    Box(
+        modifier = modifier
+            .clip(shapes.chip)
+            .background(
+                if (selected) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceVariant
+            )
+            .border(
+                width = if (selected) 2.dp else 1.dp,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outlineVariant,
+                shape = shapes.chip,
+            )
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(label, fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                label,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Text(
                 time,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface,
+                else MaterialTheme.colorScheme.onBackground,
             )
         }
     }
